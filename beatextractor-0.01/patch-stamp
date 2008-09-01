@@ -1,0 +1,11 @@
+Patches applied in the Debian version of :
+
+debian/patches/01_beatextractor.dpatch (<leleobhz@localhost>):
+  An patch to correct places for the debian install
+
+debian/patches/02_beatextractorrecursive.dpatch (<leleobhz@localhost>):
+  An patch to correct places for the debian install for Recursive script
+
+debian/patches/03_beatextractor.kmdr-path.dpatch (<leleobhz@localhost>):
+  An patch to correct places for the debian install of BeatExtractor.kmdr
+

@@ -1,0 +1,11 @@
+Package: beatextractor
+Version: 0.01
+Section: science
+Priority: optional
+Architecture: i386
+Depends: kommander, praat
+Installed-Size: 124
+Maintainer: Leonardo Silva Amaral <leleobhz@leleobhz.org>
+Description: An automated tool for automatic sound segmentation
+ Its a praat script writed on the fly by a shell script to
+ generate TextGrids from .wav with a easy and fast method.

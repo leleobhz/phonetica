@@ -1,0 +1,17 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 02_beatextractorrecursive.sh-path.dpatch by  <leleobhz@localhost>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: An patch to correct places for the debian install for Recursive script
+
+@DPATCH@
+
+--- ./BeatExtractorRecursive.sh.orig 2007-02-23 17:28:16.000000000 -0200
++++ ./BeatExtractorRecursive.sh	2007-02-23 17:08:09.000000000 -0200
+@@ -14,5 +14,5 @@
+ 
+ for file in `cat ~/.bbep/target.btex`; do
+ clear
+-./BeatExtractor.sh "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "$file" "${10}"
++/usr/share/BeatExtractor/BeatExtractor.sh "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "$file" "${10}"
+ done

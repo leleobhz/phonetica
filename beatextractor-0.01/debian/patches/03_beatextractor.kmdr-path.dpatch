@@ -1,0 +1,19 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_beatextractor.kmdr-path.dpatch by  <leleobhz@localhost>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: An patch to correct places for the debian install of BeatExtractor.kmdr
+
+@DPATCH@
+
+--- ./BeatExtractor.kmdr.orig	2007-02-23 17:58:32.000000000 -0200
++++ ./BeatExtractor.kmdr	2007-02-23 17:59:24.000000000 -0200
+@@ -889,7 +889,7 @@
+ 
+ for file in `cat ~/.bbep/target.btex`; do
+ @saida.clear
+-./BeatExtractor.sh @speaker_sex.text @filter.text @filter_order.text "@left_Cut_off_frequency.text" "@right_Cut_off_frequency.text" "@smoothing_cut_freq.text" @technique.text "@threshold1.text" "@threshold2.text" "$file" "ProgressBar1" 2&gt; /dev/null
++/usr/share/BeatExtractor/BeatExtractor.sh @speaker_sex.text @filter.text @filter_order.text "@left_Cut_off_frequency.text" "@right_Cut_off_frequency.text" "@smoothing_cut_freq.text" @technique.text "@threshold1.text" "@threshold2.text" "$file" "ProgressBar1" 2&gt; /dev/null
+ done
+ 
+ </string>

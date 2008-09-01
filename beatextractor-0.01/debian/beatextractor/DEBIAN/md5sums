@@ -1,0 +1,12 @@
+b942448cf6aa0095216fedcfd9e0cac7  usr/share/BeatExtractor/BeatExtractor.kmdr
+6fe0f4ffeeb66066bd5d35a0c1fc3b17  usr/share/BeatExtractor/BeatExtractorRecursive.sh
+04f9409be262d91d0ea37522876b5e5a  usr/share/BeatExtractor/BeatExtractor.sh
+393f813d09f48f57759da099d72c771f  usr/share/BeatExtractor/GraphicLauncher.sh
+ca7fa0393156358f1cc5ae58614b759d  usr/share/BeatExtractor/Progress.sh
+35071abe858677ad0587252f4e699a12  usr/share/BeatExtractor/README
+d41d8cd98f00b204e9800998ecf8427e  usr/share/BeatExtractor/target.btex
+35071abe858677ad0587252f4e699a12  usr/share/doc/beatextractor/README
+a47aa2b8aca978fe02a33b8cdbdc7fb4  usr/share/doc/beatextractor/README.Debian
+3d7a376c6da1b403953dfaf2f522d9f9  usr/share/doc/beatextractor/copyright
+1a8a5432725cd77b1e261a6a96842eb7  usr/share/doc/beatextractor/changelog.gz
+59eeaabcb549d8efb03dcfa629789463  usr/share/man/man1/bbep.1.gz

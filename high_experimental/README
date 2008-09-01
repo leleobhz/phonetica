@@ -1,0 +1,11 @@
+This directory is to store all atempts to do something too hard or complex.
+
+The first usage for this directory is a atempt to create entirelly with python a accoustic phonetic toolkit (Like praat).
+
+Start trying to use esps.py (http://www.ling.upenn.edu/~kgorman/papers/esps.py), esps (http://www.speech.kth.se/software/) and pstat (http://www.nmr.mgh.harvard.edu/Neural_Systems_Group/gary/python/pstat.py)
+
+Some information about TextGrid is available in esps.py and in SpeedCluster (http://www.bangor.ac.uk/~cbs007/speechCluster/README.html)
+
+Ive advanced a little in my speech analysis algorithm research. Ive discovered libsnack (http://www.speech.kth.se/snack/) can extract nativelly the formants and pitch, and i need now see if it will be precise enough. About ESPS, its really hard to compile it, because it even know what linux is. If someone know a way to compile it on linux, please tell-me. :]
+
+EVERYTHING inside this folder, and this project is licenced by GPLv2.

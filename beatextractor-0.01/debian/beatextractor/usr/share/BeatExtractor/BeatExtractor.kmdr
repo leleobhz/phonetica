@@ -1,0 +1,919 @@
+<!DOCTYPE UI><UI version="3.0" stdsetdef="1">
+<class>Form1</class>
+<comment>### BBEP ###
+
+A Kommander interface to BeatExtractor - a Praat script converted and improved on bash - .
+
+Author: Leonardo Silva Amaral &lt;leleobhz@leleobhz.org&gt;
+Helpers: 
+- Christian Tosta &lt;ch_tosta@terra.com.br&gt;
+- Ana C. F. Matte &lt;ana@underlinux.com.br&gt;
+
+Special thanks: 
+- greycat@irc.freenode.org/#bash:
+(For the praaaaaat kidding and a very good guide to find the principal issue from shell script)
+
+&lt;greycat&gt;  praat &lt;(cat &lt;&lt;EOF
+&lt;greycat&gt;   myy praat coode goees heree
+&lt;greycat&gt;  EOF)
+</comment>
+<author>Leonardo Silva Amaral</author>
+<license>GNU GPL</license>
+<version>0.1</version>
+<widget class="Dialog">
+    <property name="name">
+        <cstring>Form1</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>498</width>
+            <height>412</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>BBEP</string>
+    </property>
+    <property name="associations" stdset="0">
+        <stringlist>
+            <string></string>
+            <string>echo "@dcopid" &gt; ~/.bbep/BeatExtractor.kmdr.pid
+
+if [[ -d ~/.bbep/ ]]; then
+        if [[ -e ~/.bbep/target.btex ]]; then echo "" &amp;&gt; /dev/null
+        else
+        touch ~/.bbep/target.btex
+        kdialog --title "Arquivo Vazio" --error "Provavelmente voce nao tinha o diretorio\n $HOME/.bbep/target.btex.\n Eu o criei para voce, porem sera necessario popular este arquivo.\n Leia a Documentacao para maiores informacoes"
+        fi
+else
+mkdir ~/.bbep
+touch ~/.bbep/target.btex
+kdialog --title "Arquivo Vazio" --error "Provavelmente voce nao tinha o diretorio\n $HOME/.bbep/target.btex.\n Eu o criei para voce, porem sera necessario popular este arquivo.\n Leia a Documentacao para maiores informacoes"
+fi
+
+@file.setText("@exec(echo $(cat ~/.bbep/target.btex | grep .wav))")</string>
+            <string>rm -rf ~/.bbep/BeatExtractor.kmdr.pid &amp;&gt; /dev/null</string>
+        </stringlist>
+    </property>
+    <widget class="Label">
+        <property name="name">
+            <cstring>filter_order_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>316</x>
+                <y>61</y>
+                <width>171</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Ordem dos Filtros:</string>
+        </property>
+    </widget>
+    <widget class="ButtonGroup">
+        <property name="name">
+            <cstring>filter_order</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>316</x>
+                <y>82</y>
+                <width>171</width>
+                <height>68</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="radioButtonExclusive">
+            <bool>true</bool>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+                <string></string>
+            </stringlist>
+        </property>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>order_filter_1</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>94</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>A&amp;utomatico</string>
+            </property>
+            <property name="checked">
+                <bool>true</bool>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>order_filter_1</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>order_filter_2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>37</y>
+                    <width>94</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Primeir&amp;o</string>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>order_filter_2</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="ButtonGroup">
+        <property name="name">
+            <cstring>speaker_sex</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>82</y>
+                <width>128</width>
+                <height>68</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="checkable">
+            <bool>false</bool>
+        </property>
+        <property name="checked">
+            <bool>false</bool>
+        </property>
+        <property name="exclusive">
+            <bool>false</bool>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+                <string></string>
+            </stringlist>
+        </property>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>female</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>37</y>
+                    <width>84</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>&amp;Feminino</string>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>female</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>male</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>84</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>&amp;Masculino</string>
+            </property>
+            <property name="checked">
+                <bool>true</bool>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>male</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="CloseButton">
+        <property name="name">
+            <cstring>CloseButton1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>402</x>
+                <y>214</y>
+                <width>85</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>&amp;Sair</string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string></string>
+            </stringlist>
+        </property>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>threshold_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>144</x>
+                <y>156</y>
+                <width>80</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Thresholds:</string>
+        </property>
+    </widget>
+    <widget class="ButtonGroup">
+        <property name="name">
+            <cstring>technique</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>177</y>
+                <width>128</width>
+                <height>68</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+                <string></string>
+            </stringlist>
+        </property>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>derivative</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>87</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>&amp;Derivada</string>
+            </property>
+            <property name="checked">
+                <bool>true</bool>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>derivative</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>amplitude</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>37</y>
+                    <width>87</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Ampl&amp;itude</string>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>amplitude</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>filter_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>144</x>
+                <y>61</y>
+                <width>80</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Filtro:</string>
+        </property>
+    </widget>
+    <widget class="GroupBox">
+        <property name="name">
+            <cstring>GroupBox3</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>144</x>
+                <y>177</y>
+                <width>252</width>
+                <height>68</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+            </stringlist>
+        </property>
+        <widget class="Label">
+            <property name="name">
+                <cstring>threshold1_lbl</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>16</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>1:</string>
+            </property>
+        </widget>
+        <widget class="Label">
+            <property name="name">
+                <cstring>threshold2_lbl</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>37</y>
+                    <width>17</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>2:</string>
+            </property>
+        </widget>
+        <widget class="LineEdit">
+            <property name="name">
+                <cstring>threshold1</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>30</x>
+                    <y>10</y>
+                    <width>210</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
+            <property name="text">
+                <string>0.15</string>
+            </property>
+            <property name="alignment">
+                <set>AlignRight</set>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string>@widgetText</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="LineEdit">
+            <property name="name">
+                <cstring>threshold2</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>31</x>
+                    <y>37</y>
+                    <width>210</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
+            <property name="text">
+                <string>0.12</string>
+            </property>
+            <property name="alignment">
+                <set>AlignRight</set>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string>@widgetText</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>technique_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>156</y>
+                <width>128</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Técnica:</string>
+        </property>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>freq_cutoff_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>251</y>
+                <width>128</width>
+                <height>23</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Frequência de Corte:</string>
+        </property>
+    </widget>
+    <widget class="ExecButton">
+        <property name="name">
+            <cstring>ExecButton1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>402</x>
+                <y>177</y>
+                <width>85</width>
+                <height>31</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Execu&amp;tar</string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>verificador="@file.text"
+if [-z "$verificador" ];
+then
+kdialog --msgbox "Você esqueceu de indicar o arquivo."
+exit 0
+fi
+
+@saida.clear
+@saida.execute
+</string>
+            </stringlist>
+        </property>
+    </widget>
+    <widget class="ButtonGroup">
+        <property name="name">
+            <cstring>filter</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>144</x>
+                <y>82</y>
+                <width>166</width>
+                <height>68</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+                <string></string>
+            </stringlist>
+        </property>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>butterworth</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>98</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>&amp;Butterworth</string>
+            </property>
+            <property name="checked">
+                <bool>true</bool>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>butterworth</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="RadioButton">
+            <property name="name">
+                <cstring>hanning</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>37</y>
+                    <width>98</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>&amp;Hanning</string>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string></string>
+                    <string>hanning</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="GroupBox">
+        <property name="name">
+            <cstring>GroupBox2</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>280</y>
+                <width>214</width>
+                <height>120</height>
+            </rect>
+        </property>
+        <property name="title">
+            <string></string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+            </stringlist>
+        </property>
+        <widget class="Label">
+            <property name="name">
+                <cstring>smooth</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>70</y>
+                    <width>63</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Smooth:</string>
+            </property>
+        </widget>
+        <widget class="Label">
+            <property name="name">
+                <cstring>cut_right_lbl</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>10</x>
+                    <y>40</y>
+                    <width>63</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Direita:</string>
+            </property>
+        </widget>
+        <widget class="LineEdit">
+            <property name="name">
+                <cstring>smoothing_cut_freq</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>80</x>
+                    <y>70</y>
+                    <width>121</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>0</string>
+            </property>
+            <property name="alignment">
+                <set>AlignRight</set>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string>@widgetText</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="LineEdit">
+            <property name="name">
+                <cstring>right_Cut_off_frequency</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>80</x>
+                    <y>40</y>
+                    <width>121</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
+            <property name="text">
+                <string>0</string>
+            </property>
+            <property name="alignment">
+                <set>AlignRight</set>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string>@widgetText</string>
+                </stringlist>
+            </property>
+        </widget>
+        <widget class="Label">
+            <property name="name">
+                <cstring>cut_left_lbl</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>11</x>
+                    <y>11</y>
+                    <width>63</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="text">
+                <string>Esquerda:</string>
+            </property>
+        </widget>
+        <widget class="LineEdit">
+            <property name="name">
+                <cstring>left_Cut_off_frequency</cstring>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>80</x>
+                    <y>11</y>
+                    <width>121</width>
+                    <height>20</height>
+                </rect>
+            </property>
+            <property name="sizePolicy">
+                <sizepolicy>
+                    <hsizetype>0</hsizetype>
+                    <vsizetype>0</vsizetype>
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                </sizepolicy>
+            </property>
+            <property name="lineWidth">
+                <number>1</number>
+            </property>
+            <property name="text">
+                <string>0</string>
+            </property>
+            <property name="alignment">
+                <set>AlignRight</set>
+            </property>
+            <property name="associations" stdset="0">
+                <stringlist>
+                    <string>@widgetText</string>
+                </stringlist>
+            </property>
+        </widget>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>speaker_sex_lb</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>61</y>
+                <width>128</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Sexo do Falante:</string>
+        </property>
+    </widget>
+    <widget class="FileSelector">
+        <property name="name">
+            <cstring>file</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>31</y>
+                <width>477</width>
+                <height>24</height>
+            </rect>
+        </property>
+        <property name="acceptDrops">
+            <bool>true</bool>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText</string>
+            </stringlist>
+        </property>
+        <property name="selectionFilter">
+            <string>*.wav</string>
+        </property>
+        <property name="selectionType">
+            <enum>Open</enum>
+        </property>
+        <property name="selectionOpenMultiple">
+            <bool>true</bool>
+        </property>
+    </widget>
+    <widget class="ProgressBar">
+        <property name="name">
+            <cstring>ProgressBar1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>230</x>
+                <y>251</y>
+                <width>257</width>
+                <height>23</height>
+            </rect>
+        </property>
+        <property name="totalSteps">
+            <number>9</number>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string></string>
+            </stringlist>
+        </property>
+    </widget>
+    <widget class="Label">
+        <property name="name">
+            <cstring>file_lbl</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>10</y>
+                <width>477</width>
+                <height>16</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Selecionar Arquivos:</string>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>@widgetText
+</string>
+            </stringlist>
+        </property>
+    </widget>
+    <widget class="Konsole">
+        <property name="name">
+            <cstring>saida</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>230</x>
+                <y>280</y>
+                <width>257</width>
+                <height>120</height>
+            </rect>
+        </property>
+        <property name="focusPolicy">
+            <enum>NoFocus</enum>
+        </property>
+        <property name="wordWrap">
+            <enum>WidgetWidth</enum>
+        </property>
+        <property name="wrapColumnOrWidth">
+            <number>253</number>
+        </property>
+        <property name="wrapPolicy">
+            <enum>Anywhere</enum>
+        </property>
+        <property name="tabChangesFocus">
+            <bool>false</bool>
+        </property>
+        <property name="associations" stdset="0">
+            <stringlist>
+                <string>echo "@file.text" &gt; ~/.bbep/target.btex 2&gt; /dev/null
+
+for file in `cat ~/.bbep/target.btex`; do
+@saida.clear
+/usr/share/BeatExtractor/BeatExtractor.sh @speaker_sex.text @filter.text @filter_order.text "@left_Cut_off_frequency.text" "@right_Cut_off_frequency.text" "@smoothing_cut_freq.text" @technique.text "@threshold1.text" "@threshold2.text" "$file" "ProgressBar1" 2&gt; /dev/null
+done
+
+</string>
+            </stringlist>
+        </property>
+    </widget>
+</widget>
+<tabstops>
+    <tabstop>male</tabstop>
+    <tabstop>female</tabstop>
+    <tabstop>butterworth</tabstop>
+    <tabstop>hanning</tabstop>
+    <tabstop>order_filter_1</tabstop>
+    <tabstop>order_filter_2</tabstop>
+    <tabstop>derivative</tabstop>
+    <tabstop>amplitude</tabstop>
+    <tabstop>threshold1</tabstop>
+    <tabstop>threshold2</tabstop>
+    <tabstop>left_Cut_off_frequency</tabstop>
+    <tabstop>right_Cut_off_frequency</tabstop>
+    <tabstop>smoothing_cut_freq</tabstop>
+    <tabstop>ExecButton1</tabstop>
+    <tabstop>CloseButton1</tabstop>
+    <tabstop>saida</tabstop>
+</tabstops>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

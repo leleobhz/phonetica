@@ -1,0 +1,54 @@
+READ-ME for BBEP/BeatExtractor.sh
+
+Portuguese:
+
+- Introdução:
+
+O BBEP é uma interface gráfica do script do Praat BeatExtractor contruída para facilitar a inserção de parâmetros no script BeatExtractor, quando se tem o KDE rodando.
+
+- Requisitos:
+
+-- Para o script:
+	- Praat
+	- Environment Bash completo (Ex.: Linux, Windows + cygwin)
+
+-- Para a interface gráfica:
+	- Script BeatExtractor.sh
+	- Kommander (Environment completo ou no mínimo kmdr-executor)
+	- dcop (Recomendado rodar sobre KDE)
+	- kdelibs
+
+- Instalação: 
+
+O procedimento básico para a instalação consiste na descompressão dos arquivos, que devem ficar juntos na mesma pasta, entrada na pasta descomprimida, e a execução da interface gráfica BeatExecutor.kmdm pelo kmdr-executor.
+
+Há um script (GraphicLauncher.sh) que vem configurado para execução a partir do diretório /opt/BeatExtractor. Lembrando que caso opte pela instalação no /opt, a mesma deve ser feita como root, e o GraphicLauncher pode ser colocado tanto em uma pasta (Desktop por exemplo) quanto no $PATH (Exemplo: /usr/bin).
+
+Qualquer outra variante (Ex. Windows + cygwin + kmdr-executor) deve seguir o padrão "/local/para/o/kmdr-executor /local/onde/esta/o/BeatExtractor.kmdr".
+
+- Uso
+
+-- O Arquivo target.btex
+
+Este arquivo armazena, tanto em carater temporário quanto para pre-execução, os nomes dos arquivos para serem codificados. Caso haja um arquivo pre-preenchido antes da execução gráfica, ele usará todos os .wav que nele contiver.
+
+- Os scripts
+
+Há 4 arquivos de scripting no diretório. A seguir vai a descrição deles:
+
+	-- BeatExtractor.sh: É o motor do programa. Ele contem o script do Praat e o controle das variaveis e funções, tanto do shell quanto do Praat. Será documentado mais a frente com maiores detalhes.
+	-- BeatExtractorRecursive.sh: Script que proporciona o tratamento de vários .wav em batch. A leitura dos arquivos é feita no arquivo target.btex e cada arquivo deve vir seguido do diretório completo. Caso o arquivo não exista, esteja incorreto ou o target.btex esteje vazio, o programa não executar-se-á. A sintaxe é a mesma do BeatExtractor.sh, exeto pela ausencia do nome do arquivo.
+	-- Progress.sh: Arquivo de uso interno, que tem por finalidade fornecer a porcentagem do processo no modo gráfico.
+	-- GraphicLauncher.sh: Automatiza a abertura do modo Gráfico quando ele está instalado no /opt.
+
+	-- Sintaxe do BeatExtractor.sh:
+		-- $ ./BeatExtractor sexo_do_falante(male|female) filtro(butterworth|hanning) ordem_do_filtro(1|2) frequencia_de_corte_esquerda(Valor Numérico) frequencia_de_corte_direita(Valor Numérico) frequencia_de_corte_smooth(Valor Numérico) tecnica(derivative|amplitude) threshold1(Valor decimal com 2 casas) threshold2 (Valor decimal com 2 casas) nome_do_arquivo(Diretórios SEMPRE completos - Relativos em alguns casos dão problemas) barra_de_progresso(Para programação DCOP/Kommander - não usado por usuários)
+
+		-- $ ./BeatExtractorRecursive sexo_do_falante(male|female) filtro(butterworth|hanning) ordem_do_filtro(1|2) frequencia_de_corte_esquerda(Valor Numérico) frequencia_de_corte_direita(Valor Numérico) frequencia_de_corte_smooth(Valor Numérico) tecnica(derivative|amplitude) threshold1(Valor decimal com 2 casas) threshold2 (Valor decimal com 2 casas) barra_de_progresso(Para programação DCOP/Kommander - não usado por usuários)
+
+- BeatExtractor
+
+<Reservado ao briefing da Acris>
+
+Scripts shell e GUI Criadas por Leonardo Amaral <leleobhz at lelebhz.org>
+Script praat criado por Plinio A. Barbosa <plinio at iel.unicamp.br>

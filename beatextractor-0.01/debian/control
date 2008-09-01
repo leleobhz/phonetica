@@ -1,0 +1,13 @@
+Source: beatextractor
+Section: science
+Priority: optional
+Maintainer: Leonardo Silva Amaral <leleobhz@leleobhz.org>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: beatextractor
+Architecture: any
+Depends: kommander, praat
+Description: An automated tool for automatic sound segmentation
+ Its a praat script writed on the fly by a shell script to 
+ generate TextGrids from .wav with a easy and fast method.
