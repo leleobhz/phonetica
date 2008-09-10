@@ -31,19 +31,21 @@ mysound.read('Fn-ST-1.wav')
 
 # Python Snack have the function formant, but dont accept any options, so we use a tk.call direct, giving access to all powerfull tk implementation. Above is all default values, and have too -windowlength, -start, -end and -lpctype 0 (autocorrelation) or 1 (stabilized covariance)
 
-#formants = mysound.tk.call(mysound, 'formant', '-numformants', '4', '-framelength', '0.01', '-windowtype', 'Cos^4', '-windowlength', '0.049', '-preemphasisfactor', '0.7', '-lpcorder', '12', '-ds_freq', '10000', '-nom_f1_freq', '500')
+formant = dict()
+formant['windowlenght'] = 0.049
+formant['framelenght'] = 0.01
+formant['fields'] = ('F1', 'F2', 'F3', 'F4', 'BW1', 'BW2', 'BW3', 'BW4')
+formant['time'] = formant['windowlenght'] / 2
 
+formant['processed'] = mysound.tk.call(mysound, 'formant', '-numformants', '4', '-framelength', formant['framelenght'], '-windowtype', 'Cos^4', '-windowlength', formant['windowlenght'], '-preemphasisfactor', '0.7', '-lpcorder', '12', '-ds_freq', '10000', '-nom_f1_freq', '500')
 
-#print 'Formants: '
-#for i in formants:
-#	print '\t Formant %s' % i[0]
-#	for field in i:	
-#		print '\t\t %s' % field
-#print ''
+for formant_local in formant['processed']:
 
-#print formants
+	formants = dict(zip(formant['fields'], formant_local))
+	print '\tSecond %.2f\n\t\tF1: %.0f Hz\n\t\tF2: %.0f Hz\n\t\tF3: %.0f Hz\n\t\tF4: %.0f Hz\n\t\tBW1: %.0f Hz\n\t\tBW2: %.0f Hz\n\t\tBW3: %.0f Hz\n\t\tBW4: %.0f Hz' % (formant['time'], formants['F1'], formants['F2'], formants['F3'], formants['F4'], formants['BW1'], formants['BW2'], formants['BW3'], formants['BW4'])
+	formant['time'] = formant['time'] + formant['framelenght']
 
-# Using ESPS method to extract F0(?).
+# Extract F0.
 f0 = dict()
 f0['method'] = 'esps'
 f0['windowlenght'] = 0.049
