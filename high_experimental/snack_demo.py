@@ -31,7 +31,12 @@ mysound = tkSnack.Sound()
 mysound.read('Fn-ST-1.wav')
 
 # Extract Formants
-# Python Snack have the function formant, but dont accept any options, so we use a tk.call direct, giving access to all powerfull tk implementation. Above is all default values, and have too -windowlength, -start, -end and -lpctype 0 (autocorrelation) or 1 (stabilized covariance)
+'''
+Python Snack have the function formant, but dont accept any options, 
+so we use a tk.call direct, giving access to all powerfull tk implementation.
+Above is all default values, and have too -windowlength, -start, -end and 
+-lpctype 0 (autocorrelation) or 1 (stabilized covariance)
+'''
 
 formant = dict()
 formant['windowlenght'] = 0.049
@@ -39,7 +44,10 @@ formant['framelenght'] = 0.01
 formant['fields'] = ('F1', 'F2', 'F3', 'F4', 'BW1', 'BW2', 'BW3', 'BW4')
 formant['time'] = formant['windowlenght'] / 2
 
-formant['processed'] = mysound.tk.call(mysound, 'formant', '-numformants', '4', '-framelength', formant['framelenght'], '-windowtype', 'Cos^4', '-windowlength', formant['windowlenght'], '-preemphasisfactor', '0.7', '-lpcorder', '12', '-ds_freq', '10000', '-nom_f1_freq', '500')
+formant['processed'] = mysound.tk.call(mysound, 'formant', '-numformants', '4', 
+	'-framelength', formant['framelenght'], '-windowtype', 'Cos^4', 
+	'-windowlength', formant['windowlenght'], '-preemphasisfactor', '0.7', 
+	'-lpcorder', '12', '-ds_freq', '10000', '-nom_f1_freq', '500')
 
 # Extract F0.
 f0 = dict()
@@ -49,8 +57,12 @@ f0['framelenght'] = 0.01
 f0['minpitch'] = 70
 f0['maxpitch'] = 1000
 
-f0['processed'] = mysound.tk.call(mysound, 'pitch', '-method', f0['method'] , '-framelength', f0['framelenght'], '-windowlength', f0['windowlenght'], '-minpitch', f0['minpitch'], '-maxpitch', f0['maxpitch'])
-f0['fields'] = ('Pitch', 'Prob. Voicing', 'Local root mean squared mensurements', 'Peak Normalized cross-correlation')
+f0['processed'] = mysound.tk.call(mysound, 'pitch', '-method', f0['method'] , 
+	'-framelength', f0['framelenght'], '-windowlength', f0['windowlenght'],
+	'-minpitch', f0['minpitch'], '-maxpitch', f0['maxpitch'])
+f0['fields'] = ('Pitch', 'Prob. Voicing', 
+	'Local root mean squared mensurements', 
+	'Peak Normalized cross-correlation')
 
 if f0['method'] == 'esps':
 	f0['time'] = f0['windowlenght'] / 2
@@ -63,12 +75,18 @@ for formant_local, f0_local in izip (formant['processed'], f0['processed']):
 	pitch = dict(izip(f0['fields'], f0_local))
 	formants = dict(izip(formant['fields'], formant_local))
 	if pitch['Prob. Voicing']:
-		print '\tSecond %.2f\n\t\tF0: %.0f Hz\n\t\tF1: %.0f Hz\n\t\tF2: %.0f Hz\n\t\tF3: %.0f Hz\n\t\tF4: %.0f Hz\n\t\tBW1: %.0f Hz\n\t\tBW2: %.0f Hz\n\t\tBW3: %.0f Hz\n\t\tBW4: %.0f Hz' % (formant['time'], pitch['Pitch'], formants['F1'], formants['F2'], formants['F3'], formants['F4'], formants['BW1'], formants['BW2'], formants['BW3'], formants['BW4'])
+		print '\tSecond %.2f' % formant['time']
+		print '\t\tF0: %.0f Hz' % pitch['Pitch']
+		for tipo in ('F', 'BW'):
+			for elem in xrange(1, 5):
+				print '\t\t%s%d: %.0f Hz' % (tipo, elem, 
+					formants['%s%d' % (tipo, elem)])
 	f0['time'] = f0['time'] + f0['framelenght']
 	formant['time'] = formant['time'] + formant['framelenght']
 
 info = mysound.info()
-info_fields=('Length', 'Rate', 'Maxmimum Sample', 'Minimum Sample', 'Sample encoding', 'Channels', 'Format', 'Header size')
+info_fields=('Length', 'Rate', 'Maxmimum Sample', 'Minimum Sample', 
+	'Sample encoding', 'Channels', 'Format', 'Header size')
 
 print 'Sound Info: '
 for field, value in izip(info_fields, info):
