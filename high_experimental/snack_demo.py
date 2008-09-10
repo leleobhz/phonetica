@@ -60,8 +60,8 @@ else:
 
 # Time to print!!!!
 for formant_local, f0_local in izip (formant['processed'], f0['processed']):
-	pitch = dict(zip(f0['fields'], f0_local))
-	formants = dict(zip(formant['fields'], formant_local))
+	pitch = dict(izip(f0['fields'], f0_local))
+	formants = dict(izip(formant['fields'], formant_local))
 	if pitch['Prob. Voicing']:
 		print '\tSecond %.2f\n\t\tF0: %.0f Hz\n\t\tF1: %.0f Hz\n\t\tF2: %.0f Hz\n\t\tF3: %.0f Hz\n\t\tF4: %.0f Hz\n\t\tBW1: %.0f Hz\n\t\tBW2: %.0f Hz\n\t\tBW3: %.0f Hz\n\t\tBW4: %.0f Hz' % (formant['time'], pitch['Pitch'], formants['F1'], formants['F2'], formants['F3'], formants['F4'], formants['BW1'], formants['BW2'], formants['BW3'], formants['BW4'])
 	f0['time'] = f0['time'] + f0['framelenght']
@@ -71,8 +71,7 @@ info = mysound.info()
 info_fields=('Length', 'Rate', 'Maxmimum Sample', 'Minimum Sample', 'Sample encoding', 'Channels', 'Format', 'Header size')
 
 print 'Sound Info: '
-information = dict(zip(info_fields, info))
-for field, value in information.iteritems():
+for field, value in izip(info_fields, info):
 	print '\t%s: %s' % (field, value)
 print '\tFilename:', mysound.tk.call(mysound, 'cget', '-load')
 
