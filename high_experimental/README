@@ -9,3 +9,9 @@ Some information about TextGrid is available in esps.py and in SpeedCluster (htt
 Ive advanced a little in my speech analysis algorithm research. Ive discovered libsnack (http://www.speech.kth.se/snack/) can extract nativelly the formants and pitch, and i need now see if it will be precise enough. About ESPS, its really hard to compile it, because it even know what linux is. If someone know a way to compile it on linux, please tell-me. :]
 
 EVERYTHING inside this folder, and this project is licenced by GPLv2.
+
+Links:
+
+http://www.onlamp.com/python/2001/01/31/graphics/pysono.py (FFT code)
+https://kitwiki.csc.fi/twiki/bin/viewfile/KitWiki/KurssiRaportti?rev=;filename=cepstral_f0.py.txt (Almost Saint Graal)
+
