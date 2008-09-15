@@ -15,16 +15,28 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-# A attempt to implement using libsnack the cepstum fundamental frequency extractor
+# A attempt to implement using libsnack the cepstrum fundamental frequency extractor
 
 from itertools import izip
 from Tkinter import *
 from tkSnack import *
+from scipy.fftpack import fft, ifft
 from math import *
-from scipy import fft
-from pylab import *
 import pylab
-import numpy
+import sys
+
+def progress_bar(value, max, barsize):
+   chars = int(value * barsize / float(max))
+   percent = int((value / float(max)) * 100)
+   sys.stdout.write("#" * chars)
+   sys.stdout.write(" " * (barsize - chars + 2))
+   if value >= max:
+      sys.stdout.write("done. \n\n")
+   else:
+      sys.stdout.write("[%3i%%]\r" % (percent))
+      sys.stdout.flush()
+
+import time
 
 root = Tk()
 initializeSnack(root)
@@ -39,16 +51,37 @@ mysound.read('Fn-ST-1.wav')
 # New code attempt
 
 cepstrum = dict()
-cepstrum['fftlength'] = 256
+cepstrum['length'] = 256
 cepstrum['windowtype'] = 'hamming'
-cepstrum['winlength'] = 128
 cepstrum['preemphasisfactor'] = 0.97
+cepstrum['powerSpectrum'] = []
+cepstrum['result'] = []
+frames = []
+pos = 0
 
-cepstrum['powerSpectrum'] = mysound.powerSpectrum(fftlength=cepstrum['fftlength'], windowlength=cepstrum['winlength'], windowtype=cepstrum['windowtype'], windowtype=cepstrum['windowtype'], preemphasisfactor=cepstrum['preemphasisfactor'], analysistype='FFT')
+for frame in xrange(0, mysound.length()):
+	if ((mysound.length() - pos) > cepstrum['length']):
 
-# What? http://www.phon.ucl.ac.uk/courses/spsci/matlab/lect10.html
-# Above dont work
-#cepstrum['cepstrum'] = fft(log(abs(cepstrum['fft'])))
+		cepstrum['powerSpectrum'].append(mysound.dBPowerSpectrum(start=pos, fftlength=cepstrum['length'], windowlength=cepstrum['length'], windowtype=cepstrum['windowtype'], windowtype=cepstrum['windowtype'], preemphasisfactor=cepstrum['preemphasisfactor'], analysistype='FFT'))
+
+'''
+		cepstrum['result'].append(
+			ifft(map(lambda x: log(x), abs(fft(
+			mysound.dBPowerSpectrum(start=pos, fftlength=cepstrum['length'], 
+			windowlength=cepstrum['length'], windowtype=cepstrum['windowtype'], 
+			windowtype=cepstrum['windowtype'], 
+			preemphasisfactor=cepstrum['preemphasisfactor'], analysistype='FFT')
+		)))))
+'''
+		frames.append(pos)
+		pos = pos + cepstrum['length']
+#		print 'Frame %d done' % pos
+	else:
+		break
+
+
+pylab.plot(cepstrum['result'])
+pylab.show()
 
 info = mysound.info()
 info_fields=('Length', 'Rate', 'Maxmimum Sample', 'Minimum Sample', 
