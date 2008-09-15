@@ -1,0 +1,61 @@
+#
+#       file:   makefile.dos
+#       desct:  makefile for LPC on Turbo C v2.0
+#
+
+DRIVE = D:
+LIB = -L$(DRIVE)\TC\LIB
+INC = -I$(DRIVE)\TC\INCLUDE
+CC = tcc -c $(INC)
+C = tcc $(LIB) $(INC)
+LL = tlib matrix.lib
+
+OBJS = lpc.obj lpc1.obj lpc2.obj cparser.obj gio.obj cepstrum.obj ulaw2lin.obj
+MATOBJS = matdurbn.obj matsolve.obj matcreat.obj matdump.obj materr.obj
+
+lpc:    lpcmain.c lpc.h $(OBJS) $(MATOBJS)
+        $(C) lpcmain.c $(OBJS) matrix.lib
+        del lpc.exe
+        ren lpcmain.exe lpc.exe
+
+lpc.obj:  lpc.c lpc.h
+	$(CC) lpc.c
+
+lpc1.obj: lpc1.c lpc.h
+	$(CC) lpc1.c
+
+lpc2.obj: lpc2.c lpc.h
+	$(CC) lpc2.c
+
+matcreat.obj:     matcreat.c matrix.h
+        $(CC) matcreat.c
+        $(LL) -+matcreat.obj
+
+matdump.obj:      matdump.c matrix.h
+	$(CC) matdump.c
+        $(LL) -+matdump.obj
+
+materr.obj:       materr.c matrix.h
+	$(CC) materr.c
+        $(LL) -+materr.obj
+
+matdurbn.obj:     matdurbn.c matrix.h
+	$(CC) matdurbn.c
+        $(LL) -+matdurbn.obj
+
+matsolve.obj:     matsolve.c matrix.h
+	$(CC) matsolve.c
+        $(LL) -+matsolve.obj
+
+cparser.obj:      cparser.c cparser.h
+	$(CC) cparser.c
+
+gio.obj:  gio.c gio.h
+	$(CC) gio.c
+
+cepstrum.obj:     cepstrum.c matrix.h lpc.h
+	$(CC) cepstrum.c
+
+ulaw2lin.obj:     ulaw2lin.c
+	$(CC) ulaw2lin.c
+

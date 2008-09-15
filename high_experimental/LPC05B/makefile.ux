@@ -1,0 +1,46 @@
+OBJS = lpc.o lpc1.o lpc2.o matdurbn.o matsolve.o matcreat.o matdump.o \
+materr.o cparser.o gio.o cepstrum.o ulaw2lin.o
+CC = cc -c
+C = cc
+CO = -lm -g
+
+
+lpc:	lpcmain.c lpc.h $(OBJS)
+	$(C) lpcmain.c -o lpc $(OBJS) $(CO)
+
+lpc.o:	lpc.c lpc.h
+	$(CC) lpc.c
+
+lpc1.o:	lpc1.c lpc.h
+	$(CC) lpc1.c
+
+lpc2.o:	lpc2.c lpc.h
+	$(CC) lpc2.c
+
+matcreat.o:	matcreat.c matrix.h
+	$(CC) matcreat.c
+
+matdump.o:	matdump.c matrix.h
+	$(CC) matdump.c
+
+materr.o:	materr.c matrix.h
+	$(CC) materr.c
+
+matdurbn.o:	matdurbn.c matrix.h
+	$(CC) matdurbn.c
+
+matsolve.o:	matsolve.c matrix.h
+	$(CC) matsolve.c
+
+cparser.o:	cparser.c cparser.h
+	$(CC) cparser.c
+
+gio.o:	gio.c gio.h
+	$(CC) gio.c
+
+cepstrum.o:	cepstrum.c matrix.h lpc.h
+	$(CC) cepstrum.c
+
+ulaw2lin.o:	ulaw2lin.c
+	$(CC) ulaw2lin.c
+

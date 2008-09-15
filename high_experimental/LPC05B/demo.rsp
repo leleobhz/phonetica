@@ -1,0 +1,18 @@
+//
+//      this is a demo response file
+//
+
+// LPC autocorrelation method (default)
+-autocor
+
+// window size is 256 points
+-wsize=256
+
+// non-overlapping window
+-wover=0
+
+// output to standard output
+-stdout
+
+// act on audio file (could be multiple!)
+sample

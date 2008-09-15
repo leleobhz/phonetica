@@ -1,0 +1,110 @@
+-------------------------------------------------------------------------------
+               LPC-PARCOR-CEPSTRUM Generator for C Programmers
+                              version 0.5b
+
+                          by Patrick Ko Shu-pui
+
+                  Copyright (c) 1992 All Rights Reserved.
+-------------------------------------------------------------------------------
+ADDRESS TO CONTACT:
+
+            fidonet:  6:700/132 BiG Programming Club [852] 654-8751
+            internet: ko053@cucs19.cs.cuhk.hk
+
+            mailing:  Patrick Ko
+		      No.11, 14 Street,
+                      Hong Lok Yuen,
+                      Tai Po, Hong Kong
+
+-------------------------------------------------------------------------------
+Any comment is welcomed. Please send mails to the internet address.
+-------------------------------------------------------------------------------
+READ    .ME     - this file
+CEPSTRUM.C      - Cepstrum generation
+CPARSER .C      - command line parser
+CPARSER .H      - command line parser header
+DEMO    .BAT    - demo shell script
+DEMO    .RSP    - demo response file
+GIO     .C      - general i/o
+GIO     .H      - general i/o header
+LPC     .C      - LPC generator
+LPC     .H      - LPC generator header
+LPC     .EXE    - LPC program for DOS only
+LPC1    .C      - LPC (covariance)
+LPC2    .C      - LPC (autocorrelation)
+LPCMAIN .C      - LPC main program
+MAKEFILE.DOS    - makefile for DOS
+MAKEFILE.UX     - makefile for Unix
+MATCREAT.C      - matrix creation
+MATDUMP .C      - matrix dumping
+MATDURBN.C      - matrix: linear eqn solving (Levinsion-Durbin algorithm)
+MATERR  .C      - matrix error handler
+MATRIX  .H      - matrix header file
+MATSOLVE.C      - matrix: lienar eqn solving (Gaussian elim w/ partial pivot)
+SAMPLE          - sample audio file
+ULAW2LIN.C      - ulaw to linear data conversion
+ULAW2LIN.H      - ulaw2lin.c header
+VERSION .H      - version header
+
+-------------------------------------------------------------------------------
+WHATS NEW IN v0.5:
+
+        -       support 8-bit-ulaw (SUNSPARC), 16-bit PCM audio data format
+        -       the rectangular window size, windows overlapping size can
+                be specified
+        -       generate :
+
+                n LPC (autocorrelation) coefficients, or
+                n LPC (covariance) coefficients, or
+                n PARCOR coefficients, or
+                n+1 LPC cepstrum coefficients
+
+                if you specify n-order transformation.
+                (use -order= at command line)
+
+        -       support response file (see demo.bat which is a shell script)
+
+NOTE:
+        -       the IPC feature is not implemented yet.
+
+
+HOW TO COMPILE:
+
+        1.      Ultrix under DecStation - use MAKE with MAKEFILE.UX
+        2.      Other Unix Platform - use MAKEFILE.UX
+        3.      DOS - use MAKEFILE.DOS (with Turbo C v2.0)
+
+HOW TO RUN:
+
+        -       type lpc at the shell prompt and a usage screen
+                will be displayed
+
+
+REFERENCE
+
+	[1] Mary L. Boas, "Mathematical Methods in the Physical Sciene,"
+        John Wiley & Sons, 2nd Ed., 1983. Chap 3.
+
+	[2] Kendall E. Atkinson, "An Introduction to Numberical Analysis,"
+	John Wiley & Sons, 1978.
+
+	[3] Shuzo Saito, Kazuo Nakata, "Fundamentals of Speech Signal
+	Processing," Academic Press, 1985.
+
+AUTHOR
+All the sources are written by Patrick KO Shu Pui
+SysOp of BiG Programming Club (6:700/132, fidonet), Hong Kong.
+
+===============================================================================
+AUTHORIZATION NOTICE
+
+This C source package LPC05b.ZIP is FREE for ACADEMIC purpose only.
+
+For COMMERCIAL usage, authorization is required from the author. Please
+SEND a US$50 cheque to the address above payable to the author.
+===============================================================================
+DISCLAIMER      (I hate this but I have to do that)
+
+You are on your own risk - the author is not responsible for any lost due
+to the use of this toolbox.
+===============================================================================
