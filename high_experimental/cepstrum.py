@@ -1,96 +1,51 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# Code based in http://www.onlamp.com/python/2001/01/31/graphics/pysono.py
 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-# A attempt to implement using libsnack the cepstrum fundamental frequency extractor
-
-from itertools import izip
-from Tkinter import *
-from tkSnack import *
-from scipy.fftpack import fft, ifft
-from math import *
+from Numeric import *
+from array import *
+import numpy
 import pylab
+import wave
 import sys
+import struct
 
-def progress_bar(value, max, barsize):
-   chars = int(value * barsize / float(max))
-   percent = int((value / float(max)) * 100)
-   sys.stdout.write("#" * chars)
-   sys.stdout.write(" " * (barsize - chars + 2))
-   if value >= max:
-      sys.stdout.write("done. \n\n")
-   else:
-      sys.stdout.write("[%3i%%]\r" % (percent))
-      sys.stdout.flush()
+# open the wave file
+fp = wave.open(sys.argv[1],"rb")
 
-import time
+sample_rate = fp.getframerate()
+total_num_samps = fp.getnframes()
+fft_length = int(sys.argv[2])
+num_fft = (total_num_samps / (fft_length*fp._nchannels) ) - 2
 
-root = Tk()
-initializeSnack(root)
+# create temporary working array
+temp = zeros((num_fft,fft_length*2),Float)
 
-# Instancing...
-mysound = Sound()
+# read in the data from the file
+for i in range(num_fft):
+    tempb = fp.readframes(fft_length);
+    temp[i,:] = array(Float, struct.unpack("%dB"%(fft_length*2),tempb))
+fp.close()
 
-# Read Sound
-#mysound.read('test_praat.wav')
-mysound.read('Fn-ST-1.wav')
+# Window the data
+temp = temp * numpy.hamming(fft_length*2)
 
-# New code attempt
+# Transform with the FFT, Return Power
+cepstrum  = numpy.fft.fft(log10(1e-20+abs(temp)))
+n_out_pts = (fft_length / 2) + 1
 
-cepstrum = dict()
-cepstrum['length'] = 256
-cepstrum['windowtype'] = 'hamming'
-cepstrum['preemphasisfactor'] = 0.97
-cepstrum['powerSpectrum'] = []
-cepstrum['result'] = []
-frames = []
-pos = 0
+# Limits
+ms1=sample_rate/1000;                 # maximum speech Fx at 1000Hz
+ms20=sample_rate/50;                  # minimum speech Fx at 50Hz
 
-for frame in xrange(0, mysound.length()):
-	if ((mysound.length() - pos) > cepstrum['length']):
+q = [i/sample_rate for i in range(ms1, ms20)]
 
-		cepstrum['powerSpectrum'].append(mysound.dBPowerSpectrum(start=pos, fftlength=cepstrum['length'], windowlength=cepstrum['length'], windowtype=cepstrum['windowtype'], windowtype=cepstrum['windowtype'], preemphasisfactor=cepstrum['preemphasisfactor'], analysistype='FFT'))
-
-'''
-		cepstrum['result'].append(
-			ifft(map(lambda x: log(x), abs(fft(
-			mysound.dBPowerSpectrum(start=pos, fftlength=cepstrum['length'], 
-			windowlength=cepstrum['length'], windowtype=cepstrum['windowtype'], 
-			windowtype=cepstrum['windowtype'], 
-			preemphasisfactor=cepstrum['preemphasisfactor'], analysistype='FFT')
-		)))))
-'''
-		frames.append(pos)
-		pos = pos + cepstrum['length']
-#		print 'Frame %d done' % pos
-	else:
-		break
+# Plot the result
+#pylab.plot(q, [abs(x) for x in cepstrum[ms1:ms20]])
+#pylab.legend('Cepstrum')
+#pylab.xlabel('Quefrency (s)')
+#pylab.ylabel('Amplitude')
+#pylab.show()
 
 
-pylab.plot(cepstrum['result'])
-pylab.show()
-
-info = mysound.info()
-info_fields=('Length', 'Rate', 'Maxmimum Sample', 'Minimum Sample', 
-	'Sample encoding', 'Channels', 'Format', 'Header size')
-
-
-print 'Sound Info: '
-for field, value in izip(info_fields, info):
-	print '\t%s: %s' % (field, value)
-print '\tFilename:', mysound.tk.call(mysound, 'cget', '-load')
-
-mysound.destroy()
+max_cepstrum = numpy.max([abs(x) for x in cepstrum[ms1:ms20]])
+print 'Fx=%.0fHz\n' % (sample_rate / (ms1 + int(max_cepstrum) - 1))

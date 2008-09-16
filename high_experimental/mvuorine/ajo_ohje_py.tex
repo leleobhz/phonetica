@@ -1,0 +1,42 @@
+# Huom. Tämän asennusohje on tarpeellinen vain niille 
+# ohjelmille, jotka käyttävät Numpy-luokkaa.
+# Ainakin osalla on käytössä omat apuvälineet, jotka löytyvät osanan 
+# tätä pakettia.
+
+# Tämä tiedosto sisältää ohjeet ohjelmien pythin-versioiden käyttöönottoon.
+# Jotta nämä versiot toimisivat on koneelle asennettava joitakin 
+# kirjastoja, jotka sisältävät tarpeellisia matemaattisia apuvälineitä
+# mm. FFT eli fast fourier transformation. 
+# Nämä löytyvät NumPy-projektin numpy-moduulista, joka voin ladata
+# seuraavalta nettiosoitteesta:
+# http://numpy.sourceforge.net
+# Tältä sivulta valitaa kohta 'Download', seuraavalta sivulta kohta' Numpy' 
+# ja viimeiseltä sivulta numpy-paketin tuorein versio 
+# numpy-X.Y.Z.tar.gz
+# Nämä ohjeet olettavat että purat paketin hakemistoon ~/lib/python
+# eli jos paketti laitetaan tämän nimiseen hakemistoon ei seuraavia
+# käskyjä tarvitse muuttaa mitenkää, muuten joudut korjaamaan joitakin
+# hakemisto polkuja. 
+# paketti puretaan komennolla: 
+# tar xzvf numpy-X.Y.Z.tar.gz
+# Jotta python-tulkki osaisi käyttää paketin kirjastoja on ne asennettava. 
+# Mennään ensin äskeisen paketin purkamisen yhteydessä syntyneeseen hakemistoon
+# cd numpy-X.Y.Z 
+# ja annetaan siellä käsky 
+# python setup.py install --home $HOME
+# (edellyttää että bash_profile:ssa on määritelty muuttuja $HOME.
+# Varmistetaan lopuksi, että hakemisto jossa kirjastot sijaitsevat ~/lib/python
+# on määritelty PYTHONPATH muuttujassa, jotta tulkki löytää kirjastot 
+# komennella:
+# export PYTHONPATH=$HOME/lib/python/:$PYTHONPATH
+# Asennuksen onnistumisen voi selvittää antamalla Python-tulkissa komento: 
+# 'import numpy.dft.fftpack'.
+# Jos tämä menee läpi ilman vastalauseita tulkilta, kaiten pitäisi olla 
+# kunnossa.
+
+
+
+
+
+
+

@@ -1,6 +1,4 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 # Perustaajuuden löytäminen Kepstrianalyysin avulla (Pitch tracking) 
 #
 # Koska Kepstrianalyysi antaa meille tavan poimia kukkuloita signaalista,
@@ -13,6 +11,9 @@
 # osia soinnittomista, ja menetelmällä löydetään jonkinlainen arvio 
 # f0:lle myös soinittomista osioista. Tämä aiheuttaa suuria heilahteluja 
 # f0 arvioissa ajanhetkestä toiseen.
+
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Original C program Copyright by John Coleman in "Introducing Speech and 
 # Language Processing",
@@ -30,8 +31,7 @@ from four1 import four1
 
 # Given a frame number and an array 'x_in' containing a signal, prints out the
 # pitch
-
-def print_cepstral_f0(frame, x_in, SR, upper):
+def print_cepstral_f0(frame, x_in):
 	data = []
 	logpsd = []
 
@@ -62,38 +62,26 @@ def print_cepstral_f0(frame, x_in, SR, upper):
 
 	max = 0.0
 	max_f0 = 0.0
-	for i in range(int(SR/upper), 256):
+	for i in range(88, 256):
 		# Work down from an upper limit of 180Hz (88 = 16000/180)
 		if logpsd[2*i] > max:
 			max = logpsd[2*i]
-			max_f0 = SR/i
+			max_f0 = 16000/i
 
 	print "%d\t%.1f" % (frame, max_f0)
 
 	return
 
-# lis�tty mahdollisuus antaa SR komentoriviparametrin�, oletusarvo 16000, sek� upper limit, oletus 180
 
-if len(argv) < 2:
-	exit("usage: " + argv[0] + " <input_file> [sampling rate] [upper limit]")
+if len(argv) != 2:
+	exit("usage: " + argv[0] + " <input_file>")
 
 infile = argv[1]
-
-if len(argv)>2:
-	SR = int(argv[2])
-else:
-	SR = 16000
-
-if len(argv)>3:
-	upper = int(argv[3])
-else:
-	upper = 180
-
 x_in = signal_in(infile)
 
 print "Sample\tf_0 (Hz)"
 for i in range(79, 319, 80): print "%d\t0" % i
 for i in range(319, len(x_in)-256, 80):
-	print_cepstral_f0(i, x_in, SR, upper)
+	print_cepstral_f0(i, x_in)
 
 exit(0)

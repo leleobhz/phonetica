@@ -8,10 +8,17 @@ Some information about TextGrid is available in esps.py and in SpeedCluster (htt
 
 Ive advanced a little in my speech analysis algorithm research. Ive discovered libsnack (http://www.speech.kth.se/snack/) can extract nativelly the formants and pitch, and i need now see if it will be precise enough. About ESPS, its really hard to compile it, because it even know what linux is. If someone know a way to compile it on linux, please tell-me. :]
 
+LPC-PARCOR-CEPSTRUM folder is a C version for cepstrum f0 extraction
+
+cepstrum.py is a new code using numpy. Currently only extracts the f0 mean from entire file.
+cepstrum_snack.py is a attempt to do the same using Snack. unfortunelly it dont works yet
+
+The new dir called mvuorine is the python code from Mikko P Vuorinen <mvuorine[whereismyspam?]cc.helsinki.fi> and its working *VERY* well. Its today my reference to make code, but i aim to make cepstrum.py (using numpy) do the same.
+
 EVERYTHING inside this folder, and this project is licenced by GPLv2.
 
 Links:
 
 http://www.onlamp.com/python/2001/01/31/graphics/pysono.py (FFT code)
 https://kitwiki.csc.fi/twiki/bin/viewfile/KitWiki/KurssiRaportti?rev=;filename=cepstral_f0.py.txt (Almost Saint Graal)
-
+http://www.helsinki.fi/~mvuorine/python-puheanalyysi.tar.bz2 (Mikko code)
