@@ -15,11 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-# A attempt to implement using libsnack the cepstrum fundamental frequency extractor
+# A attempt to implement using pymedia the cepstrum fundamental frequency extractor
 
 from itertools import izip
-from Tkinter import *
-from tkSnack import *
+import pymedia.audio.sound as sound
+import pymedia.audio.acodec as acodec
 from Numeric import *
 from array import *
 import numpy
@@ -40,19 +40,20 @@ def progress_bar(value, max, barsize):
 
 import time
 
-root = Tk()
-initializeSnack(root)
-
-# Instancing...
-mysound = Sound()
-
-# Read Sound
-#mysound.read('test_praat.wav')
-mysound.read('Fn-ST-1.wav')
+audio = dict()
+audio['file'] = 'Fn-ST-1.mp3'
+audio['filext'] = audio['file'].split('.' )[ -1 ].lower()
+audio['demuxer'] = muxer.Demuxer( audio['filext'] )
+audio['decode'] = dict()
+audio['decode']['params'] = {'id': acodec.getCodecID(audio['filext']), 'ext': audio['filext']}
+audio['decode']['decoder'] = acodec.Decoder(audio['decode']['params'])
+audio['decode']['file'] = open(audio['file'], 'rb')
+audio['decode']['stream'] = audio['decode']['file'].read(8192)
+audio['decode']['metadata'] = audio['decode']['decoder'].decode(audio['decode']['stream'])
 
 # New code attempt
 
-sample_rate = mysound.info()[1]
+sample_rate = audio['decode']['metadata'].samplerate
 total_num_samps = mysound.info()[0]
 fft_length = int(512)
 num_fft = (total_num_samps / (fft_length*mysound.info()[5]) ) - 2
