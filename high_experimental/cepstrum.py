@@ -7,7 +7,6 @@ from pylab import fft, plot, xlabel, ylabel, show, hamming
 from wave import open
 from struct import unpack
 from sys import stdout, argv
-from threading import Thread
 
 def main(audiofile):
 

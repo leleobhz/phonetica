@@ -19,6 +19,8 @@
 
 from itertools import izip
 from Tkinter import *
+from sys import argv
+
 root = Tk()
 import tkSnack
 tkSnack.initializeSnack(root)
@@ -28,7 +30,7 @@ mysound = tkSnack.Sound()
 
 # Read Sound
 #mysound.read('test_praat.wav')
-mysound.read('Fn-ST-1.wav')
+mysound.read(argv[1])
 
 # Extract Formants
 '''
@@ -75,8 +77,8 @@ for formant_local, f0_local in izip (formant['processed'], f0['processed']):
 	pitch = dict(izip(f0['fields'], f0_local))
 	formants = dict(izip(formant['fields'], formant_local))
 	if pitch['Prob. Voicing']:
-		print '\tSecond %.2f' % formant['time']
-		print '\t\tF0: %.0f Hz' % pitch['Pitch']
+		#print '\tSecond %.2f' % formant['time']
+		#print '\t\tF0: %.0f Hz' % pitch['Pitch']
 		for tipo in ('F', 'BW'):
 			for elem in xrange(1, 5):
 				print '\t\t%s%d: %.0f Hz' % (tipo, elem, 

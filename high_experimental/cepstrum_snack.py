@@ -18,14 +18,12 @@
 # A attempt to implement using libsnack the cepstrum fundamental frequency extractor
 
 from itertools import izip
+from numpy import array, log, zeros, float
+from pylab import fft, plot, xlabel, ylabel, show, hamming
+from struct import unpack
+from sys import stdout, argv
 from Tkinter import *
 from tkSnack import *
-from Numeric import *
-from array import *
-import numpy
-import pylab
-import struct
-import sys
 
 def progress_bar(value, max, barsize):
    chars = int(value * barsize / float(max))
@@ -38,8 +36,6 @@ def progress_bar(value, max, barsize):
       sys.stdout.write("[%3i%%]\r" % (percent))
       sys.stdout.flush()
 
-import time
-
 root = Tk()
 initializeSnack(root)
 
@@ -48,7 +44,7 @@ mysound = Sound()
 
 # Read Sound
 #mysound.read('test_praat.wav')
-mysound.read('Fn-ST-1.wav')
+mysound.read(argv[1])
 
 # New code attempt
 
@@ -59,22 +55,27 @@ num_fft = (total_num_samps / (fft_length*mysound.info()[5]) ) - 2
 #num_fft = (total_num_samps / fft_length) - 2
 
 # create temporary working array
-temp = zeros((num_fft,fft_length*mysound.info()[5]),Float)
+#temp = zeros((num_fft,fft_length*mysound.info()[5]),Float)
+temp = []
 pos = 0
 
 # read in the data from the file
 for i in range(num_fft):
-    pos = pos + fft_length
-    tempb = mysound.data(start=pos, end=(pos+fft_length*mysound.info()[5]),fileformat='RAW');
-    print type(tempb), len(tempb)
-    temp[i,:] = array(Float, struct.unpack("%dB"%(fft_length*2),tempb))
-fp.close()
+	pos = pos + fft_length
+	tempb = mysound.data(start=pos, end=(pos+fft_length*mysound.info()[5]),fileformat='RAW');
+	print type(tempb), len(tempb)
+#	temp[i,:] = array(Float, struct.unpack("%dB"%(fft_length*2),tempb))
+	'''
+	Ok ok, Tcl 1 x 0 leleobhz
+	'''
+	temp.insert(array(unpack("%dB"%(fft_length*2),tempb), float))
+#	temp.insert(i, array(unpack("%dB"%(len(tempb.encode('utf-8'))),tempb.encode('utf-8')), float))
 
 # Window the data
-temp = temp * numpy.hamming(fft_length*2)
+temp = temp * hamming(fft_length*2)
 
 # Transform with the FFT, Return Power
-cepstrum  = numpy.fft.fft(log10(1e-20+abs(temp)))
+cepstrum  = fft(log10(1e-20+abs(temp)))
 n_out_pts = (fft_length / 2) + 1
 
 # Limits
