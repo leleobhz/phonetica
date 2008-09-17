@@ -1,0 +1,13 @@
+Welcome to setfon trunk!
+
+This is a little brief of what you ill find here.
+
+beatextractor is a piece of code for automatic segmentation.
+DOC is a folder with a lot of papers and important links (Mainly from high_experimental research)
+high_experimental is a attempt to re-create all sound processing tools needed by a speech analisys. As this svn basically only receives commit from me (leleobhz), can be said this is the mainline of SVN code.
+praatwrapper is a code for wrap praat code to python. Unsucessfull attempt since praat does not suport formulas, language elements and a lot of things from interactive commandline (And i refuse to create temporary scripts).
+utils is a collection of related applications, but not directly involved in main setfon development tree.
+
+As i wrote, this svn repository is basically (Until now, Wed, 17 Sep 2008 08:42:05 -0300) only used by me, and my code is officialy considerated a parallel (un?)official work, so if trunk control changes and you like my code, try find something in www.leleobhz.org (Surelly ill take this code away from this SVN if this happen)
+
+Any questions, mail-me leleobhz[whereismyspam???]leleobhz.org
