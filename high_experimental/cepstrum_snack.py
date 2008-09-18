@@ -55,8 +55,7 @@ num_fft = (total_num_samps / (fft_length*mysound.info()[5]) ) - 2
 #num_fft = (total_num_samps / fft_length) - 2
 
 # create temporary working array
-#temp = zeros((num_fft,fft_length*mysound.info()[5]),Float)
-temp = []
+temp = zeros((num_fft,fft_length*mysound.info()[5]),unicode)
 pos = 0
 
 # read in the data from the file
@@ -68,7 +67,8 @@ for i in range(num_fft):
 	'''
 	Ok ok, Tcl 1 x 0 leleobhz
 	'''
-	temp.insert(array(unpack("%dB"%(fft_length*2),tempb), float))
+#	temp.insert(array(unpack("%dB"%(fft_length*2),tempb), float))
+	temp[i,:] = array(tempb, unicode)
 #	temp.insert(i, array(unpack("%dB"%(len(tempb.encode('utf-8'))),tempb.encode('utf-8')), float))
 
 # Window the data
