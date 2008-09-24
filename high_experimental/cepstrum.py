@@ -17,21 +17,15 @@
 
 # Code based in http://www.onlamp.com/python/2001/01/31/graphics/pysono.py
 
-from itertools import izip
-from numpy import array, log, zeros
-from pylab import fft, plot, xlabel, ylabel, show, hamming
-from wave import open
-from struct import unpack
 from sys import stdout, argv
+from wave import open
 
-def main(audiofile):
+def cepstrum_f0(self, audiodata):
 
 	from itertools import izip
 	from numpy import array, log, zeros
 	from pylab import fft, plot, xlabel, ylabel, show, hamming
-	from wave import open
 	from struct import unpack
-	from sys import stdout, argv
 
 	def progress_bar(value, max, barsize):
 		chars = int(value * barsize / float(max))
@@ -59,13 +53,13 @@ def main(audiofile):
 	#	frame = frame + window_length
 
 	# open the wave file
-	fp = open(audiofile,"rb")
+	fp = open(audiodata,"rb")
 
 	sample_rate = fp.getframerate()
 	sample_width = fp.getsampwidth()
 	total_num_samps = fp.getnframes()
 	fft_length = 256
-	window_length = 512
+	window_length = 256
 	num_window = (total_num_samps / window_length ) - 2
 	
 	# create temporary working array
@@ -88,8 +82,8 @@ def main(audiofile):
 		cepstrum_process(i)
 	#stdout.write('\n')
 	# Limits
-	ms1=sample_rate/1000;                 # maximum speech Fx at 1000Hz
-	ms20=sample_rate/50;                  # minimum speech Fx at 50Hz
+	ms1=sample_rate/500;                 # maximum speech Fx at 1000Hz
+	ms20=sample_rate/70;                  # minimum speech Fx at 50Hz
 
 	# Plot the result
 	#q = [float(i)/sample_rate for i in range(ms1, ms20)]
@@ -97,11 +91,14 @@ def main(audiofile):
 	#xlabel('Quefrency (s)')
 	#ylabel('Amplitude')
 	#show()
-
+	
+	f0 = []
+	
 	for i, j in izip (cepstrum, range(0, num_window*window_length, window_length)):
 		max_cepstrum = max([abs(x) for x in i[ms1:ms20]])
 		#print 'Frame %d (Sec. %.2f)  F0=%.0fHz' % (j, (float(j) / sample_rate), sample_rate / (ms1 + int(max_cepstrum) - 1))
-		(j, (float(j) / sample_rate), sample_rate / (ms1 + int(max_cepstrum) - 1))
+		f0.append([j, sample_rate / (ms1 + int(max_cepstrum) - 1)])
+	return f0
 
 if __name__ == "__main__":
 #	import psyco
@@ -111,4 +108,4 @@ if __name__ == "__main__":
 #	print Timer('cProfile.run(\'main(argv[1])\')', 'import cProfile').timeit(1)
 #	print 'This script takes %.3f seconds to complete' % Timer('main(argv[1])', 'from __main__ import main; from sys import argv').timeit(1)
 
-	main(argv[1])
+	print cepstrum_f0('main', argv[1])
