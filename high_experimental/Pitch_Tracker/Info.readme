@@ -1,0 +1,11 @@
+Original files in : /home/snake/red/expts/93.8.20/cmt
+
+acpa0001.orig             cmt_htk.sun4
+acpa0001.ppd              cmt_pitch.sgi
+acpa0001.ptm              cmt_pitch.sun4
+acpa0001.ptm.ps           cmt_pitch_tracker.comb.c
+cmt_htk.sgi
+
+6/6/94:
+
+New version written to be independent of ajr's tools.a

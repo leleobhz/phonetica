@@ -1,0 +1,88 @@
+--------------------------------------------------------------------------
+PROGRAM: dynamic_pitch_tracker
+ Pitch extractor and pitch period marking program by Chris Tuerk, 
+ Cambridge University Engineering Department, Trumpington Street,
+ Cambridge, CB2 1PZ, England, U.K.
+
+--------------------------------------------------------------------------
+Modification Details :
+
+1. Modified August 1993 by R.E.Donovan, also of CUED.
+   The modifications were made to allow the pitch extractor to be used with
+   any format of waveform file.  A pitch against time output file generator 
+   was also added. HTK compatility (CUED only) installed.
+
+2.  Modified June 1994 by S.R.Waterhouse, also of CUED.
+    Modified to be independent of external libraries - Makefile installed.
+    HP compatibility installed.
+
+Emails : Rob Donovan      red@eng.cam.ac.uk
+       : Steve Waterhouse srw1001@eng.cam.ac.uk
+       : Tony Robinson    ajr@eng.cam.ac.uk
+--------------------------------------------------------------------------
+Based loosely on an algorithm by Medan, Yair and Chazan (see IEEE SP Jan 1991)
+This also utilizes dynamic programming.
+General outline:
+  Does a first pass of the file moving forward every 10ms using Medan
+  techniques to get a set of probable pitch locations.
+  Next goes through a dynamic programming segment which selects the best
+  string (a bit of logic based on studying dr1 sentences was used here).
+  Finally, after setting up the target pitch for a region of speech, the
+  actual pitch periods are determined.
+--------------------------------------------------------------------------
+Input File Provided :
+	acpa0001.orig : 
+
+Files Generated:
+	acpa0001.ppd : contains length of voiced pitch period (in samples) 
+		       against start position of pitch period (in samples)
+	acpa0001.ptm : contains time (in seconds) against pitch (in Hz)
+--------------------------------------------------------------------------
+References:
+
+@mastersthesis{Tuerk90,
+	author=		"Christine M. Tuerk",
+	title=		"A Text-to-Speech system based on {NET}talk",
+	school=		cued,
+	address=	"Trumpington Street, Cambridge CB2 1PZ, UK",
+	month=		aug,
+	year=		1990}
+
+@inproceedings{TuerkMonacoRobinson91,
+	author=		"Christine Tuerk and Peter Monaco and Tony Robinson",
+	title=		"The Development of a Connectionist Multiple-Voice
+			Text-to-Speech System",
+	booktitle=	ICASSP,
+	year=		1991}
+
+@inproceedings{TuerkRobinson92,
+	author=		"Christine Tuerk and Tony Robinson",
+	title=		"A Multiple-Speaker Phoneme Durational Model",
+	booktitle=	"Institute of Acoustics Autumn conference on Speech
+			and Hearing",
+	month=nov,
+	year=		1992}
+
+@phdthesis{Tuerk93,
+	author=		"Christine Tuerk",
+	school=		cued,
+	title= 		"Automatic Speech Synthesis Using Auditory Transforms
+			and Artificial Neural Networks",
+	year=		1993}
+
+@inproceedings{TuerkRobinson93a,
+	author=		"Christine Tuerk and Tony Robinson",
+	title=		"Speech Synthesis Using Artificial Neural Networks
+			Trained on Cepstral Coefficients",
+	booktitle=	eurospeech,
+	month=		sep,
+	year=		1993}
+
+@inproceedings{TuerkRobinson93b,
+	author=		"Christine Tuerk and Tony Robinson",
+	title=		"A New Frequency Shift Function for Reducing
+			Inter-Speaker Variance",
+	booktitle=	eurospeech,
+	month=		sep,
+	year=		1993}
+

@@ -1,0 +1,32 @@
+
+   If the HTK libraries are available then use the appropriate compile lines.
+   Be sure that the #includes below point to the correct libraries in the
+   correct directories.  The archive file and Cincludes specified on the gcc
+   compile line must also be correct.
+   The resulting program then uses the HTK libraries to read in the waveform
+   file.  Thus sampling rate, headersize and byte swapping is handled 
+   automatically.
+
+   If the HTK libraries are not available then the Tools.h header must be 
+   #included correctly, along with the appropriate archive file on the gcc 
+   compile line.
+
+   On the CUED svr-research system:
+    to compile if HTK libraries are available:
+     on sun4:
+      gcc cmt_pitch_tracker.comb.c -D HTKCOMPILE -o cmt_htk.sun4 -I /tools/htk/HTK_V1.4C/Cincludes /tools/htk/HTK_V1.4C/HTKLib/HTKLib.sun4.a -lm
+     on sgi:
+      gcc cmt_pitch_tracker.comb.c -D HTKCOMPILE -D SGICOMPILE -o cmt_htk.sgi /tools/htk/HTK_V1.4C/HTKLib/HTKLib.iris4d.a -lm
+    to compile if HTK libraries are not available:
+     on sun4:
+      gcc cmt_pitch_tracker.comb.c -o cmt_pitch.sun4 -lm
+     on sgi:
+      gcc cmt_pitch_tracker.comb.c -D SGICOMPILE -o cmt_pitch.sgi -lm
+   to run:
+    on sun4:
+     cmt_pitch.sun4
+     cmt_htk.sun4
+    on sgi:
+     cmt_pitch.sgi
+      cmt_htk.sgi
+
