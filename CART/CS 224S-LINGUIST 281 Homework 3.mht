@@ -1,0 +1,302 @@
+From: <Salvo pelo Microsoft Internet Explorer 7>
+Subject: CS 224S/LINGUIST 281 Homework 3
+Date: Mon, 2 Feb 2009 12:33:18 -0200
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----=_NextPart_000_005B_01C98532.6D85E400"
+X-MimeOLE: Produced By Microsoft MimeOLE V6.00.2900.5579
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_005B_01C98532.6D85E400
+Content-Type: text/html;
+	charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Content-Location: http://www.stanford.edu/class/cs224s/hw3.html
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>CS 224S/LINGUIST 281 Homework 3</TITLE>
+<META http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Dwindows-1252">
+<META content=3D"MSHTML 6.00.6000.16788" name=3DGENERATOR></HEAD>
+<BODY bgColor=3D#ffffff>
+<TABLE width=3D"100%">
+  <TBODY>
+  <TR>
+    <TD><IMG alt=3DSTANFORD=20
+      =
+src=3D"http://www.stanford.edu/class/cs224s/images/stanford.seal64.gif"><=
+/TD>
+    <TD width=3D"100%"><FONT size=3D+2>CS 224S/LINGUIST 281 &nbsp; - =
+&nbsp; &nbsp;=20
+      Winter 2009 <BR>Homework 3: Letter to Sound=20
+Rules</FONT></TD></TR></TBODY></TABLE>
+<TABLE cellPadding=3D3 width=3D"100%" bgColor=3D#990000 border=3D0>
+  <TBODY>
+  <TR>
+    <TD><B><FONT color=3D#ffffff><FONT size=3D+1>Due: January 27 at the =
+start of=20
+      class. </FONT></FONT></B></TD></TR></TBODY></TABLE>
+<P>Please <B>read this entire page before beginning</B>. </P>
+<P>This homework is stolen by permission from Richard Sproat's Speech =
+Synthesis=20
+class at UIUC, and relates to pronunciation modeling, specifically the=20
+pronunciation of personal names in English, a particularly hard problem. =
+</P>
+<P><B>THE FOLLOWING TEXT IS ALL THANKS TO RICHARD SPROAT! SO WHEN IT =
+SAYS "I",=20
+THIS MEANS RICHARD!</B> </P>
+<P></P>
+<H3>Wagon</H3>
+<P>When you installed Festival, you also installed the Edinburgh speech =
+tools=20
+package. The binaries are probably installed somewhere like=20
+<TT>/usr/local/festival/test/speech_tools</TT> in your installation. One =
+of the=20
+tools is <EM>Wagon</EM>, the Edinburgh speech tools' version of the CART =
+
+(Classification and Regression Tree) algorithm (Breiman et al. 1984).=20
+Documentation for Wagon is available in several places, such as <A=20
+href=3D"http://festvox.org/docs/speech_tools-1.2.0/x16721.htm#WAGON-MANUA=
+L">here</A>.=20
+</P>
+<P>. <B>[I (Dan) have also installed a copy of linux-compiled version of =
+wagon=20
+at /afs/ir/class/cs224s/wagon; it should be executable from vine, =
+raptor,=20
+firebird.]</B> </P>
+<P>As you will see in the Wagon manual, you need to provide Wagon with a =
+data=20
+file consisting of a set of feature vectors, with the first element =
+being the=20
+predicted feature/value; and a feature description file that tells Wagon =
+what=20
+the possible feature values are for each feature. For those of you who =
+have used=20
+CART, this is the same idea as in CART, except that the format of the =
+files is=20
+different. Note that you can run a test on test data by using the the=20
+<TT>-test</TT> flag. </P>
+<P></P>
+<H3>The problem</H3>
+<P></P>
+<P></P>
+<H4>Background</H4>
+<P>You are to use Wagon to train a pronunciation model for a set of =
+family=20
+names. The dictionary can be found <A=20
+href=3D"http://www.stanford.edu/class/cs224s/hw3data/nlab.out">here</A>. =
+The=20
+dictionary consists of, in alternating lines, the spelling of the name =
+(all in=20
+lower case), and the transcription of the name into a single-character =
+phonetic=20
+alphabet. Note that the dictionary has been aligned automatically (using =
+the=20
+algorithm described in <A=20
+href=3D"http://compling.ai.uiuc.edu/rws/newindex/pmtools.pdf">Sproat, =
+2001</A>),=20
+so that letters are mapped one-for-one onto phones. In some cases this =
+results=20
+in a "deletion" (indicuted by a "#" on the phone side); in others this =
+results=20
+in an "amalgamation", as in the combination of "i" and "k" into "_i_k_" =
+in: </P><PRE>m c p h e r s o n=20
+m _i_k_ f # E R s &amp; n=20
+</PRE>(The phonetic transcription scheme is more or less the one listed =
+as "JPO"=20
+(after Joe Olive) in Appendix A of <A=20
+href=3D"http://www.stanford.edu/class/cs224s/worldbet.pdf">this document =
+by Jim=20
+Hieronymus</A>.)=20
+<P>Assume that your task is to use only evidence from a fixed width left =
+and=20
+right orthographic context to predict the phone (including amalgamated =
+phones=20
+and deletion) for the current letter. For example, you might decide to =
+use two=20
+letters on the left, two on the right, and the current letter. So your =
+features=20
+would be the letters of the left and right context as well as the =
+current=20
+letter. Ideally you would have one feature for each letter, with values, =
+e.g.,=20
+<EM>feat<SUB>-2</SUB>=3Dp</EM> if the letter in position -2 is "p". =
+Unfortunately=20
+CART is inefficient with categorical features that have a large number =
+of=20
+possible values (&gt;15, or so), so you will need to break up the =
+features. One=20
+possible feature encoding is given <A=20
+href=3D"http://www.stanford.edu/class/cs224s/hw3data/graph.enc">here</A>.=
+ The=20
+features include a general class "cons" versus "vowel", an indicator of =
+case=20
+(redundant in this example since everything has been downcased), a vowel =
+feature=20
+identifying the vowel or "n/a" if a consonant, and two sets of consonant =
+
+features. Also used is the pad symbol, which is defined here as "#". =
+Depending=20
+on your context, you will have to pad the left and right of the input =
+and output=20
+strings with enough pads so that the leftmost and rightmost letters have =
+
+sufficient context to their left/right. </P>
+<P>Using these features, and assuming a window of 5 (including the =
+target=20
+letter), the first few lines of an encoded data file might look as =
+follows: </P><PRE>[rws@catarina hw3data]$ head -5 dict.data
+i       pad pad pad pad pad     pad pad pad pad pad     vow lower Vi n/a =
+n/a   cons lower n/a n/a Cm    pad pad pad pad pad
+m       pad pad pad pad pad     vow lower Vi n/a n/a    cons lower n/a =
+n/a Cm  pad pad pad pad pad      pad pad pad pad pad
+i       pad pad pad pad pad     pad pad pad pad pad     vow lower Vi n/a =
+n/a   cons lower n/a Cp n/a    pad pad pad pad pad
+p       pad pad pad pad pad     vow lower Vi n/a n/a    cons lower n/a =
+Cp n/a  pad pad pad pad pad      pad pad pad pad pad
+v       pad pad pad pad pad     pad pad pad pad pad     cons lower n/a =
+n/a Cv  vow lower Vo n/a n/a     pad pad pad pad pad
+</PRE><FONT color=3Dred></FONT>
+<P></P>
+<H4><FONT color=3Dred>Specific Tasks</FONT></H4>
+<P></P>
+<UL><FONT color=3Dred>
+  <LI>Divide the dictionary into training and test data. I recommend =
+about 90%=20
+  training and 10% testing.=20
+  <LI>Build a model using Wagon with a window of five around the target =
+letter.=20
+  Report the per-letter accuracy of this model. Based on the number of =
+words in=20
+  your test set, report an approximate <EM>per-word</EM> accuracy.=20
+  <LI>Now expand the window by one letter on each side. How much does =
+the=20
+  per-letter and per-word accuracy improve?=20
+  <LI>Do a short error analysis. To do this you will need to use=20
+  <I>wagon_test</I>, [<B>which I, Dan, have put in the same place as =
+wagon</B>.]=20
+  This requires just a small variation to your training procedure. You =
+will need=20
+  to use wagon to create a tree, use <I>wagon_test</I> to run the tree =
+on the=20
+  test set, and compare the "predicted" value with the "predictee". For =
+the=20
+  error analysis, you should try to say something about what kinds of =
+characters=20
+  or names or nationalities are causing the most frequent errors, and =
+offer some=20
+  suggestions about better features for doing. grapheme-to-phoneme =
+conversion.=20
+  </FONT></LI></UL>
+<P></P>
+<H3>More on using Wagon</H3>
+<P></P>
+<P>Caveat: you will want to increase the lisp heap size for Wagon for =
+this task.=20
+Here was the invocation that I used, for example: </P>
+<P></P><PRE>wagon -desc dict.desc \
+      -stop 10 \
+      -output dict.tree \
+      -data dict.data \
+      -test dict_test.data \
+      -heap 5000000
+</PRE>
+<P></P>It should take a few minutes to run, depending of course upon =
+your memory=20
+and processor speed.=20
+<P>The parameters for wagon_test are: </P><PRE>./wagon_test -h
+Usage: wagon_test <OPTIONS>
+Summary: program to test CART models on data
+-desc <IFILE>     Field description file
+-data <IFILE>     Datafile, one vector per line
+-tree <IFILE>     File containing CART tree
+-predict          Predict for each vector returning full vector
+-predict_val      Predict for each vector returning just value
+-predictee <STRING>
+                  name of field to predict (default is first field)
+-heap <INT> {210000}
+              Set size of Lisp heap, should not normally need
+              to be changed from its default
+-o <OFILE>        File to save output in
+</OFILE></INT></STRING></IFILE></IFILE></IFILE></OPTIONS></PRE>
+<P></P>
+<H3>Extra credit</H3>
+<P>Many of you will have experience with other machine learning =
+approaches. For=20
+extra credit, you can try your favorite approach on the same data. =
+Report the=20
+algorithm used, and the results. How do they compare to CART/Wagon's=20
+performance? You must of course make the tests comparable: for example =
+you have=20
+to keep the character window constant in both cases. </P>
+<P></P>
+<H3>Homework Hint</H3>
+<P></P>We have provided the following hint in order to help you sanity =
+check=20
+your code. We trained/tested with a window of three (one letter on =
+either side)=20
+and got a per-letter accuracy of 87.642%. You can change your window to =
+three=20
+and see if you approximately agree with this number (due to different =
+ways of=20
+splitting the data, you may not perfectly agree).=20
+<P></P>
+<H3>References</H3>
+<P>Leo Breiman, Jerome H. Friedman, Richard~A. Olshen, and Charles J. =
+Stone.=20
+<EM>Classification and Regression Trees</EM>. Wadsworth &amp; Brooks, =
+Pacific=20
+Grove CA, 1984. </P>
+<P>Richard Sproat, "Pmtools: A Pronunciation Modeling Toolkit", =
+<EM>Proceedings=20
+of the Fourth ISCA Tutorial and Research Workshop on Speech =
+Synthesis</EM>,=20
+Blair Atholl, Scotland, 2001. </P>
+<P><B>How to turn in the homework:</B> </P>
+<UL>
+  <LI>Please send a plain text e-mail or file containing your =
+code/commands,=20
+  sample output, and responses to cs224s-win0809-ta@lists.stanford.edu.=20
+</LI></UL></BODY></HTML>
+
+------=_NextPart_000_005B_01C98532.6D85E400
+Content-Type: image/gif
+Content-Transfer-Encoding: base64
+Content-Location: http://www.stanford.edu/class/cs224s/images/stanford.seal64.gif
+
+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
+Ow==
+
+------=_NextPart_000_005B_01C98532.6D85E400--

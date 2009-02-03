@@ -1,0 +1,5 @@
+
+((Syllable.syl_break is 0)
+ ((0.0348297 0.154118))
+ ((0.0509859 0.191127)))
+;; RMSE 0.0435 Correlation is 0.3908 Mean (abs) Error 0.0342 (0.0271)
