@@ -6,7 +6,7 @@ OBJ = ortosil_013.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-hellomake: $(OBJ)
+ortosil: $(OBJ)
 	gcc -o $@ $^ $(CFLAGS)
 
 .PHONY: clean
@@ -15,4 +15,4 @@ clean:
 	rm -f *.o core *~
 
 uninstall:
-	rm -f *.o core *~ hellomake
+	rm -f *.o core *~ ortosil
