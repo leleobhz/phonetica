@@ -1,0 +1,49 @@
+//
+// Formato das regras:
+//
+// pre:exp:pos=res
+//
+// onde:
+//
+// pre = expressão regular a ser encontrada imediatamente antes do ponto analisado
+// exp = expressão regular a ser encontrada no ponto analisado
+// pos = expressão regular a ser encontrada após o ponto analisado
+//
+// se forem encontradas as 3 expressões, então saída+=res e o ponto analisado passa 
+// para depois da exp encontrada.
+//
+// exemplo:
+// nhaca
+// |
+// passa pela regra ":nh:a=rr", saída = rr e
+// nhaca
+//   |
+//
+// --- separa um conjunto de regras (4 grupos no máximo)
+//
+// as regras são efetuadas até que uma regra seja encontrada, então passa-se para o
+// próximo conjunto de regras.
+// o processamento para quando nenhuma regra for encontrada para o ponto.
+//
+//
+// 'macros' usadas nas expressões regulares:
+V=[aeiouãõâêôüáéíóúà]
+C=[bcdfghjklmnpqrstvwxyzç]
+L=[VC]
+// macro para início de palavra
+<=(?:^|\b)
+// macro para fim de palavra
+>=(?:$|\b)
+---
+//
+// 'macros' usadas em 'res':
+// 1 = primeiro carater do texto encontrado (em exp)
+// 2 = segundo carater do texto encontrado (em exp)
+//
+//
+//
+:<([a-z]*)([áéíóúàâêô])([a-z]*)>:=12'3
+:<alex>:=ale'x
+:<(C?C?)(V)(C?)>:=12'3
+:<(C)(V)(CC)>:=12'3
+:(\s):=1
