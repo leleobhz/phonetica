@@ -1,7 +1,0 @@
-2.0.0: (2009-04-25)
-------
-- Versão inicial em Java
-
-2.0.1: (2009-04-26)
-------
-- Mostra e processa em Fonética após colocar acento
