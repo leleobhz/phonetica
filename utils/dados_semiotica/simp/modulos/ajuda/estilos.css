@@ -1,0 +1,182 @@
+/*
+ * ESTILOS DO MODULO AJUDA
+ */
+#conteudo_principal h2.titulo {
+  background: transparent url(../../imgs/icones/ajuda.gif) 0% 60% no-repeat;
+  padding-left: 20px;
+}
+
+#centro ul li {
+  margin: 4px;
+}
+
+.idiomas span {
+  display: none;
+}
+
+.ativo {
+  font-weight: bolder;
+}
+
+#licenca_en {
+  background: transparent url(../../imgs/linguas/flag_en.png) 0% 50% no-repeat;
+  padding-left: 20px;
+}
+
+#licenca_ptbr {
+  background: transparent url(../../imgs/linguas/flag_br.png) 0% 50% no-repeat;
+  padding-left: 20px;
+}
+
+.texto {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 780px;
+  width: auto;
+}
+
+#licenca {
+  background-color: #FFFFF0;
+  border: 1px inset #FFFFF0;
+  margin: 1em 0;
+  padding: 1em;
+}
+
+#licenca .nota {
+  background-color: #FFFFFF;
+  border: 1px outset #FFFFFF;
+  padding: .5em;
+}
+
+#licenca .nota p:lang(en) {
+  font-style: italic;
+}
+
+#licenca pre {
+  border: 1px dotted #000000;
+  padding: 1em;
+}
+
+#licenca h3 {
+  border-bottom: 1px dotted #000000;
+  margin-top: 1em;
+}
+
+#licenca .noindent {
+  text-indent: 0;
+}
+
+#licenca .centro {
+  text-align: center;
+}
+
+#topico_ajuda {
+  background-color: #FFFFF5;
+  border: 1px inset #FFFFF5;
+  margin: 15px;
+  padding: 5px;
+  width: 95%;
+  min-width: 380px;
+  max-width: 750px;
+}
+
+#topico_ajuda h3 {
+  background: transparent url(../../imgs/icones/livro_aberto.gif) center left no-repeat;
+  border-bottom: 2px dotted #000000;
+  margin: 0px;
+  padding: 0px 0px 0px 23px;
+}
+
+#topico_ajuda p {
+  text-align: justify;
+  text-indent: 3em;
+}
+
+.lista_topicos + h2 {
+  margin-top: 1.5em;
+}
+
+.lista_topicos {
+  list-style-image: none;
+  list-style-type: none;
+}
+
+.lista_topicos a {
+  background: transparent url(../../imgs/icones/livro.gif) center left no-repeat;
+  padding-left: 23px;
+}
+
+.lista_topicos a:hover,
+.lista_topicos a:active {
+  background: transparent url(../../imgs/icones/livro_aberto.gif) center left no-repeat;
+}
+
+#lista_icones {
+  display: block;
+  list-style-type: none;
+  list-style-image: none;
+  padding: 1em;
+  width: 50%;
+}
+
+#lista_icones li {
+  display: block;
+  float: left;
+  height: 25px;
+  width: 25px;
+}
+
+#lista_icones li a span {
+  background-color: #EEEEEE;
+  border: 1px solid #DDDDDD;
+  color: #000000;
+  display: none;
+  opacity: 0.85;
+  padding: 1em;
+  position: absolute;
+  width: 400px;
+}
+
+#lista_icones li a:hover span {
+  display: block;
+}
+
+.destaque {
+  background-color: #FFFF00 !important;
+  color: #990000 !important;
+}
+
+#simp {
+  background-color: #EEF0F5;
+  border: 1px outset #EEF0F5;
+  color: #333333;
+  margin: 1em 0;
+  padding: .6em;
+}
+
+#simp h2 {
+  border-bottom: 2px dotted #DD6666;
+  font-family: Georgia;
+  font-style: italic;
+  font-size: 1.2em;
+  font-weight: bolder;
+}
+
+#simp h2:first-letter {
+  font-size: 2em;
+  position: absolute;
+  
+}
+
+#simp ul {
+  list-style-image: none;
+  list-style-type: square;
+}
+
+#simp ul li em {
+  font-style: normal;
+}
+
+#simp ul li span {
+  font-style: italic;
+}
