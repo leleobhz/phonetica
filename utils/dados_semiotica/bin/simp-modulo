@@ -1,0 +1,741 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Script que cria um modulo simples
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.2.0.7
+// Data: 12/12/2007
+// Modificado: 05/06/2009
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+
+/// Tipos de retorno
+define('SUCESSO',        0);
+define('ERRO_USUARIO',   1);
+define('ERRO_DIRETORIO', 2);
+define('ERRO_ARQUIVOS',  3);
+define('ERRO_SISTEMA',   4);
+
+$dirroot = `simp-config --dirweb`;
+require_once($dirroot.'config.php');
+
+$dirextras = `simp-config --dirextras`;
+$sistema = simplexml_load_file($dirextras.'sistema.xml');
+if (!$sistema) {
+    fwrite(STDERR, "Erro ao carregar dados do sistema\n");
+    fwrite(STDERR, "Ja configurou os dados com \"simp-dados\" ?\n");
+    exit(ERRO_SISTEMA);
+}
+
+/// Guardar dados para criacao do modulo em $modulo
+$modulo = new stdClass();
+$modulo->sistema = $sistema->dados;
+
+/// CABECALHO
+$login = trim(`whoami`);
+$modulo->usuario = false;
+foreach ($sistema->usuarios->usuario as $u) {
+    if ($login == $u->login) {
+        $modulo->usuario = $u;
+        $id_orgao = strval($modulo->usuario->orgao['ref']);
+        $achou = false;
+        foreach ($sistema->orgaos->orgao as $o) {
+            if ($id_orgao == $o['id']) {
+                $modulo->usuario->addChild('nome_orgao', strval($o));
+                unset($modulo->usuario->orgao);
+                $achou = true;
+                break;
+            }
+        }
+        if (!$achou) {
+            fwrite(STDERR, "Orgao invalido: {$id_orgao}\n");
+            exit(ERRO_USUARIO);
+        }
+        break;
+    }
+}
+if (!$modulo->usuario) {
+    fwrite(STDERR, "Usuario invalido: {$login}\n");
+    fwrite(STDERR, "Cadastre-se no arquivo sistema.xml antes de executer o script.\n");
+    exit(ERRO_USUARIO);
+}
+
+$modulo->data = strftime('%d/%m/%Y', $CFG->time);
+$modulo->ano = strftime('%Y', $CFG->time);
+
+/// CLASSE
+do {
+    $existe = false;
+    fwrite(STDOUT, "Entre com o nome da classe: ");
+    fscanf(STDIN, "%s\n", $classe);
+    try {
+        simp_autoload($classe);
+        $modulo->obj = new $classe();
+        $existe = true;
+    } catch (Exception $e) {
+        fwrite(STDERR, "A classe {$classe} nao existe!\n");
+    }
+} while (!$existe);
+
+
+/// MODULO
+fwrite(STDOUT, "Entre com o nome do modulo: ");
+fscanf(STDIN, "%s\n", $modulo->nome);
+
+/// SUBMODULO
+do {
+    fwrite(STDOUT, "Trata-se de um sub-modulo? [s/n] ");
+    fscanf(STDIN, "%s\n", $submodulo);
+    $submodulo = strtolower(trim($submodulo));
+    $resposta_valida = ($submodulo == 's' || $submodulo == 'n');
+    if (!$resposta_valida) {
+        fwrite(STDERR, "Escreva apenas \"s\" ou \"n\" depois tecle ENTER\n");
+    }
+} while (!$resposta_valida);
+if ($submodulo == 's') {
+    fwrite(STDOUT, "Dados do Sub-modulo:\n");
+    do {
+        fwrite(STDOUT, "Objetos filhos de \"{$classe}\":\n");
+        foreach ($modulo->obj->get_definicoes_rel_uu() as $def) {
+            fwrite(STDOUT, " - {$def->nome}\n");
+        }
+        fwrite(STDOUT, "Escreva o nome do objeto filho de \"{$classe}\": ");
+        fscanf(STDIN, "%s\n", $obj_filho);
+        $possui_filho = $modulo->obj->possui_rel_uu($obj_filho);
+        if (!$possui_filho) {
+            fwrite(STDERR, "A classe \"{$classe}\" nao possui objeto filho \"{$obj_filho}\"\n");
+        }
+    } while (!$possui_filho);
+
+    do {
+        fwrite(STDOUT, "Entre com o nome do modulo pai:\n");
+        fwrite(STDOUT, "{$CFG->dirmods}");
+        fscanf(STDIN, "%s\n", $modulo_pai);
+        $modulo_existe = is_dir($CFG->dirmods.$modulo_pai);
+        if (!$modulo_existe) {
+            fwrite(STDERR, "Modulo invalido!\n");
+        }
+    } while (!$modulo_existe);
+
+    // Calcular nivel do submodulo
+    $m = $CFG->dirmods.$modulo_pai;
+    $nivel = 1;
+    while ($m) {
+        $sub = dirname($m);
+        if (basename($sub) == 'modulos') {
+            break;
+        }
+        $m = $sub;
+        $nivel++;
+    }
+
+    $modulo->submodulo = $obj_filho;
+    $modulo->obj_filho = $modulo->obj->get_objeto_rel_uu($obj_filho);
+    $modulo->modulo_pai = $modulo_pai;
+    $modulo->nivel_submodulo = $nivel;
+}
+
+$modulo->entidade_singular = $modulo->obj->get_entidade();
+$modulo->entidade_plural = $modulo->obj->get_entidade(1);
+$modulo->entidade_singular_comentario = texto::strip_acentos(texto::decodificar($modulo->obj->get_entidade()));
+$modulo->entidade_plural_comentario = texto::strip_acentos(texto::decodificar($modulo->obj->get_entidade(1)));
+$modulo->classe = $modulo->obj->get_classe();
+
+/// Criar os arquivos
+$arquivos = array();
+
+$arquivos['estilos'] = '';
+$arquivos['index'] = '';
+$arquivos['inserir'] = '';
+
+do {
+    fwrite(STDOUT, "Pagina de Exibir (s/n)? ");
+    fscanf(STDIN, "%s\n", $op);
+    if (!ereg('s|n', $op)) {
+        fwrite(STDERR, "Opcao invalida!\n");
+    }
+} while (!ereg('s|n', $op));
+if ($op == 's') {
+    $arquivos['exibir'] = '';
+    $opcoes_lista[] = "'exibir'";
+}
+
+do {
+    fwrite(STDOUT, "Pagina de Alterar (s/n)? ");
+    fscanf(STDIN, "%s\n", $op);
+    if (!ereg('s|n', $op)) {
+        fwrite(STDERR, "Opcao invalida!\n");
+    }
+} while (!ereg('s|n', $op));
+if ($op == 's') {
+    $arquivos['alterar'] = '';
+    $opcoes_lista[] = "'alterar'";
+    $opcoes_possiveis[] = 'alterar';
+}
+
+do {
+    fwrite(STDOUT, "Pagina de Excluir (s/n)? ");
+    fscanf(STDIN, "%s\n", $op);
+    if (!ereg('s|n', $op)) {
+        fwrite(STDERR, "Opcao invalida!\n");
+    }
+} while (!ereg('s|n', $op));
+if ($op == 's') {
+    $arquivos['excluir'] = '';
+    $opcoes_lista[] = "'excluir'";
+    $opcoes_possiveis[] = 'excluir';
+}
+
+do {
+    fwrite(STDOUT, "Paginas de Importar (s/n)? ");
+    fscanf(STDIN, "%s\n", $op);
+    if (!ereg('s|n', $op)) {
+        fwrite(STDERR, "Opcao invalida!\n");
+    }
+} while (!ereg('s|n', $op));
+if ($op == 's') {
+    $arquivos['importar_csv'] = '';
+    $arquivos['importar_xml'] = '';
+
+    $modulo->link_importar_csv = ",\n                   link::arquivo_modulo(\$USUARIO, 'importar_csv.php', \$modulo, false, '', 'importar', 1)";
+    $modulo->link_importar_xml = ",\n                   link::arquivo_modulo(\$USUARIO, 'importar_xml.php', \$modulo, false, '', 'importar', 1)";
+}
+
+// Opcoes nas listas
+$modulo->opcoes_lista = 'array('.implode(', ', $opcoes_lista).')';
+
+// Opcoes possiveis
+if (count($opcoes_possiveis) > 1) {
+    $ultima = array_shift($opcoes_possiveis);
+    $modulo->opcoes_possiveis = 'As op&ccedil;&otilde;es poss&iacute;veis s&atilde;o: '.
+        implode(', ', $opcoes_possiveis).' e '.$ultima.'.';
+} else {
+    $modulo->opcoes_possiveis = 'A &uacute;nica op&ccedil;&atilde;o poss&iacute;vel &eacute; '.$opcoes_possiveis[0].'.';
+}
+
+// Campos da classe
+$campos_exibir  = array();
+$campos_inserir = array();
+$campos_excluir = array();
+$campos_obrigatorios = array();
+
+foreach ($modulo->obj->get_atributos() as $atributo) {
+    if (empty($atributo->chave)) {
+        $campos_exibir[] = "'{$atributo->nome}'";
+        $campos_excluir[] = "'{$atributo->nome}'";
+    }
+    if ($atributo->chave != 'PK') {
+        $campos_inserir[] = "'{$atributo->nome}'";
+        if (!$atributo->pode_vazio && is_null($atributo->padrao)) {
+            $campos_obrigatorios[] = "'{$atributo->nome}'";
+        } elseif ($atributo->unico) {
+            $campos_obrigatorios[] = "'{$atributo->nome}'";
+        }
+    }
+}
+foreach ($modulo->obj->get_implicitos() as $atributo => $dados) {
+    $campos_exibir[] = "'{$atributo}'";
+}
+foreach ($modulo->obj->get_definicoes_rel_uu() as $chave => $def) {
+    $campos_exibir[] = "'{$def->nome}'";
+    $campos_inserir[] = "'{$chave}'";
+    $campos_obrigatorios[] = "'{$chave}'";
+}
+foreach ($modulo->obj->get_definicoes_rel_un() as $vetor => $def) {
+    $campos_exibir[] = "'{$vetor}'";
+}
+
+// Em casos de sub-modulo, nao inserir a chave do relacionamento
+if (isset($modulo->submodulo)) {
+    $nome_chave = "'".$modulo->obj->get_nome_chave_rel_uu($modulo->submodulo)."'";
+    do {
+        $pos = array_search($nome_chave, $campos_inserir);
+        if ($pos !== false) {
+            unset($campos_inserir[$pos]);
+        }
+    } while ($pos !== false);
+}
+
+$campos_exibir  = array_unique($campos_exibir);
+$campos_inserir = array_unique($campos_inserir);
+$campos_excluir = array_unique($campos_excluir);
+$campos_obrigatorios = array_unique($campos_obrigatorios);
+
+$modulo->campos_lista   = "array('".$modulo->obj->get_campo_nome()."')";
+$modulo->campos_exibir  = montar_array_identado($campos_exibir);
+$modulo->campos_inserir = montar_array_identado($campos_inserir);
+$modulo->campos_excluir = montar_array_identado($campos_excluir);
+$modulo->campos_obrigatorios = 'array('.implode(', ', $campos_obrigatorios).');';
+
+if (count($campos_obrigatorios) > 1) {
+    $ultimo = array_shift($campos_obrigatorios);
+    $modulo->campos_obrigatorios_textual = implode(', ', $campos_obrigatorios).' e '.$ultimo;
+} else {
+    if (count($campos_obrigatorios)) {
+        $modulo->campos_obrigatorios_textual = $campos_obrigatorios[0];
+    } else {
+        $modulo->campos_obrigatorios_textual = 'nenhum';
+    }
+}
+
+unset($campos_exibir, $campos_inserir, $campos_excluir, $campos_obrigatorios);
+
+// Ordenar pelo campo
+$modulo->ordem = "'".$modulo->obj->get_campo_nome()."'";
+
+
+/// Gerar o conteudo dos arquivos
+foreach ($arquivos as $tipo => $valor) {
+    $funcao = 'criar_arquivo_'.$tipo;
+    $arquivos[$tipo] = $funcao($modulo);
+}
+
+/// Perguntar se deseja criar no diretorio de modulos
+if (isset($modulo->submodulo)) {
+    $destino_modulo = $CFG->dirmods.$modulo->modulo_pai.'/'.$modulo->nome;
+} else {
+    $destino_modulo = $CFG->dirmods.$modulo->nome;
+}
+if (is_dir($destino_modulo)) {
+    $destino_modulo = './'.$modulo->nome;
+    fwrite(STDOUT, "ATENCAO: ja existe um modulo com este nome.\nCuidado ao mover o novo modulo para nao perder informacoes.\n");
+} else {
+    do {
+        fwrite(STDOUT, "Deseja criar o novo modulo no diretorio de modulos do sistema?\n");
+        fwrite(STDOUT, "Destino sugerido: {$destino_modulo}\n");
+        fwrite(STDOUT, "Opcao (s/n): ");
+        fscanf(STDIN, "%s\n", $mover);
+        $mover = strtolower(trim($mover));
+        $resposta_valida = $mover == 's' || $mover == 'n';
+        if (!$resposta_valida) {
+            fwrite(STDERR, "Opcao invalida!\n");
+        }
+    } while (!$resposta_valida);
+
+    if ($mover == 'n') {
+        $destino_modulo = './'.$modulo->nome;
+    }
+}
+
+/// Criar diretorio
+if (!mkdir($destino_modulo, 0755)) {
+    fwrite(STDERR, "Erro ao criar diretorio '{$modulo->nome}'");
+    exit(ERRO_DIRETORIO);
+}
+
+/// Criar arquivos
+$r = true;
+foreach ($arquivos as $nome => $conteudo) {
+    if ($nome == 'estilos') {
+        $arq = "{$destino_modulo}/{$nome}.css.php";
+        fwrite(STDOUT, "Gerando arquivo: {$arq}\n");
+        $r = $r && file_put_contents($arq, $conteudo);
+    } else {
+        $arq = "{$destino_modulo}/{$nome}.php";
+        fwrite(STDOUT, "Gerando arquivo: {$arq}\n");
+        $r = $r && file_put_contents($arq, $conteudo);
+    }
+}
+
+/// Retorno do comando
+if (!$r) {
+    fwrite("Erro durante a criacao dos arquivos do modulo\n");
+    exit(ERRO_ARQUIVOS);
+}
+fwrite(STDOUT, "Modulo criado com sucesso\n");
+exit(SUCESSO);
+
+
+/// Funcoes
+
+
+//
+//     Cria um arquivo de listar entidades
+//
+function criar_arquivo_index(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Lista de {$modulo->entidade_plural_comentario}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Quadro
+\$dados_lista = new stdClass();
+\$dados_lista->opcoes = {$modulo->opcoes_lista};
+\$dados_lista->campos = {$modulo->campos_lista};
+\$dados_lista->ordem  = {$modulo->ordem};
+{$dados_pagina}
+modulo::listar_entidades('{$modulo->classe}', \$dados_lista{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de inserir
+//
+function criar_arquivo_inserir(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Arquivo para inserir {$modulo->entidade_plural_comentario}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+
+{$entidade_submodulo}
+/// Dados do formulario
+\$dados_form = new stdClass();
+\$dados_form->campos = {$modulo->campos_inserir}
+{$dados_pagina}
+modulo::inserir('{$modulo->classe}', \$dados_form{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de exibir
+//
+function criar_arquivo_exibir(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Exibe os dados de um(a) {$modulo->entidade_singular_comentario}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Quadro
+\$dados_quadro = new stdClass();
+\$dados_quadro->campos = {$modulo->campos_exibir}
+{$dados_pagina}
+modulo::exibir('{$modulo->classe}', \$dados_quadro{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de alterar
+//
+function criar_arquivo_alterar(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Arquivo para alterar dados de {$modulo->entidade_plural_comentario}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Formulario
+\$dados_form = new stdClass();
+\$dados_form->campos = {$modulo->campos_inserir}
+{$dados_pagina}
+modulo::alterar('{$modulo->classe}', \$dados_form{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de excluir
+//
+function criar_arquivo_excluir(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Arquivo para excluir {$modulo->entidade_plural_comentario}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Formulario
+\$dados_form = new stdClass();
+\$dados_form->campos = {$modulo->campos_excluir}
+{$dados_pagina}
+modulo::excluir('{$modulo->classe}', \$dados_form{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de importar por CSV
+//
+function criar_arquivo_importar_csv(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Importa {$modulo->entidade_plural_comentario} de um arquivo CSV
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Formulario
+\$dados_form = new stdClass();
+\$dados_form->campos = {$modulo->campos_obrigatorios}
+{$dados_pagina}
+modulo::importar_csv('{$modulo->classe}', \$dados_form{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de importar por XML
+//
+function criar_arquivo_importar_xml(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $classe_filho = $modulo->obj_filho->get_classe();
+    $entidade_submodulo = "\n\${$modulo->submodulo} = modulo::get_entidade_session('{$classe_filho}');";
+    $dados_pagina = "\n".
+                    "/// Dados da Pagina\n".
+                    "\$dados_pagina = new stdClass();\n".
+                    "\$dados_pagina->submodulo = '{$modulo->submodulo}';\n";
+    $informar_dados_pagina = ', $dados_pagina';
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $entidade_submodulo = '';
+    $dados_pagina = '';
+    $informar_dados_pagina = '';
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Importa {$modulo->entidade_plural_comentario} de um arquivo XML
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+require_once('{$nivel}../../config.php');
+require_once(\$CFG->dirroot.'sessao.php');
+{$entidade_submodulo}
+
+/// Dados do Formulario
+\$dados_form = new stdClass();
+\$dados_form->campos = {$modulo->campos_obrigatorios}
+{$dados_pagina}
+modulo::importar_xml('{$modulo->classe}', \$dados_form{$informar_dados_pagina});
+CODIGO;
+}
+
+
+//
+//     Cria um arquivo de folha de estilos
+//
+function criar_arquivo_estilos(&$modulo) {
+// Object $modulo: dados do modulo
+//
+if (isset($modulo->submodulo)) {
+    $nivel = str_repeat('../', $modulo->nivel_submodulo);
+} else {
+    $nivel = '';
+}
+return <<<CODIGO
+<?php
+//
+// {$modulo->sistema->nome} - {$modulo->sistema->descricao}
+// Descricao: Estilos do modulo {$modulo->nome}
+// Autor: {$modulo->usuario->nome}
+// Orgao: {$modulo->usuario->nome_orgao}
+// E-mail: {$modulo->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$modulo->data}
+// Modificado: {$modulo->data}
+// Copyright (C) {$modulo->ano}  {$modulo->usuario->nome}
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+require_once('{$nivel}../../config.php');
+modulo::estilos('{$modulo->classe}');
+CODIGO;
+}
+
+
+//
+//     Monta um array identado
+//
+function montar_array_identado($vetor) {
+// Array[String] $vetor
+//
+    $itens = array();
+    foreach ($vetor as $item) {
+        $itens[] = "    {$item}";
+    }
+    return "array(\n".
+           implode(",\n", $itens)."\n".
+           ");\n";
+}

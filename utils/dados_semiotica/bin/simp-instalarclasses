@@ -1,0 +1,48 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: script para instalacao das classes de forma manual
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: Tecnolivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.0.0.2
+// Data: 12/12/2007
+// Modificado: 06/08/2008
+// Utilizacao: $ ./instalar_classes.php
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// Licenca: LICENCE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dirroot = `simp-config --dirweb`;
+require_once($dirroot.'config.php');
+
+try {
+    $instalacao = new instalacao();
+} catch (Exception $e) {
+    fwrite(STDERR, "Erro ao instanciar a classe de instalacao\n");
+    exit(1);
+}
+
+fwrite(STDOUT, "Instalando as classes: ");
+$instalou = $instalacao->instalar_classes($erros, $avisos);
+fwrite(STDOUT, ($instalou ? "OK\n" : "Erro\n"));
+
+if (count($erros)) {
+    fwrite(STDERR, "Erros:\n");
+    foreach ($erros as $erro) {
+        fwrite(STDERR, '* '.strip_tags(texto::decodificar($erro))."\n");
+    }
+    fwrite(STDERR, "Todas as operacoes de sucesso foram canceladas\n");
+} elseif (count($avisos)) {
+    fwrite(STDOUT, "Avisos:\n");
+    foreach ($avisos as $aviso) {
+        fwrite(STDOUT, '* '.strip_tags(texto::decodificar($aviso))."\n");
+    }
+}
+
+if (!$instalou) {
+    exit(2);
+}
+
+exit(0);

@@ -1,0 +1,60 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Procura loops em relacionamentos 1:1 fortes entre entidades
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.0.0.0
+// Data: 11/02/2009
+// Modificado: 11/02/2009
+// Copyright (C) 2009  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dirroot = `simp-config --dirweb`;
+require_once($dirroot.'config.php');
+
+$possui_loop = false;
+foreach (listas::get_entidades() as $classe => $descricao) {
+    echo '* '.$classe.': ';
+    $vetor = array($classe);
+    if (!possui_loop($classe, $vetor)) {
+        echo "OK\n";
+    } else {
+        $possui_loop = true;
+    }
+    echo "\n";
+}
+exit($possui_loop ? 1 : 0);
+
+
+//
+//     Checa se os filhos 1:1 possuem Loop
+//
+function possui_loop($classe, $vetor) {
+// String $classe: nome da classe
+// String $vetor: vetor com o caminho de classes desde a classe pai mais distante
+//
+    $obj = new $classe();
+    $relacionamentos = $obj->get_definicoes_rel_uu();
+    foreach ($relacionamentos as $def) {
+        if (!$def->forte) { continue; }
+        $vetor2 = array_merge($vetor, array($def->classe));
+        if (in_array($def->classe, $vetor)) {
+            echo "LOOP!\n";
+            echo implode(' > ', $vetor2)."\n";
+            if ($vetor[0] != $def->classe) {
+                $pos = array_search($def->classe, $vetor2);
+                echo "A classe {$def->classe} entra em loop em:\n";
+                echo implode(' > ', array_splice($vetor2, $pos))."\n";
+            }
+            return true;
+        }
+        if (possui_loop($def->classe, $vetor2)) {
+            return true;
+        }
+    }
+    return false;
+}

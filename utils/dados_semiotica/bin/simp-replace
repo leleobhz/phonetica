@@ -1,0 +1,178 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Converte uma string para outra em todo o Sistema
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.0.0.3
+// Data: 15/07/2008
+// Modificado: 24/03/2009
+// Copyright (C) 2008  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dirroot = `simp-config --dirweb`;
+require_once($dirroot.'config.php');
+
+/// Obter argumentos
+$opcoes = getopt('a:d:ft');
+
+// Trocar tabs por 4 espacos
+if (isset($opcoes['t'])) {
+    $antes = "\t";
+    $depois = '    ';
+
+// Trocar alguma palavra
+} else {
+    $antes  = isset($opcoes['a']) ? $opcoes['a'] : false;
+    $depois = isset($opcoes['d']) ? $opcoes['d'] : false;
+}
+$forcar = isset($opcoes['f']);
+
+if ($antes === false || $depois === false) {
+    fwrite(STDERR, "Faltou informar os parametros -a e -d.\n");
+    fwrite(STDERR, "Consulte o manual do script.\n");
+    exit(1);
+}
+
+fwrite(STDOUT, "Substituindo \"{$antes}\" por \"{$depois}\"\n");
+$arquivos = array();
+$diretorio = $CFG->dirroot;
+$total = listar($diretorio, $arquivos, $antes);
+if (!count($arquivos)) {
+    fwrite(STDOUT, "Nenhum arquivo encontrado (busca realizada em {$total} arquivos)\n");
+    exit(0);
+}
+trocar($arquivos, $antes, $depois, $forcar);
+exit(0);
+
+
+//
+//     Obtem a lista de arquivos onde foi encontrada a chave para ser substituida
+//
+function listar($diretorio, &$arquivos, $busca) {
+// String $diretorio: diretorio onde sera feita a substituicao
+// Array[String] $arquivos: vetor a ser preenchido
+// String $busca: palavra de busca
+//
+    $arquivos_procurados = 0;
+    $dir = opendir($diretorio);
+    $tamanho = strlen($busca);
+    while (($item = readdir($dir)) !== false) {
+        if ($item == '.' || $item == '..' || $item == '.svn') { continue; }
+        $item_completo = realpath($diretorio.'/'.$item);
+        if (is_dir($item_completo)) {
+            $arquivos_procurados += listar($item_completo, $arquivos, $busca);
+        } elseif (strpos($item, '.php') !== false) {
+            $arquivos_procurados++;
+            $f = fopen($item_completo, 'r');
+            if (!$f) {
+                fwrite(STDERR, "Erro ao abrir \"{$item_completo}\".");
+            }
+            $ss = '';
+            while (!feof($f)) {
+                $s = fread($f, $tamanho);
+                if (strpos($ss.$s, $busca) !== false) {
+                    $arquivos[] = $item_completo;
+                    break;
+                }
+                $ss = $s;
+            }
+            fclose($f);
+        }
+    }
+    closedir($dir);
+    return $arquivos_procurados;
+}
+
+
+//
+//     Substitui um valor por outro nos arquivos informados
+//
+function trocar(&$arquivos, $antes, $depois, $forcar = false) {
+// Array[String] $arquivos: arquivos onde existe a ocorrencia da palavra
+// String $antes: palavra a ser substituida
+// String $depois: palavra que substituira
+// Bool $forcar: indica se deve substituir tudo sem perguntar
+//
+    foreach ($arquivos as $a) {
+        $conteudo = file_get_contents($a);
+        if ($forcar) {
+            fwrite(STDOUT, $a.': ');
+            $conteudo_novo = str_replace($antes, $depois, $conteudo);
+            if (file_put_contents($a, $conteudo_novo)) {
+                fwrite(STDOUT, "OK\n");
+            } else {
+                fwrite(STDERR, "Erro ao salvar arquivo\n");
+            }
+        } else {
+            $tam_conteudo = strlen($conteudo);
+            $tam_antes    = strlen($antes);
+            $tam_depois   = strlen($depois);
+            $diferenca    = $tam_depois - $tam_antes;
+
+            fwrite(STDOUT, "Arquivo: {$a}\n");
+            $pos = 0;
+            $mudou = false;
+            do {
+                $pos = strpos($conteudo, $antes, $pos);
+                if ($pos === false) {
+                    break;
+                }
+
+                // Obter pedaco do texto como estava ANTES
+                $p_inicio = max(0, $pos - 40);
+                $p_fim = min($tam_conteudo, $pos + $tam_antes + 40);
+                $texto_antes = substr($conteudo, $p_inicio, $p_fim - $p_inicio);
+                $texto_antes = explode("\n", $texto_antes);
+                $texto_antes = '< '.implode("\n< ", $texto_antes)."\n";
+                
+                // Gerar conteudo com a substituicao da ocorrencia
+                $inicio = substr($conteudo, 0, $pos);
+                $fim    = substr($conteudo, $pos + $tam_antes);
+                $conteudo_novo = $inicio.$depois.$fim;
+
+                // Obter pedaco do texto como ficara DEPOIS
+                $pos_inicio = max(0, $pos - 40);
+                $p_fim = min($tam_conteudo + $diferenca, $pos + $tam_depois + 40);
+                $texto_depois = substr($conteudo_novo, $p_inicio, $p_fim - $p_inicio);
+                $texto_depois = explode("\n", $texto_depois);
+                $texto_depois = '> '.implode("\n> ", $texto_depois)."\n";
+
+                fwrite(STDOUT, "Ocorrencia encontrada (posicao {$pos}):\n");
+                fwrite(STDOUT, $texto_antes);
+                fwrite(STDOUT, $texto_depois);
+                fwrite(STDOUT, "Subtituir [s/n]: ");
+                fscanf(STDIN, "%s\n", $substituir);
+
+                switch ($substituir) {
+                case 'n':
+                case 'N':
+                    fwrite(STDOUT, "Ocorrencia ignorada\n");
+                    $pos += $tam_antes;
+                    break;
+                case 's':
+                case 'S':
+                    $mudou = true;
+                    $conteudo = $conteudo_novo;
+                    $tam_conteudo += $diferenca;
+                    $pos += $tam_depois;
+                    break;
+                }
+            } while ($pos !== false);
+
+            if ($mudou) {
+                fwrite(STDOUT, 'Salvando arquivo: ');
+                if (file_put_contents($a, $conteudo)) {
+                    fwrite(STDOUT, "OK\n");
+                } else {
+                    fwrite(STDERR, "Erro ao salvar arquivo\n");
+                }
+            } else {
+                fwrite(STDOUT, "Nenhuma mudanca no arquivo\n");
+            }
+        }
+    }
+}

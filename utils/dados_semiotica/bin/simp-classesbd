@@ -1,0 +1,979 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Script que gera as entidades apartir de uma base de dados existente.
+// Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rpmoreira@tecnolivre.ufla.br
+// Versao: 1.0.0.3
+// Data: 29/07/2008
+// Modificado: 08/08/2008
+// Copyright (C) 2008  Rodrigo Pereira Moreira
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dirroot = `simp-config --dirweb`;
+$dirextras = `simp-config --dirextras`;
+require_once($dirroot.'config.php');
+
+define('ARQUIVO_SISTEMA', $dirextras.'sistema.xml');
+
+// Obtem o dados do sistema para montar o cabecalho dos arquivos
+$arq_dados = get_dados_sistema();
+
+// Obtem um objeto_dao com as configuracoes do BD
+$nome_sgbd;
+$bd = get_objeto_dao($nome_sgbd);
+
+// Obtem as tabelas do BD ordenadas pela dependencia entre relacionamentos
+$tabelas_ordenadas = get_tabelas_ordenadas($bd);
+
+// Obtem o local onde os aquivos serao salvos
+$local = get_local_arquivos();
+
+
+// Para cada tabela: montar uma classe entidade
+$r = true;
+foreach ($tabelas_ordenadas as $tabela) {
+
+    fwrite(STDOUT, "\nTabela \"{$tabela->nome}\"\n");
+    do {
+        fwrite(STDOUT, "Deseja criar esta entidade? [s/n] ");
+        fscanf(STDIN, "%s\n", $criar);
+        $criar = strtolower($criar);
+        $valido = $criar == 's' || $criar == 'n';
+        if (!$valido) {
+            fwrite(STDERR, "Valor invalido. Digite \"s\" ou \"n\".\n");
+        }
+    } while (!$valido);
+    if ($criar == 'n') {
+        continue;
+    }
+
+    // 1 - Pegar dados que definem a entidade
+    $entidade = get_dados_entidade($tabela);
+
+    // 2 - Pegar os atributos da entidade
+    $atributos = get_atributos_entidade($bd, $tabela);
+
+    // 3 - Monta os arquivos da entidade
+    $arquivo = montar_entidade($arq_dados, $entidade, $atributos, $tabelas_ordenadas, $nome_sgbd);
+
+    // 4 - Salvar em arquvio
+    $r = $r && salvar_entidade($arquivo, $entidade, $local);
+}
+exit($r ? 0 : 1);
+
+
+//
+//     Obtem os dados basicos do sistema
+//
+function get_dados_sistema() {
+    global $CFG;
+    $arq_dados = new stdClass();
+    
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+    $arq_dados->sistema = $sistema->dados;
+
+    $login = trim(`whoami`);
+    $arq_dados->usuario = false;
+    foreach ($sistema->usuarios->usuario as $u) {
+        if ($login == $u->login) {
+            $arq_dados->usuario = $u;
+            $id_orgao = strval($arq_dados->usuario->orgao['ref']);
+            $achou = false;
+            foreach ($sistema->orgaos->orgao as $o) {
+                if ($id_orgao == $o['id']) {
+                    $arq_dados->usuario->addChild('nome_orgao', strval($o));
+                    unset($arq_dados->usuario->orgao);
+                    $achou = true;
+                    break;
+                }
+            }
+            if (!$achou) {
+                fwrite(STDERR, "Orgao invalido: {$id_orgao}\n");
+                exit(1);
+            }
+            break;
+        }
+    }
+    if (!$arq_dados->usuario) {
+        fwrite(STDERR, "Usuario invalido: {$login}\n");
+        fwrite(STDERR, "Cadastre-se no arquivo sistema.xml antes de executer o script (use simp-dados para cadastrar).\n");
+        exit(1);
+    }
+    $arq_dados->data = strftime('%d/%m/%Y', $CFG->time);
+    $arq_dados->ano = strftime('%Y', $CFG->time);
+    return $arq_dados;
+}
+
+
+//
+//     Obtem um objeto_dao com as configuracoes do BD
+//
+function get_objeto_dao(&$nome_sgbd) {
+// String $nome_sgbd: Identificacao do SGBD
+//
+    global $CFG;
+    
+    // Configuracao default
+    $sgbd = 'mysql';
+    $host = 'localhost';
+    $porta = '3306';
+    $usuario = 'root';
+    $senha = '';
+    $base_dados = $CFG->sistema;
+
+    // Obtem dados do BD perguntando ao usuario
+    fwrite(STDOUT, "Preencha as configuracoes do BD a ser usado\n");
+
+    $drivers = objeto_dao::get_drivers();
+    if (count($drivers)) {
+        fwrite(STDOUT, "Possiveis SGBDs:\n");
+        foreach ($drivers as $driver) {
+            fwrite(STDOUT, "{$driver->codigo} - ".texto::strip_acentos(texto::decodificar($driver->nome))."\n");
+        }
+    } else {
+        fwrite(STDERR, "Nenhum driver de SGBD disponivel\n");
+        exit(1);
+    }
+
+    fwrite(STDOUT, "SGDB ({$sgbd}): ");
+    fscanf(STDIN, "%s\n", $s);
+    $sgbd = empty($s)? $sgbd : $s;
+    
+    switch ($sgbd) {
+    case 'mysql':
+    case 'mysqli':
+    case 'pdo_mysql':
+        $usuario = 'root';
+        $porta = '3306';
+        $nome_sgbd = 'mysql';
+        break;
+    case 'pgsql':
+    case 'pdo_pgsql':
+        $usuario = 'postgres';
+        $porta = '5432';
+        $nome_sgbd = 'pgsql';
+        break;
+    case 'oci8':
+    case 'pdo_oci':
+        //TODO
+        $usuario = '?';
+        $porta = '1521';
+        break;
+    case 'sqlite':
+    case 'pdo_sqlite':
+        //TODO
+        $porta = false;
+        break;
+    }
+
+    fwrite(STDOUT,"Host ({$host}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $host = $in;
+    }
+
+    if ($porta) {
+        do {
+            fwrite(STDOUT,"Porta ({$porta}): ");
+            fscanf(STDIN, "%s\n", $in);
+            if (!empty($in)) {
+                $porta = $in;
+            }
+            $valido = is_numeric($porta);
+            if (!$valido) {
+                fwrite(STDERR, "Porta invalida. Digite um inteiro\n");
+            }
+        } while (!$valido);
+    }
+
+    fwrite(STDOUT,"Usuario ({$usuario}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $usuario = $in;
+    }
+
+    fwrite(STDOUT,"Senha: ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $senha = $in;
+    }
+
+    fwrite(STDOUT,"Base de Dados ({$base_dados}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $base_dados = $in;
+    }
+
+    fwrite(STDOUT, "\n");
+
+    // Cria um objeto_dao
+    $bd = new objeto_dao($sgbd, $host, $porta, $usuario, $senha, $base_dados);
+    $bd->conectar();
+
+    // Verifica se nao houve problemas com a conexao
+    if ($bd->possui_erros()) {
+        $erros = $bd->get_erros();
+        fwrite(STDERR, "Erro ao conectar no BD informado\n");
+        foreach ($erros as $e) {
+            fwrite(STDERR, "Erro: {$e}\n");
+        }
+        exit(1);
+    }
+    $bd->carregar('operacao');
+    
+    return $bd;
+}
+
+
+//
+//     Obtem as tabelas do BD de forma ordenada por dependencia dos relacionamentos
+//
+function get_tabelas_ordenadas(&$bd) {
+// objeto_dao $bd: objeto com os dados do BD
+//
+    
+    // Obtem as tabelas do BD
+    $tabelas = $bd->get_tabelas();
+
+    // Se nao obteve nenhuma tabela
+    if (!is_array($tabelas) || !count($tabelas)) {
+        fwrite(STDERR, "Nenhuma tabela.\n");
+        exit(1);
+    }
+
+    // Obtem os dados necessarios para ordenar as tabelas
+    foreach ($tabelas as $tabela) {
+        $campos = $bd->get_campos($tabela->nome);
+        $tabela->dependencias = array();
+        foreach ($campos as $campo) {
+            if (isset($campo->tabela_ref) && $campo->tabela_ref) {
+                $tabela->dependencias[] = $campo->tabela_ref;
+            }
+        }
+        $tabela->vista = false;
+        $aux_tabelas[] = $tabela;
+    }
+
+    // Realiza a ordenacao
+    $vetor = array();
+    $vetor_d = array();
+    foreach ($aux_tabelas as $aux_tabela) {
+        if (!count($aux_tabela->dependencias)) {
+            $aux_tabela->vista = true;
+            $vetor[] = $aux_tabela;
+        } else {
+            $vetor_d[$aux_tabela->nome] = $aux_tabela;
+        }
+    }
+
+    foreach ($vetor_d as $nome => $t) {  
+        verificar_dependencia($t, $vetor_d, $vetor);
+    }
+    
+    return $vetor;
+}
+
+
+//
+//    Verifica as dependencias
+//
+function verificar_dependencia($tabela, $vetor_d, &$vetor) {
+// Object $tabela: objeto com os dados da tabela corrente
+// Array[String => Object] $vetor_d: vetor de tabelas com dependencia
+// Array[Object] $vetor: vetor de tabelas ordenadas
+//
+    foreach($tabela->dependencias as $nome) {
+        if (array_key_exists($nome, $vetor_d) && !$tabela->vista) {
+            verificar_dependencia($vetor_d[$nome], $vetor_d, $vetor);     
+        }
+    }
+    if (!$tabela->vista) {
+        $tabela->vista = true;
+        $vetor[] = $tabela;
+    }
+}
+
+
+//
+//     Obtem os dados que definem a entidade
+//
+function get_dados_entidade(&$tabela) {
+// Object $tabela: Objeto com os dados da tabela
+//
+    // Obtem sugestoes de nomes da calsse, entidade no singular e entidade no plural
+    $o = get_classe_tabela($tabela->nome);
+    
+    $entidade = new stdClass();
+    $entidade->tabela    = texto::strtolower(texto::strip_acentos($tabela->nome));
+    $entidade->descricao = texto::strip_acentos($tabela->comentario);
+    $entidade->classe    = $o->classe;
+    $entidade->singular  = $o->singular;
+    $entidade->plural    = $o->plural;
+    $entidade->genero    = 'M';
+
+    // Nome da classe
+    fwrite(STDOUT, "Nome da classe ({$entidade->classe}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $entidade->classe = $in;
+    }
+
+    // Nome da entidade no  singular
+    fwrite(STDOUT, "Nome da entidade no singular ({$entidade->singular}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $entidade->singular = $in;
+    }
+    
+    // Nome da entidade no  singular
+    fwrite(STDOUT, "Nome da entidade no plural ({$entidade->plural}): ");
+    fscanf(STDIN, "%s\n", $in);
+    if (!empty($in)) {
+        $entidade->plural = $in;
+    }
+    
+    // Genrero da entidade
+    do {
+        fwrite(STDOUT, "Genero da entidade [M = masculino / F = feminino / I = indeterminado] ({$entidade->genero}): ");
+        fscanf(STDIN, "%s\n", $in);
+        if (!empty($in)) {
+            $entidade->genero = $in;
+        }
+        $valido = preg_match('/^[MFI]$/', $entidade->genero);
+        if (!$valido) {
+            fwrite(STDERR, "Genero invalido: {$entidade->genero}\n");
+        }
+    } while (!$valido);
+    
+    fwrite(STDOUT, "\n");
+    
+    $tabela->classe = $entidade->classe;
+    return $entidade;
+}
+
+
+//
+//     Retorna sugestoes de nome para a classe, entidade no singular, entidade no plural de acordo com o nome da tabela
+//
+function get_classe_tabela($nome_tabela) {
+// String $nome_tabela: nome da tabela
+//
+    // Expressoes regulares baseada no sufixo do nome
+    $e_aes = '/([a-z]+)aes$/u';
+    $e_oes = '/([a-z]+)oes$/u';
+    $e_es = '/([a-z]+)es$/u';
+    $e_s = '/([a-z]+)s$/u';
+
+    // Se e' um nome simples
+    if (strpos($nome_tabela, '_') === false) {
+
+        // Tabela terninada em "aes"
+        if (preg_match($e_aes, $nome_tabela, $match)) {
+            $o = new stdClass();
+            $o->classe   = $match[1].'ao';
+            $o->singular = ucfirst($match[1]).'&atilde;o';
+            $o->plural   = ucfirst($match[1]).'&atilde;es';
+            return $o;
+
+        // Tabela terninada em "oes"
+        } elseif (preg_match($e_oes, $nome_tabela, $match)) {
+            $o = new stdClass();
+            $o->classe   = $match[1].'ao';
+            $o->singular = ucfirst($match[1]).'&atilde;o';
+            $o->plural   = ucfirst($match[1]).'&otilde;es';
+            return $o;
+
+        // Tabela terninada em "es"
+        } elseif (preg_match($e_es, $nome_tabela, $match)) {
+            $o = new stdClass();
+            $o->classe   = $match[1];
+            $o->singular = ucfirst($match[1]);
+            $o->plural   = ucfirst($match[1]).'es';
+            return $o;
+
+        // Tabela terninada em "s"
+        } elseif (preg_match($e_s, $nome_tabela, $match)) {
+            $o = new stdClass();
+            $o->classe   = $match[1];
+            $o->singular = ucfirst($match[1]);
+            $o->plural   = ucfirst($match[1]).'s';
+            return $o;
+
+        // Nome terninados em outros sufixos
+        } else {
+            $o = new stdClass();
+            $o->classe   = $nome_tabela;
+            $o->singular = ucfirst($nome_tabela);
+            $o->plural   = ucfirst($nome_tabela).'s';
+            return $o;
+        }
+        
+    } else {
+        $n = array();
+        $nomes = explode('_', $nome_tabela);
+        foreach ($nomes as $nome ) {
+            if (strlen($nome) > 3 ) {
+                $nome = ucfirst($nome);
+            }
+            $n[] = $nome;
+        }
+        $o = new stdClass();
+        $o->classe   = $nome_tabela;
+        $o->singular = implode(' ', $n);
+        $o->plural   = implode(' ', $n);
+        return $o;
+    }
+}
+
+
+//
+//     Obtem os atributos da entidade
+//
+function get_atributos_entidade($bd, $tabela) {
+// objeto_dao $bd: Objeto com os dados do BD
+// Object $tabela: Objeto com os dados da tabela
+//
+    $atributos = array();
+    $campos = $bd->get_campos($tabela->nome);
+    foreach ($campos as $campo) {
+        $a = new stdClass();
+        foreach ($bd->get_descricao_campos() as $caracteristica => $descricao) {
+            if (isset($campo->$caracteristica)) {
+                $a->$caracteristica = $campo->$caracteristica;
+            } else {
+                $a->$caracteristica = null;
+            }   
+        }
+        $atributos[] = $a;
+        unset($a);
+    }
+    return $atributos;
+}
+
+
+//
+//     Monta o arquivo da entidade baseado nos dados da tabela
+//
+function montar_entidade($arq_dados, $entidade, $atributos, $tabelas_ordenadas, $nome_sgbd) {
+// Object $arq_dados: dados do sistema
+// Object $entidade: dados da entidade
+// Array[Object] $atributos: Vetor de objetos com os dados dos atributos
+// Array[Object] $tabelas_ordenadas: vetor de objetos com os dados das tabelas
+// String $nome_sgbd: Identificaçcao do sgbd usado
+//
+    return cabecalho_entidade($arq_dados, $entidade->classe).
+           definicao_entidade($entidade).
+           definicao_atributos($atributos, $entidade->classe, $tabelas_ordenadas, $nome_sgbd);
+}
+
+
+//
+//     Retorna o cabecalho do arquivo da entidade
+//
+function cabecalho_entidade($arq_dados, $classe) {
+// Object $arq_dados: dados do sistema
+// String $classe: Nome da classe
+//
+return <<<CABECALHO
+<?php
+//
+// {$arq_dados->sistema->nome} - {$arq_dados->sistema->descricao}
+// Descricao: Definicao da entidade $classe
+// Autor: {$arq_dados->usuario->nome}
+// Orgao: {$arq_dados->usuario->nome_orgao}
+// E-mail: {$arq_dados->usuario->email}
+// Versao: 1.0.0.0
+// Data: {$arq_dados->data}
+// Modificado: {$arq_dados->data}
+// Copyright (C) {$arq_dados->ano}  {$arq_dados->usuario->nome}
+// License: LICENSE.TXT
+//
+abstract class {$classe}_base extends objeto_formulario {
+
+CABECALHO;
+}
+
+
+//
+//     Retorna o metodo de definicao da entidade no arquivo
+//
+function definicao_entidade($entidade) {
+// Object $entidade: Objeto que guarda os dados da entidade
+//
+return <<<DEFINICAO
+
+    //
+    //     Cria a definicao da entidade
+    //
+    protected function definir_entidade() {
+        \$this->criar_entidade(
+            /* Nome Entidade   */ '$entidade->singular',
+            /* Entidade Plural */ '$entidade->plural',
+            /* Genero          */ '$entidade->genero',
+            /* Classe          */ '$entidade->classe',
+            /* Tabela          */ '$entidade->tabela',
+            /* Desc. Tabela    */ '$entidade->descricao',
+            /* Singleton       */ false);
+    }
+
+DEFINICAO;
+}
+
+
+//
+//     Cria o metodo de definicao dos atributos 
+//
+function definicao_atributos($atributos, $classe, $tabelas_ordenadas, $nome_sgbd) {
+// Array[Object] $atributos: Vetor de objetos com os dados dos atributos
+// String $classe: nome da classe
+// Array[Object] $tabelas_ordenadas: vetor de objetos com os dados das tabelas
+// String $nome_sgbd: Identificacao do sgbd utilizado
+//
+
+// Guarda a definicao do metodo e assinatura
+$definicao = <<<DEFINICAO
+
+
+    //
+    //     Cria os atributos da classe
+    //
+    protected function definir_atributos() {
+
+DEFINICAO;
+
+    $a_relacionamento = array();
+    $a_simples = array();
+
+    foreach ($atributos as $a) {
+        
+        // Vefifica se e' um atributo de relacionamento 1:1
+        if (isset($a->tabela_ref) && $a->tabela_ref) {
+
+            // Pega o nome da classe relacionada
+            $classe_relacionada = get_classe_relacionada($a->tabela_ref, $tabelas_ordenadas);
+
+// Guarda a string  que monta o campo relcionamento
+$a_relacionamento[] = <<<ATRIBUTOUU
+
+        // CAMPO: {$a->nome} => gera um {$classe_relacionada}
+        \$this->adicionar_rel_uu(
+            /* Classe          */ '$classe_relacionada',
+            /* Objeto gerado   */ '$classe_relacionada',
+            /* Atributo gerado */ '$a->nome');
+
+ATRIBUTOUU;
+            unset($classe_relacionada); 
+
+        // Se e' um atributo simples
+        } else {
+            
+            // Verifica o sgbd para realizar a engenaria reveras do campos
+            switch ($nome_sgbd) {
+            case 'mysql':
+                $da = get_dados_atributo_mysql($a);
+                break;
+            case 'pgsql':
+                $da = get_dados_atributo_pgsql($a);
+                break;
+            }
+
+// Guarda a string  que monta os campos simples
+$a_simples[] = <<<ATRIBUTO
+
+        // CAMPO: {$da->nome}
+        \$atributo = new atributo('{$da->nome}', '{$da->descricao}', {$da->default});
+        \$atributo->set_tipo('{$da->tipo}', {$da->nulo}, {$da->chave});
+        \$atributo->set_intervalo({$da->tipo_inicio}, {$da->tipo_fim});
+        \$atributo->set_validacao({$da->validacao}, false, {$da->unico});
+        \$this->adicionar_atributo(\$atributo);
+        unset(\$atributo);
+
+ATRIBUTO;
+  
+        }
+        
+    }
+    
+// Guarda o rodape do arquivo
+$rodape = <<<RODAPE
+    }
+}
+RODAPE;
+    
+    // Monta e retorma a string com os metodos basicos
+    return $definicao.
+           implode('', $a_simples).
+           implode('', $a_relacionamento).
+           $rodape;
+}
+
+
+//
+//     Obtem a classe relacionada com atributo
+//
+function get_classe_relacionada($nome_tabela, $tabelas_ordenadas) {
+// String $nome_tabela: nome da tabela
+// Array[Object] $tabelas_ordenadas: vetor de objetos com os dados das tabelas
+//
+    foreach ($tabelas_ordenadas as $tabela) {
+        if ($tabela->nome == $nome_tabela) {
+            return $tabela->classe;
+        }
+    }
+    return false;
+}
+
+
+//
+//   Tratamento para Mysql
+//
+
+//
+//   Obten os dados do atributo com o bd em mysql
+//
+//
+function get_dados_atributo_mysql($atributo) {
+    
+    // Pega o comentario
+    $comentario = empty($atributo->comentario)? $atributo->nome : $atributo->comentario;
+
+    // Obtem caracteriscas relacionadas ao tipo e intervalo
+    $tc = get_tipo_mysql($atributo->tipo_campo, $atributo->nulo);
+    $chave = ($atributo->chave == 'PRI')? "'PK'" : "false";
+    $nulo = $atributo->nulo? 'true' : 'false';
+ 
+    // Obtem o valor default do campo
+    $default = ($atributo->default === null)? 'null' : ($atributo->default? "'".$atributo->default."'" : "''");
+    
+    // Obtem se o atributo e' unico para validacao
+    $unico = ($atributo->chave == 'UNI' || $atributo->chave == 'PRI')? 'true' : 'false';
+    
+    $a = new stdClass();
+    $a->nome = $atributo->nome;
+    $a->descricao = $comentario;
+    $a->default = $default;
+    $a->tipo = $tc->tipo;
+    $a->nulo = $nulo;
+    $a->chave = $chave;
+    $a->tipo_inicio = $tc->inicio;
+    $a->tipo_fim = $tc->fim;
+    $a->validacao = $tc->validacao;
+    $a->unico = $unico;
+    
+    return $a;
+}
+
+
+//
+//     Obtem as caracteristicas do tipo de campo
+//
+function get_tipo_mysql($tipo, $nulo) {
+// String $tipo: tipo do campo
+// Bool $nulo: flag que indica se o campo e' nulo ou nao
+//
+    $tc = new stdClass();
+    $tc->tipo      = '';
+    $tc->inicio    = 'false';
+    $tc->fim       = 'false';
+    $tc->validacao = 'false';
+    
+    $expressao_inteiros = '/^([a-z]*)int\(\d+\)([a-z\040]*)$/';
+    $expressao_real     = '/^(float)[a-z0-9\(\)\040,]*?$/';
+    $expressao_string   = '/^([a-z]*)char\((\d+)\)$/';
+    $expressao_text     = '/^[a-z]*text$/';
+    $expressao_blob     = '/^[a-z]*blob$/';
+
+    // Se e' um inteiro
+    if (preg_match($expressao_inteiros, $tipo, $match)) {
+        $tc->tipo = 'int';
+        $subtipo = $match[1];
+        $unsigned = trim($match[2]) == 'unsigned';
+        inteiros_mysql($tc, $subtipo, $unsigned);
+        
+    // Se e' um float
+    } elseif (preg_match($expressao_real, $tipo, $match)) {
+        $tc->tipo = 'float';
+        $tc->inicio = 'false';
+        $tc->fim    = 'false';
+        
+    // Se e' uma string
+    } elseif (preg_match($expressao_string, $tipo, $match)) {
+        $tc->tipo = 'string';
+        if ($match[1] == 'var') {
+            $tc->inicio = $nulo ? 0 : 1;
+            $tc->fim = (int)$match[2];
+            $tc->validacao = "'TEXTO_LINHA'";
+        } else {
+            $tc->inicio = (int)$match[2];
+            $tc->fim    = (int)$match[2];
+        }
+
+    // Se e' um text
+    } elseif (preg_match($expressao_text, $tipo, $match)) {
+         $tc->tipo = 'string';
+         $tc->inicio = 0;
+         $tc->fim    = 'false';
+         $tc->validacao = "'TEXTO'";
+         
+    // Se e' um blob
+    } elseif (preg_match($expressao_blob, $tipo, $match)) {
+        $tc->tipo   = 'binario';
+        $tc->inicio = 'false';
+        $tc->fim    = 'false';
+    } else {
+        fwrite(STDERR, "Tipo de campo desconhecido: {$tipo}\n");
+    }
+    
+    return $tc;
+}
+
+
+//
+//   Inteiros para mysql
+//
+function inteiros_mysql(&$tc, $subtipo, $unsigned) {
+// Object $tc: objeto que guarda os dados tipo do atributo
+// String $subtipo: subtipo de inteiro (tiny, small, medium ou big)
+// Bool $unsigned: flag indicando que o inteiro e' nao sinalisado
+//
+    switch ($subtipo) {
+    case 'tiny':
+        if ($unsigned) {
+            $tc->inicio = '0';
+            $tc->fim    = '255';
+        } else {
+            $tc->inicio = '-128';
+            $tc->fim    = '127';
+        }
+        break;
+    case 'small':
+        if ($unsigned) {
+            $tc->inicio = '0';
+            $tc->fim    = '65535';
+        } else {
+            $tc->inicio = '-32768';
+            $tc->fim    = '32767';
+        }
+        break;
+    case 'medium':
+        if ($unsigned) {
+            $tc->inicio = '0';
+            $tc->fim    = '16777215';
+        } else {
+            $tc->inicio = '-8388608';
+            $tc->fim    = '8388607';
+        }
+        break;
+    case 'big':
+        if ($unsigned) {
+            $tc->inicio = '0';
+            $tc->fim    = '18446744073709551615';
+        } else {
+            $tc->inicio = '-9223372036854775808';
+            $tc->fim    = '9223372036854775807';
+        }
+        break;
+    default:
+        if ($unsigned) {
+            $tc->inicio = '0';
+            $tc->fim    = '4294967295';
+        } else {
+            $tc->inicio = '-2147483648';
+            $tc->fim    = '2147483647';
+        }
+    }
+}
+
+
+//
+//    Tratamento para PostgreSQL
+//
+
+
+//
+//   Obtem os dados do atributo com o bd em psql
+//
+function get_dados_atributo_pgsql($atributo) {
+    
+    // Pega o comentario
+    $comentario = empty($atributo->comentario)? $atributo->nome : $atributo->comentario;
+    
+    // Obtem caracteriscas relacionadas ao tipo e intervalo
+    $tc = get_tipo_pgsql($atributo->tipo, $atributo->tamanho, $atributo->nulo);
+    $chave = ($atributo->chave == 'PK')? "'PK'" : "false";
+    $nulo = $atributo->nulo? 'true' : 'false';
+    
+    // Obtem o valor default do campo
+    $default = ($atributo->default === null)? 'null' : ($atributo->default? "'".$atributo->default."'" : "''");
+    
+    
+    $a = new stdClass();
+    $a->nome = $atributo->nome;
+    $a->descricao = $comentario;
+    $a->default = $default;
+    $a->tipo = $tc->tipo;
+    $a->nulo = $nulo;
+    $a->chave = $chave;
+    $a->tipo_inicio = $tc->inicio;
+    $a->tipo_fim = $tc->fim;
+    $a->validacao = $tc->validacao;
+    $a->unico = 'false';
+    
+    return $a;
+    
+}
+
+
+//
+//     Obtem as caracteristicas do tipo de campo
+//
+function get_tipo_pgsql($tipo, $tamanho, $nulo) {
+// String $tipo: tipo do campo
+// Int $tamanho: tamanho do campo
+// Bool $nulo: flag que indica se o campo e' nulo ou nao
+//
+    $tc = new stdClass();
+    $tc->tipo      = '';
+    $tc->inicio    = 'false';
+    $tc->fim       = 'false';
+    $tc->validacao = 'false';
+
+    $expressao_inteiros = '/^int\d+$/';
+    $expressao_real     = '/^float\d+?$/';
+    $expressao_string   = '/^([a-z]*)char$/';
+    $expressao_text     = '/^[a-z]*text$/';
+    $expressao_blob     = '/^bytea$/';
+    
+    // Se e' um inteiro
+    if (preg_match($expressao_inteiros, $tipo)) {
+        $tc->tipo = 'int';
+        inteiros_pgsql($tc, $tamanho);
+        
+    // Se e' um float
+    } elseif (preg_match($expressao_real, $tipo)) {
+        $tc->tipo = 'float';
+        $tc->inicio = 'false';
+        $tc->fim    = 'false';
+        
+    // Se e' uma string
+    } elseif (preg_match($expressao_string, $tipo, $match)) {
+        $tc->tipo = 'string';
+        if ($match[1] == 'var') {
+            $tc->inicio = $nulo ? 0 : 1;
+            $tc->fim = (int)$tamanho;
+            $tc->validacao = "'TEXTO_LINHA'";
+        } else {
+            $tc->inicio = (int)$tamanho;
+            $tc->fim    = (int)$tamanho;
+        }
+
+    // Se e' um text
+    } elseif (preg_match($expressao_text, $tipo)) {
+         $tc->tipo = 'string';
+         $tc->inicio = 0;
+         $tc->fim    = 'false';
+         $tc->validacao = "'TEXTO'";
+         
+    // Se e' um bytea
+    } elseif (preg_match($expressao_blob, $tipo)) {
+        $tc->tipo   = 'binario';
+        $tc->inicio = 'false';
+        $tc->fim    = 'false';
+    } else {
+        fwrite(STDERR, "Tipo de campo desconhecido: {$tipo}\n");
+    }
+
+    return $tc;
+}
+
+
+//
+//   Inteiros para mysql
+//
+function inteiros_pgsql(&$tc, $tamanho) {
+    
+    switch ($tamanho) {
+    case 2:
+        $tc->inicio = '-32768';
+        $tc->fim    = '32767';
+        break;
+    case 4:
+        $tc->inicio = '-2147483648';
+        $tc->fim    = '2147483647';
+        break;
+    case 8:
+        $tc->inicio = '-9223372036854775808';
+        $tc->fim    = '9223372036854775807';
+        break;
+    }
+    
+}
+
+//
+//   Reorna o local onde as entidades vao ser salvas
+//
+function get_local_arquivos() {
+    global $CFG;
+    $local = $CFG->dirclasses.'entidade/';
+    do {
+        fwrite(STDOUT, "Salvar as entidades em ({$local}): ");
+        fscanf(STDIN, "%s\n", $in);
+        if (!empty($in)) {
+            $local = $in;
+        }
+        $existe = is_dir($local);
+        if (!$existe) {
+            fwrite(STDERR, "Local invalido (indique um diretorio valido)\n");
+        }
+    } while (!$existe);
+    return $local;
+}
+
+//
+//     Salva o arquivo da entidade
+//
+function salvar_entidade($arquivo, $entidade, $local) {
+// String $arquivo: conteudo do arquivo
+// Object $entidade: dados da entidade
+// Sttring $local: local onde as entidades vao ser salvas
+//    
+    $local_arquivo = realpath($local).'/'.$entidade->classe.'.class.php';
+    if (is_file($local_arquivo)) {
+        do {
+            fwrite(STDOUT, "Ja existe o arquivo {$local_arquivo}!\n");
+            fwrite(STDOUT, "Voce deseja:\n");
+            fwrite(STDOUT, "1 - Sobrescreve-lo\n");
+            fwrite(STDOUT, "2 - Salvar com outro nome\n");
+            fwrite(STDOUT, "3 - Cancelar a entidade\n");
+            fwrite(STDOUT, "Opcao: ");
+            fscanf(STDIN, "%s\n", $in);
+            $valido = preg_match('/^[1-3]$/', $in);
+            if (!$valido) {
+                fwrite(STDERR, "Operacao invalida\n");
+            }
+        } while (!$valido);
+        switch ($in) {
+        case '1':
+            break;
+        case '2':
+            do {
+                fwrite(STDOUT, "Novo nome: ");
+                fscanf(STDIN, "%s\n", $in);
+                $local_arquivo = realpath($local).'/'.$in;
+                $existe = is_file($local_arquivo);
+                if ($existe) {
+                    fwrite(STDOUT, "Ja existe o arquivo {$local_arquivo}!\n");
+                }
+            } while ($existe);
+            break;
+        case '3':
+            fwrite(STDOUT, "Entidade ignorada\n");
+            return true;
+        }
+    }
+    return file_put_contents($local_arquivo, $arquivo);
+}

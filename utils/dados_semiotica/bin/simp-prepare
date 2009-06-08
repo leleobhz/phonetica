@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# SIMP
+# Descricao: script de preparacao do sistema para instalacao
+# Autor: Rubens Takiguti Ribeiro
+# Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+# E-mail: rubens@tecnolivre.ufla.br
+# Versao: 1.0.0.3
+# Data: 11/10/2007
+# Modificado: 06/08/2008
+# License: LICENSE.TXT
+# Copyright (C) 2007  Rubens Takiguti Ribeiro
+#
+
+# Obter argumentos e preencher o dirroot com o diretorio raiz do sistema
+if (( $# >= 1 ))
+then
+    case "$1" in
+    -h)
+        man simp-prepare
+        ;;
+    /*)
+        dirroot=${1}/
+        ;;
+    *)
+        dirroot=./${1}/
+        ;;
+    esac
+else
+    type simp-config > /dev/null 2> /dev/null
+    if (( $? != 0 ))
+    then
+        echo "O script simp-config nao foi encontrado"
+        echo "A variavel de ambiente PATH foi configurada corretamente?"
+        exit 1
+    fi
+    dirroot=`simp-config --dirweb`
+fi;
+
+if [ ! -d $dirroot ]
+then
+    echo "O diretorio ${dirroot} nao existe"
+    exit 1
+fi
+
+# PASSO 1: sobrescrever o arquivo de configuracoes
+cp -f ${dirroot}config.bk.php ${dirroot}config.php > /dev/null 2> /dev/null
+if (( $? != 0 ))
+then
+    echo "Erro ao copiar config.bk.php sobre config.php"
+    exit $?
+fi
+
+# PASSO 2: definir permissoes sobre os arquivos necessarios
+chmod -R 777 ${dirroot}/arquivos ${dirroot}/config.* > /dev/null 2> /dev/null
+if (( $? != 0 ))
+then
+    echo "Erro ao colocar permissoes sobre arquivos config e diretorio arquivos"
+    exit $?
+fi
+
+echo 'Pronto para instalar!'
+exit 0

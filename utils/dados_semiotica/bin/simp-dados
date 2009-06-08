@@ -1,0 +1,251 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Script que manipula o XML de dados do Sistema
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.0.0.4
+// Data: 16/07/2008
+// Modificado: 30/03/2009
+// Copyright (C) 2008  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dirroot = `simp-config --dirweb`;
+$dirextras = `simp-config --dirextras`;
+require_once($dirroot.'config.php');
+
+define('ARQUIVO_SISTEMA', $dirextras.'sistema.xml');
+
+$opcoes = getopt('aruod');
+
+// ADICIONAR
+if (isset($opcoes['a'])) {
+    if (isset($opcoes['u'])) {
+        $r = adicionar_usuario();
+    } elseif (isset($opcoes['o'])) {
+        $r = adicionar_orgao();
+    } else {
+        utilizacao();
+    }
+
+// REMOVER
+} elseif (isset($opcoes['r'])) {
+    if (isset($opcoes['u'])) {
+        $r = remover_usuario();
+    } elseif (isset($opcoes['o'])) {
+        $r = remover_orgao();
+    } else {
+        utilizacao();
+    }
+
+// DEFINIR DADOS
+} elseif (isset($opcoes['d'])) {
+    $r = definir_dados();
+} else {
+    utilizacao();
+}
+exit($r ? 0 : 1);
+
+
+//
+//     Mostra como utilizar o script
+//
+function utilizacao() {
+    fwrite(STDERR, "Precisa informar um dos argumentos:\n".
+                   "-au para adicionar usuario\n".
+                   "-ao para adicionar orgao\n".
+                   "-ru para remover usuario\n".
+                   "-ro para remover orgao\n".
+                   "-d para definir os dados do sistema\n"
+    );
+    exit(1);
+}
+
+
+//
+//     Adiciona um novo usuario
+//
+function adicionar_usuario() {
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+    $login = trim(`whoami`);
+
+    foreach ($sistema->usuarios->usuario as $u) {
+        if (strval($u->login) == $login) {
+            fwrite(STDERR, "O usuario {$login} ja foi cadastrado\n");
+            exit(1);
+        }
+    }
+
+    $usuario = $sistema->usuarios->addChild('usuario');
+
+    if (extension_loaded('posix')) {
+        $dados_usuario = posix_getpwnam($login);
+        $login_padrao = $dados_usuario['name'];
+        $nome_padrao  = $dados_usuario['gecos'];
+    }
+    
+    // Definir Login
+    fwrite(STDOUT, "Login: {$login}\n");
+    $usuario->addChild('login', $login);
+
+    // Definir Nome
+    do {
+        fwrite(STDOUT, "Nome ({$nome_padrao}): ");
+        $nome = fgets(STDIN, 200);
+        $nome = trim($nome);
+        if ($nome) {
+            $usuario->addChild('nome', $nome);
+        } elseif (isset($nome_padrao)) {
+            $usuario->addChild('nome', $nome_padrao);
+        }
+    } while (!isset($usuario->nome));
+
+    // Definir E-mail
+    do {
+        fwrite(STDOUT, 'E-mail: ');
+        fscanf(STDIN, "%s\n", $email);
+        $email = trim($email);
+        if ($email) {
+            $usuario->addChild('email', $email);
+        }
+    } while (!isset($usuario->email));
+
+    // Definir Orgao
+    do {
+        fwrite(STDOUT, "\nIDs dos Orgaos Cadastrados:\n");
+        foreach ($sistema->orgaos->orgao as $o) {
+            $ids[strval($o['id'])] = true;
+            fwrite(STDOUT, $o['id']."\n");
+        }
+        fwrite(STDOUT, 'ID do orgao: ');
+        fscanf(STDIN, "%s\n", $id_orgao);
+
+        if (!isset($ids[$id_orgao])) {
+            fwrite(STDOUT, "ID invalido!\n");
+        }
+    } while (!isset($ids[$id_orgao]));
+
+    $orgao = $usuario->addChild('orgao');
+    $orgao->addAttribute('ref', $id_orgao);
+
+    return confirmar($sistema);
+}
+
+
+//
+//     Adiciona um novo orgao
+//
+function adicionar_orgao() {
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+
+    foreach ($sistema->orgaos->orgao as $o) {
+        $ids[strval($o['id'])] = true;
+    }
+
+    fwrite(STDOUT, 'Nome: ');
+    $nome = texto::strip_acentos(trim(fgets(STDIN)));
+    $orgao = $sistema->orgaos->addChild('orgao', $nome);
+
+    do {
+        fwrite(STDOUT, 'ID: ');
+        fscanf(STDIN, "%s\n", $id_orgao);
+        if (isset($ids[$id_orgao])) {
+            fwrite(STDERR, "Este ID ja foi usado!\n");
+        }
+    } while (isset($ids[$id_orgao]));
+    $orgao->addAttribute('id', trim($id_orgao));
+    return confirmar($sistema);
+}
+
+
+//
+//     Remove um usuario
+//
+function remover_usuario() {
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+
+    fwrite(STDOUT, 'Login: ');
+    fscanf(STDIN, "%s\n", $login);
+    $i = 0;
+    foreach ($sistema->usuarios->usuario as $u) {
+        if (strval($u->login) == $login) {
+            unset($sistema->usuarios->usuario[$i]);
+            return confirmar($sistema);
+        }
+        ++$i;
+    }
+    fwrite(STDERR, "Usuario nao encontrado\n");
+    return false;
+}
+
+
+//
+//     Remove um orgao
+//
+function remover_orgao() {
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+
+    fwrite(STDOUT, 'ID: ');
+    fscanf(STDIN, "%s\n", $id_orgao);
+    $i = 0;
+    foreach ($sistema->orgaos->orgao as $o) {
+        if (strval($o['id']) == $id_orgao) {
+            unset($sistema->orgaos->orgao[$i]);
+            return confirmar($sistema);
+        }
+        ++$i;
+    }
+    fwrite(STDERR, "Orgao nao encontrado\n");
+    return false;
+}
+
+
+//
+//     Define os dados basicos do sistema
+//
+function definir_dados() {
+    $sistema = simplexml_load_file(ARQUIVO_SISTEMA);
+    fwrite(STDOUT, 'Nome: ');
+    $sistema->dados->nome = texto::strip_acentos(trim(fgets(STDIN)));
+
+    fwrite(STDOUT, 'Descricao: ');
+    $sistema->dados->descricao = texto::strip_acentos(trim(fgets(STDIN)));
+
+    return confirmar($sistema);
+}
+
+
+//
+//     Pede confirmacao para salvar os dados
+//
+function confirmar($sistema) {
+// simpleXMLElement $sistema: estrutura XML atualizada
+//
+    do {
+        fwrite(STDOUT, 'Confirmar atualizacao [s/n]: ');
+        fscanf(STDIN, "%s\n", $confirmar);
+        $confirmar = strtolower($confirmar);
+        $terminou = preg_match('/^[sn]$/', $confirmar);
+        if (!$terminou) {
+            fwrite(STDERR, "Codigo invalido (use apenas 's' ou 'n' seguido de <enter>)\n");
+        }
+    } while (!$terminou);
+
+    if ($confirmar == 's') {
+        fwrite(STDOUT, "Salvando dados... ");
+        $arq = ARQUIVO_SISTEMA;
+        $salvou = file_put_contents($arq, $sistema->asXML(), LOCK_EX);
+        if ($salvou) {
+            fwrite(STDOUT, "OK\n");
+        } else {
+            fwrite(STDERR, "Erro ao salvar arquivo\n");
+        }
+        return $salvou;
+    } else {
+        fwrite(STDOUT, "Operacao cancelada\n");
+    }
+    return true;
+}

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# SIMP
+# Descricao: script que cria um arquivo de teste na raiz do sistema pronto para fazer um teste
+# Autor: Rubens Takiguti Ribeiro
+# Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+# E-mail: rubens@tecnolivre.ufla.br
+# Versao: 1.0.0.0
+# Data: 12/08/2008
+# Modificado: 12/08/2008
+# License: LICENSE.TXT
+# Copyright (C) 2008  Rubens Takiguti Ribeiro
+#
+ARQ_TESTE=`simp-config --dirweb`"teste.php"
+
+echo "Criando o arquivo ${ARQ_TESTE}"
+echo \
+"<?php
+// Este arquivo sera' apagado automaticamente com o fechamento deste editor
+require_once('config.php');
+
+" > $ARQ_TESTE 2> /dev/null
+
+echo "Selecionando editor de codigo"
+if [ $VISUAL ]
+then
+    EDITOR_PHP=$VISUAL
+elif [ $EDITOR ]
+then
+    EDITOR_PHP=$EDITOR
+else
+    for i in "/usr/bin/gedit" "/usr/bin/nano" "/usr/bin/pico"
+    do
+        if [ -f $i ]
+        then
+            EDITOR_PHP=$i
+            break
+        fi
+    done
+    if [ ! $EDITOR_PHP ]
+    then
+        echo "Defina o valor da variavel de ambiente EDITOR ou VISUAL" >&2
+        exit 1
+    fi
+fi
+
+echo "Abrindo o arquivo para edicao com ${EDITOR_PHP}"
+case "$EDITOR_PHP" in
+gedit | nano | pico)
+    $VISUAL +4 $ARQ_TESTE
+    ;;
+*)
+    $VISUAL $ARQ_TESTE
+    ;;
+esac
+
+echo "Removendo o arquivo ${ARQ_TESTE}"
+rm $ARQ_TESTE &> /dev/null
+
+exit 0

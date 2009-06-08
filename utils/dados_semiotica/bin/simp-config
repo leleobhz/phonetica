@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# SIMP
+# Descricao: script que informa os dados basicos da instalacao do simp
+# Autor: Rubens Takiguti Ribeiro
+# Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+# E-mail: rubens@tecnolivre.ufla.br
+# Versao: 1.0.0.2
+# Data: 06/08/2008
+# Modificado: 08/08/2008
+# License: LICENSE.TXT
+# Copyright (C) 2008  Rubens Takiguti Ribeiro
+#
+SIMP_BIN="/projetos/analises/bin/"
+SIMP_DOC="/projetos/analises/doc/"
+SIMP_EXTRAS="/projetos/analises/extras/"
+SIMP_HOME="/projetos/analises/"
+SIMP_MAN="/projetos/analises/man/"
+SIMP_WEB="/projetos/analises/simp/"
+SIMP_VERSAO="1.3.4b"
+
+case "$1" in
+--dirbin    ) echo -n $SIMP_BIN    ;;
+--dirdoc    ) echo -n $SIMP_DOC    ;;
+--dirextras ) echo -n $SIMP_EXTRAS ;;
+--dirhome   ) echo -n $SIMP_HOME   ;;
+--dirman    ) echo -n $SIMP_MAN    ;;
+--dirweb    ) echo -n $SIMP_WEB    ;;
+--versao    ) echo -n $SIMP_VERSAO ;;
+
+*) cat <<EOF
+Utilizacao:
+$ $0 [OPCAO]
+Opcoes:
+  --dirhome     Diretorio raiz do simp (${SIMP_HOME})
+  --dirbin      Diretorio de executaveis auxiliares (${SIMP_BIN})
+  --dirdoc      Diretorio da documentacao do sistema (${SIMP_DOC})
+  --dirextras   Diretorio de arquivos extras (${SIMP_EXTRAS})
+  --dirman      Diretorio de manuais (${SIMP_MAN})
+  --dirweb      Diretorio do sistema web (${SIMP_WEB})
+  --versao      Versao do Simp (${SIMP_VERSAO})
+EOF
+esac
+exit 0
