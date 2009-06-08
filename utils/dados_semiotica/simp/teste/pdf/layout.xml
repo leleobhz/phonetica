@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- @ Atributos permitidos em <table>:
+     align (left, right, center): alinhamento da tabela em relacao a folha
+     bgcolor (#RRGGBB): cor de fundo da tabela
+     color (#RRGGBB): cor padrao do texto da tabela
+     border (px): tamanho da borda da tabela
+     bordercolor (#RRGGBB): cor da borda da tabela
+     marginleft: margem esquerda em relacao ao papel (se definido, ignora o align)
+     marginright: margem direita em relacao ao papel (se definido, ignora o align)
+-->
+<table border="3px" bordercolor="#0000FF" bgcolor="#DDDDEE" align="right">
+
+<!-- @ E' preciso sempre especificar a largura (width) de cada coluna da tabela em px ou % (a soma nao precisa ser 100%) -->
+<colgroup>
+  <col width="10%" />  <!-- Coluna 1 -->
+  <col width="50%" />  <!-- Coluna 2 -->
+  <col width="20%" />  <!-- Coluna 3 -->
+</colgroup>
+
+<!-- Nao e' permitido thead, tbody e tfoot ainda -->
+
+<!-- @ Atributos permitidos em <tr>
+     join (numero): indica o numero de linhas subsequentes que devem ser unidas (aperecer na mesma folha)
+-->
+<tr>
+
+<!-- @ Atributos permitidos em <td> ou <th>:
+     align (left, right, center): alinhamento do texto na celula
+     bgimage (PATH): imagem de fundo da celula
+     bgposition (combinação de t/b/m com r/l/c) posicionamento da imagem de fundo (top, bottom, middle, right, left, center)
+     bgcolor (#RRGGBB): cor de fundo da celula
+     bold (1 ou 0): indica se o texto da celula deve estar em negrito ou nao
+     border (px): tamanho da borda da celula
+     bordercolor (#RRGGBB): cor da borda da celula
+     color (#RRGGBB): cor do texto da celula
+     height (px): altura minima da celula
+     padding (px): espacamento interno do texto da celula e a sua borda
+     valign (top, middle, bottom): alinhamento vertical do texto na celula
+-->
+  <th height="70px" border="0"><![CDATA[Exemplo]]></th>
+  <th align="right" border="2px" bordercolor="#FF0000" valign="bottom"><![CDATA[linha<br />outra linha<br />e outra]]></th>
+  <th align="left" padding="1px" border="15px" bordercolor="#00FF00"><![CDATA[SIMP]]></th>
+</tr>
+
+<tr>
+  <td colspan="2"><![CDATA[Juntando coluna 1 com 2]]></td>
+  <td padding="5px"><![CDATA[Coluna 3]]></td>
+</tr>
+
+<tr>
+  <td bgimage="./imagem.jpg" bgposition="br"><![CDATA[1]]></td>
+  <td bold="1"><![CDATA[2 (em negrito)]]></td>
+  <td rowspan="2"><![CDATA[3 (juntando linha 3 e 4)]]></td>
+</tr>
+
+
+<!-- @ Atencao: o rowspan da linha acima exige que a linha abaixo
+     insira uma celula vazia na posicao em que e' feita a juncao
+-->
+<tr>
+  <td bgimage="./imagem.jpg" bgposition="tc"><![CDATA[1]]></td>
+  <td><![CDATA[2]]></td>
+  <td />
+</tr>
+
+<tr>
+  <td bgcolor="#FFFF00" height="60px"><![CDATA[Amarelo]]></td>
+  <td bgcolor="#FF0000"><![CDATA[Vermelho]]></td>
+  <td bgcolor="#00AA00"><![CDATA[Verde]]></td>
+</tr>
+
+<tr>
+  <td height="50px"><![CDATA[1]]></td>
+  <td><![CDATA[]]></td>                  <!-- Celula vazia nao tem cor nem borda    -->
+  <td><![CDATA[ ]]></td>                 <!-- Celula sem texto, mas tem cor e borda -->
+</tr>
+
+<!-- @ Atributos permitidos em <img>:
+     src (PATH): caminho relativo ou absoluto para a imagem no servidor
+     width (px): largura da imagem
+     height (px): altura da imagem
+-->
+<tr>
+  <td valign="top" align="left"><img src="./imagem.jpg" width="15px" height="15px" /></td>
+  <td valign="middle" align="center"><img src="./imagem.jpg" width="30px" height="30px" /></td>
+  <td valign="bottom" align="right"><img src="./imagem.jpg" width="60px" height="60px" /></td>
+</tr>
+
+<tr>
+  <td height="45px"><![CDATA[1]]></td>
+  <td rowspan="2"><![CDATA[2<br />5]]></td>
+  <td><![CDATA[3]]></td>
+</tr>
+
+<tr>
+  <td height="40px"><![CDATA[4]]></td>
+  <td/>
+  <td><![CDATA[6]]></td>
+</tr>
+
+<tr join="4">
+  <td height="50px" border="1px" bordercolor="#FF0000"><![CDATA[A]]></td>
+  <td border="2px" bordercolor="#00FF00"><![CDATA[B]]></td>
+  <td border="3px" bordercolor="#0000FF"><![CDATA[C]]></td>
+</tr>
+
+<tr>
+  <td height="50px" border="4px" bordercolor="#0000FF"><![CDATA[D]]></td>
+  <td border="5px" bordercolor="#FF0000"><![CDATA[E]]></td>
+  <td border="6px" bordercolor="#00FF00"><![CDATA[F]]></td>
+</tr>
+
+<tr>
+  <td border="7px" bordercolor="#FF0000"><![CDATA[G]]></td>
+  <td border="8px" bordercolor="#00FF00"><![CDATA[H]]></td>
+  <td border="9px" bordercolor="#0000FF"><![CDATA[I]]></td>
+</tr>
+
+<tr>
+  <td colspan="3" border="10px" bordercolor="#FFFF00"><![CDATA[J]]></td>
+</tr>
+
+</table>
