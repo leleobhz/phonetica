@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<templates><template autoinsert="true" context="php" deleted="false" description="SIMP/class" enabled="true" name="class">class ${classe} {
+    ${codigo}
+}//class</template><template autoinsert="true" context="php" deleted="false" description="SIMP/interface" enabled="true" name="interface">interface ${interface} {
+    ${codigo}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/function" enabled="true" name="function">//
+//     ${descricao}
+//
+function ${funcao}() {
+    ${codigo}
+    return ;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/procedure" enabled="true" name="procedure">//
+//     ${descricao}
+//
+function ${procedimento}() {
+    ${codigo}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/define" enabled="true" name="define">define('${constante}', ${valor});</template><template autoinsert="true" context="php" deleted="false" description="SIMP/try" enabled="true" name="try">try {
+    ${operacoes}
+} catch (Exception $$e) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/do" enabled="true" name="do">do {
+    ${operacoes}
+} while (${condicoes});</template><template autoinsert="true" context="php" deleted="false" description="SIMP/foreach" enabled="true" name="foreach">foreach (${iteravel} as ${item}) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/for" enabled="true" name="for">for (${atribuicoes}; ${condicoes}; ${incrementos}) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/while" enabled="true" name="while">while (${condicoes}) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/if" enabled="true" name="if">if (${condicoes}) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/ife" enabled="true" name="ife">if (${condicoes}) {
+    ${operacoes}
+} else {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/elseif" enabled="true" name="elseif">elseif (${condicoes}) {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/else" enabled="true" name="else">else {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/switch" enabled="true" name="switch">switch (${variavel}) {
+case ${primeiro_caso}:
+    ${operacoes}
+    break;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/__get" enabled="true" name="__get">//
+//     Obtem um atributo da classe
+//
+public function __get($$atributo) {
+// String $$atributo: nome do atributo a ser obtido
+//
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/__set" enabled="true" name="__set">//
+//     Define o valor de um atributo da classe
+//
+public function __set($$atributo, $$valor) {
+// String $$atributo: nome do atributo a ser definido
+// Mixed $$valor: valor do atributo
+//
+    switch ($$atributo) {
+    case '${primeiro caso}':
+        ${operacoes}
+        break;
+    }
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/__toString" enabled="true" name="__toString">//
+//     Define a forma como um objeto sera exibido
+//
+public function __toString() {
+    ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/get_campo_nome" enabled="true" name="get_campo_nome">//
+//     Retorna o NOME DO ATRIBUTO (simples, implicito ou relacionamento 1:1) usado para identificar o objeto
+//
+public function get_campo_nome() {
+    return '${nome_do_campo}';
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/validacao_final" enabled="true" name="validacao_final">//
+//     Realiza a validacao final dos dados antes de salva-los (util para validar atributos dependentes)
+//
+public function validacao_final(&amp;$$dados) {
+// Object $$dados: dados a serem validados
+//
+    $$r = true;
+    switch ($$this-&gt;id_form) {
+    case $$this-&gt;id_formulario_${inserir}():
+        ${operacoes}
+        break;
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pre_salvar" enabled="true" name="pre_salvar">//
+//     Operacoes realizadas antes de salvar os dados no BD
+//
+public function pre_salvar(&amp;$$salvar_campos) {
+// Array[String] $$salvar_campos: vetor de campos a serem salvos
+//
+    $$r = true;
+    switch ($$this-&gt;id_form) {
+    case $$this-&gt;id_formulario_${inserir}():
+        ${operacoes}
+        break;
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pos_salvar" enabled="true" name="pos_salvar">//
+//     Operacoes realizadas apos salvar os dados no BD
+//
+public function pos_salvar() {
+    $$r = true;
+    switch ($$this-&gt;id_form) {
+    case $$this-&gt;id_formulario_${inserir}():
+        ${operacoes}
+        break;
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/dados_opcao" enabled="true" name="dados_opcao">//
+//     Retorna um vetor com os dados da opcao (icone) que aparece na lista de entidades
+//
+public function dados_opcao($$opcao, $$modulo) {
+// String $$opcao: identificador da opcao
+// String $$modulo: nome do modulo
+//
+    $$dados = new stdClass();
+
+    switch ($$opcao) {
+    case '${nome_opcao}':
+        $$dados-&gt;icone     = icone::endereco('${icone}');
+        $$dados-&gt;arquivo   = '${arquivo}.php';
+        $$dados-&gt;modulo    = $$modulo;
+        $$dados-&gt;descricao = '${descricao}';
+        $$dados-&gt;id        = '${id}';
+        $$dados-&gt;class     = '${class}';
+        return $$dados;
+    }
+
+    return parent::dados_opcao($$opcao, $$modulo);
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/exibir_atributo" enabled="true" name="exibir_atributo">//
+//     Define a forma como um atributo simples e' exibido
+//
+public function exibir_atributo($$nome_atributo) {
+// String $$nome_atributo: nome do atributo a ser exibido
+//
+    switch ($$nome_atributo) {
+    case '${atributo}':
+        ${operacoes}
+        return ${retorno};
+    }
+    return parent::exibir_atributo($$nome_atributo);
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/exibir_atributo_implicito" enabled="true" name="exibir_atributo_implicito">//
+//     Define a forma como um atributo implicito e' exibido
+//
+public function exibir_atributo_implicito($$nome_atributo) {
+// String $$nome_atributo: nome do atributo implicito a ser exibido
+//
+    switch ($$nome_atributo) {
+    case '${atributo}':
+        ${operacoes}
+        return ${retorno};
+    }
+    return parent::exibir_atributo_implicito($$nome_atributo);
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pode_exibir" enabled="true" name="pode_exibir">//
+//     Indica se o registro pode ser exibido ou nao por um usuario
+//
+public function pode_exibir(&amp;$$usuario, &amp;$$motivo = '') {
+// usuario $$usuario: usuario a ser testado
+// String $$motivo: motivo pelo qual nao se pode exibir registro
+//
+    $$r = true;
+    if (${condicao}) {
+        $$r = false;
+        $$motivo = '${motivo}';
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/campo_formulario" enabled="true" name="campo_formulario">//
+//     Indica como um campo deve ser apresentado no formulario
+//
+public function campo_formulario(&amp;$$form, $$campo, $$valor) {
+// formulario $$form: formulario que deve receber o campo
+// String $$campo: nome do campo a ser inserido
+// Mixed $$valor: valor padrao do campo
+//
+    if ($$this-&gt;possui_atributo($$campo)) {
+        $$atributo = $$this-&gt;get_definicao_atributo($$campo);
+    }
+    switch ($$campo) {
+    case '${campo}':
+        $$form-&gt;campo_${metodo};
+        return true;
+    }
+    return parent::campo_formulario($$form, $$campo, $$valor);
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pode_ser_manipulado" enabled="true" name="pode_ser_manipulado">//
+//     Indica se o registro pode ser manipulado pelo usuario
+//
+public function pode_ser_manipulado(&amp;$$usuario) {
+// usuario $$usuario: usuario a ser testado
+//
+    $$r = false;
+    if (${condicoes}) {
+        $$r = true;
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pode_acessar_formulario" enabled="true" name="pode_acessar_formulario">//
+//     Indica se o formulario de um registro pode ser acessado ou nao por um usuario
+//
+public function pode_acessar_formulario(&amp;$$usuario, &amp;$$motivo = '') {
+// usuario $$usuario: usuario a ser testado
+// String $$motivo: motivo pelo qual nao se pode acessar o registro
+//
+    $$r = true;
+    switch ($$this-&gt;id_form) {
+    case $$this-&gt;id_formulario_${metodo}():
+        if (${condicoes}) {
+            $$r = false;
+            $$motivo = '${motivo}';
+        }
+        break;
+    }
+    return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/get_vetor" enabled="true" name="get_vetor">//
+//     Obtem a lista de ${itens}
+//
+final public function get_vetor_${nome_vetor}() {
+    return array( =&gt; '',
+                  =&gt; '',
+                  =&gt; '');
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/nav" enabled="true" name="nav">$nav[] = '${modulo}#${arquivo}';</template><template autoinsert="true" context="php" deleted="false" description="SIMP/header" enabled="true" name="header">setlocale(LC_TIME, 'C');
+header("X-Framework: SIMP/".VERSAO_SIMP);
+header("Content-Type: ${content_type}");
+header("Content-Disposition: inline; filename=${filename}");
+header('Date: '.gmstrftime($$CFG-&gt;gmt, $$CFG-&gt;time));
+header('Last-Modified: '.gmstrftime($$CFG-&gt;gmt, ${time_modificado}));
+header('Expires: '.gmstrftime($$CFG-&gt;gmt, $$CFG-&gt;time));
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+setlocale(LC_TIME, $$CFG-&gt;localidade);</template></templates>

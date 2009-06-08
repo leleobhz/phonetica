@@ -1,0 +1,36 @@
+Instrucoes para instalacao manual do sistema:
+1 - Preparar o servidor web (por exempolo, Apache), PHP e um SGBD (MySQL ou PostgreSQL)
+2 - Criar um BD (com codificacao UTF-8) e um usuario no SGBD escolhido
+3 - Especificar as configuracoes do sistema e do SGBD no arquivo config.php, conforme exemplo:
+
+--
+<?php
+
+// Configuracoes Gerais
+$sistema    = 'simp';                       // Nome breve do sistema
+$dominio    = 'teste.com.br';               // Dominio do sistema
+$path       = '/';                          // Path para salvar os cookies
+$wwwroot    = 'http://teste.com.br/rad/';   // Endereco raiz do sistema
+$dirroot    = '/var/www/html/simp/';        // Diretorio raiz do sistema
+$charset    = 'utf-8';                      // Codificacao do sistema
+$versao     = '1.0.0';                      // Versao do sistema
+$instalacao = 1216664295;                   // Time de instalacao do sistema
+$localhost  = false;                        // Indica se o nome do dominio e' apenas local (true) ou e' registrado (false)
+
+// Configuracoes do SGBD
+$bd_config->sgbd     = 'mysql';       // Codigo do SGBD
+$bd_config->servidor = 'localhost';   // Host do servidor de banco de dados
+$bd_config->porta    = '3306';        // Porta de acesso
+$bd_config->base     = 'rad';         // Nome do BD usado
+$bd_config->usuario  = 'raduser';     // Nome do usuario de acesso ao BD
+$bd_config->senha    = 'passrad';     // Senha do usuario de acesso ao BD
+
+// Incluir demais configuracoes
+require_once($dirroot.'var.php'); // Nao retirar esta linha!!!
+--
+
+4 - Executar o script simp-sql para gerar a SQL de criacao das tabelas
+5 - Executar as instrucoes SQL geradas pelo script no BD criado para o sistema
+6 - Executar o script simp-instalarclasses para instalar as classes
+7 - Acessar o sistema
+

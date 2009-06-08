@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sistema>
+  <dados>
+    <nome>SIMP</nome>
+    <descricao>Framework de Desenvolvimento</descricao>
+  </dados>
+  <orgaos>
+    <orgao id="tecnolivre">TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres</orgao>
+  </orgaos>
+  <usuarios>
+    <usuario>
+      <login>rubens</login>
+      <nome>Rubens Takiguti Ribeiro</nome>
+      <email>rubens@tecnolivre.ufla.br</email>
+      <orgao ref="tecnolivre"/>
+    </usuario>
+    <usuario>
+      <login>rmoreira</login>
+      <nome>Rodrigo Pereira Moreira</nome>
+      <email>rmoreira@tecnolivre.ufla.br</email>
+      <orgao ref="tecnolivre"/>
+    </usuario>
+  </usuarios>
+</sistema>
