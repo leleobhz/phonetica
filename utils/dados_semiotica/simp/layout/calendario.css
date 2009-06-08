@@ -1,0 +1,81 @@
+/*
+ * ESTILOS DO CALENDARIO
+ */
+.calendario {
+  background-color: #EEEEEE;
+  border: 1px outset #EEEEEE;
+  width: 13em;
+  -moz-border-radius: 0.6em;
+}
+
+.calendario caption {
+  display: none;
+}
+
+.calendario .livre {
+  color: #AA0000;
+}
+
+.calendario .evento {
+  border: 1px outset #DDFFE5;
+  background-color: #DDFFE5 !important;
+  -moz-border-radius: 0.4em;
+}
+
+.calendario .hoje {
+  border: 1px outset #000000;
+  background-color: #FFFFFF;
+  -moz-border-radius: 0.4em;
+}
+
+.calendario .evento_hoje {
+  background-color: #DDFFE5;
+  border: 1px outset #000000;
+  text-decoration: blink;
+  -moz-border-radius: 0.4em;
+}
+
+.calendario .evento_hoje .dados_eventos,
+.calendario .evento .dados_eventos {
+  border: 1px outset #EEEEFF;
+  background-color: #EEEEFF;
+  display: none;
+  height: auto;
+  margin-left: -100px;
+  opacity: 0.85;
+  position: absolute;
+  text-align: left;
+  width: 200px;
+}
+
+.calendario .evento_hoje .dados_eventos p,
+.calendario .evento .dados_eventos p {
+  background: transparent url(../imgs/layout/li.gif) 0% 50% no-repeat;
+  padding: 1px 2px 2px 15px;
+}
+
+.calendario .evento_hoje:hover .dados_eventos,
+.calendario .evento:hover .dados_eventos,
+.calendario .dados_eventos:hover {
+  display: block;
+}
+
+.calendario th,
+.calendario td {
+  font-size: 0.8em;
+  text-align: center;
+}
+
+.calendario thead th.titulo_calendario {
+  background-color: #FFFFFF;
+  border: 1px outset #FFFFFF;
+  color: #000000 !important;
+  font-size: 1em !important;
+  white-space: nowrap;
+  width: 12em;
+  -moz-border-radius: 0.6em;
+}
+
+.calendario * {
+  cursor: default;
+}
