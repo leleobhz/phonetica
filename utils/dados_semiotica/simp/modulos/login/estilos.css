@@ -1,0 +1,42 @@
+/*
+ * ESTILOS DO MODULO LOGIN
+ */
+
+#conteudo_principal,
+#centro {
+  float: none;
+  margin: 0px;
+  padding: 0px;
+  text-align: center;
+  width: 100%;
+}
+
+#conteudo_principal {
+  padding: 5px 0px;
+}
+
+#esqueci_senha #conteudo_principal,
+#esqueci_senha #centro {
+  float: none;
+  margin: 0px;
+  padding: 0 2%;
+  width: 96%;
+}
+
+#esqueci_senha #conteudo_principal {
+  padding: 5px 0px;
+}
+
+#form_login,
+#form_nova_senha,
+.opcoes {
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  width: 30em;
+}
+
+.opcoes {
+  margin-top: 3em;
+  margin-bottom: 0px;
+}

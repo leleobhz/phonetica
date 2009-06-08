@@ -1,0 +1,22 @@
+/*
+ * ESTILOS DO MODULO LOGS
+ */
+#conteudo_principal h2.titulo {
+  background: transparent url(../../imgs/icones/logs.gif) 0% 60% no-repeat;
+  padding-left: 27px;
+}
+
+.colunas .coluna {
+  float: left;
+  width: 50%;
+}
+
+td {
+  padding: 0 5px;
+}
+
+#lista_logs {
+  font-size: 85%;
+  width: 95%;
+}
+
