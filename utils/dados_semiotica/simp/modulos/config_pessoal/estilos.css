@@ -1,0 +1,7 @@
+/*
+ * Estilos do modulo de configuracoes pessoais
+ */
+#conteudo_principal h2.titulo {
+  background: transparent url(../../imgs/icones/layout.gif) 0% 60% no-repeat;
+  padding-left: 20px;
+}
