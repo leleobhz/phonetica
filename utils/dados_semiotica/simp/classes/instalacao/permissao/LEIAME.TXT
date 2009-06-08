@@ -1,0 +1,48 @@
+Os arquivos deste diretorio devem ser do tipo INI e 
+representam as permissoes que cada grupo tera no sistema.
+
+Cada arquivo deve definir a diretiva "cod_grupo" indicando
+o codigo do grupo em questao e, em seguida, devem ser
+colocadas as permissoes da seguinte forma:
+
+1 - O codigo do grupo deve ser especificado no arquivo
+constantes.php, localizado na raiz do sistema e utilizada
+a sua referencia no arquivo INI.
+
+2 - Os modulos devem ser agrupados em sessoes, que sao
+definidas nos arquivos INI atraves dos colchetes.
+
+3 - Cada arquivo deve ser uma diretiva que pode assumir o
+valor 1 ou 0 indicando que o arquivo sera visivel ou nao
+no menu principal.
+
+Um exemplo de arquivo seria:
+--inicio--
+
+cod_grupo = COD_EDITORES
+
+; Modulo livros
+[livros]
+index.php   = 1         ; item "livros/index.php" visivel no menu
+alterar.php = 0         ; item "livros/alterar.php" nao visivel no menu
+inserir.php = 0         ; item "livros/inserir.php" nao visivel no menu
+
+; Modulo editoras
+[editoras]
+index.php = 1           ; item "editoras/index.php" visivel no menu
+
+--fim--
+
+O arquivo descreve as permissoes do grupo de usuarios cujo
+codigo esta definido pela constante COD_EDITORES, que deve
+ser definida no arquivo "constantes.php".
+
+O grupo de editores tera acesso a dois modulos: livros e editoras.
+
+No modulo livros, o editor podera acessar os arquivos: index.php,
+alterar.php e inserir.php, sendo que apenas o arquivo index.php
+sera apresentado no menu. Os demais poderao ser acessados atraves
+de links presentes no arquivo inde.php.
+
+No modulo editoras, o editor podera acessar apenas o arquivo index.php,
+que estara disponivel no menu principal.

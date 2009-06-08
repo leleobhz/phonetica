@@ -1,0 +1,74 @@
+/**
+ * Gramatica para construcao de condicoes de consulta
+ */
+
+CONDICAO
+  : [ CONDICAO_SIMPLES | CONDICAO_COMPOSTA | CONDICAO_UNITARIA | 
+      CONDICAO_AGRUPAMENTO | CONDICAO_ATALHO | '(' CONDICAO ')' ]
+  ;
+
+/**
+ * Elementos complementares
+ */
+
+ESPACO
+  : [ ' ' | '\n' | '\t' | ESPACO ESPACO ]
+  ;
+
+OPERANDO
+  : [ 'a' .. 'z' | 'A' .. 'Z' ]
+    [ 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' ]*
+  | OPERANDO '.' OPERANDO
+  ;
+
+/**
+ * Condicoes simples
+ */
+CONDICAO_SIMPLES
+  | OPERANDO ESPACO? OPERADOR_SIMPLES ESPACO? [ OPERANDO | '?' ]
+  ;
+
+OPERADOR_SIMPLES
+  : [ '=' | '<>' | '>' | '<' | '>=' | '<=' | '~' ]
+  ;
+
+/**
+ * Condicao Composta
+ */
+CONDICAO_COMPOSTA
+  : CONDICAO OPERADOR_COMPOSTO CONDICAO
+  ;
+
+OPERADOR_COMPOSTO
+  : [ 'AND' | 'OR' ]
+  ;
+
+/**
+ * Condicao Unitaria
+ */
+CONDICAO_UNITARIA
+  : OPERADOR_UNITARIO CONDICAO
+  ;
+
+OPERADOR_UNITARIO
+  : [ 'NOT' ]
+  ;
+
+/**
+ * Condicao de Agrupamento
+ */
+CONDICAO_AGRUPAMENTO
+  : CONDICAO OPERADOR_AGRUPAMENTO CONDICAO
+  ;
+
+OPERADOR_AGRUPAMENTO
+  : [ 'UNION' ]
+  ;
+
+/**
+ * Atalhos para condicoes
+ */
+CONDICAO_ATALHO
+  : OPERANDO ESPACO+ 'BETWEEN' ESPACO+ integer ESPACO+ 'AND' ESPACO+ integer
+  | OPERANDO ESPACO+ 'IN' ESPACO? '(' string [ ESPACO* ',' ESPACO* ]* ')' 
+  ;

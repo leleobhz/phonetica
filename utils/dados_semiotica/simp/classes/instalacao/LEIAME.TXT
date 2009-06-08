@@ -1,0 +1,13 @@
+Todos os arquivos PHP deste diretorio devem ter o nome
+"{classe}.php" e possuir a funcao "instalar_{classe}",
+ onde {classe} representa o nome da classe (entidade)
+a ser instalada.
+
+Opcionalmente, os arquivos podem implementar a funcao
+"dependencias_{classe}", que deve retornar um vetor com
+os nomes das classes que, obrigatoriamente, devem ser
+instaladas antes da classe em questao.
+
+Observacao: deve-se estar atento para nao ocorrer 
+dependencias ciclicas, ou seja, uma classe A depender
+de uma classe B e a classe B depender da classe A.

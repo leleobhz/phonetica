@@ -1,0 +1,12 @@
+Para criar um novo metodo de autenticacao, siga o 
+exemplo definido no arquivo exemplo.php
+
+Caso o metodo de autenticacao consiga obter dados
+sobre o usuario que tentou se autenticar, estes
+devem ser armazenados no vetor associativo
+"dados_usuario", que e' um dos atributos protegidos
+das classes de autenticacao.
+
+As configuracoes padrao devem ser especificadas no 
+arquivo autenticacao.ini, e agrupadas pelo nome do
+driver (nome da classe).
