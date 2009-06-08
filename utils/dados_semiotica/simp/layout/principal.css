@@ -1,0 +1,29 @@
+/*
+ * ESTILOS DA PAGINA PRINCIPAL
+ */
+#centro_principal {
+  float: left;
+  width: 60%;
+}
+
+#centro_secundario {
+  float: right;
+  text-align: center;
+  width: 38%;
+}
+
+#centro_secundario .calendario {
+  margin: 0 auto;
+  text-align: left;
+}
+
+.rss {
+  font-size: 80%;
+}
+
+noscript p {
+  border: 1px dotted #FF0000;
+  color: #880000;
+  display: block;
+  padding: .5em 1em;
+}

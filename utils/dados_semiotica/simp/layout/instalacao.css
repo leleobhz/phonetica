@@ -1,0 +1,68 @@
+/*
+ * ESTILOS DO SCRIPT DE INSTALACAO
+ */
+#conteudo_principal {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+}
+#centro {
+  float: none;
+  margin: 10px;
+}
+
+#pagina_licenca #centro {
+  text-align: center;
+}
+
+#pagina_licenca #centro ul,
+#pagina_licenca #centro h2,
+#pagina_licenca .observacao {
+  text-align: left;
+}
+
+.licenca {
+  border: 2px dotted #DDDDDD;
+  margin: 1em auto;
+  padding: 1em;
+  text-align: left;
+  width: 40em;
+}
+
+.licenca p {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  width: 40em;
+}
+
+#copyright_en h2 {
+  background: transparent url(../imgs/linguas/flag_en.png) 0% 50% no-repeat;
+  padding-left: 20px;
+}
+
+#copyright_br h2 {
+  background: transparent url(../imgs/linguas/flag_br.png) 0% 50% no-repeat;
+  padding-left: 20px;
+}
+
+#form_instalacao {
+  left: 50%;
+  margin-left: -15em;
+  position: relative;
+  width: 30em;
+}
+
+div pre {
+  background-color: #EEEEEE;
+  border: 1px inset #CCCCCC;
+  font-size: small;
+  margin: 1px 0;
+  overflow: auto;
+  padding: .5em;
+}
+div p.aviso,
+div p.erro {
+  display: block;
+  margin: 0 0 1em 0;
+}
