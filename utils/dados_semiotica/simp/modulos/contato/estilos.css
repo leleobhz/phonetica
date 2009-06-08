@@ -1,0 +1,5 @@
+/* Estilos do modulo Contato */
+#conteudo_principal h2.titulo {
+  background: transparent url(../../imgs/icones/email.gif) 0% 60% no-repeat;
+  padding-left: 25px;
+}

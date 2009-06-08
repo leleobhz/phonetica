@@ -1,0 +1,157 @@
+/* Estilos do Modulo DEVEL */
+#conteudo_principal {
+  width: 99%;
+}
+
+.bloco_opcoes {
+  float: left;
+  width: 32%;
+}
+
+#bloco_info {
+  background: transparent url(../../imgs/geral/informacoes.jpg) left top no-repeat;
+  min-height: 254px;
+  min-width: 200px;
+}
+
+#bloco_info_bd {
+  background: transparent url(../../imgs/geral/banco_de_dados.gif) left top no-repeat;
+  min-height: 230px;
+  min-width: 270px;
+}
+
+#bloco_util {
+  background: transparent url(../../imgs/geral/utilitarios.jpg) left top no-repeat;
+  min-height: 206px;
+  min-width: 230px;
+}
+
+.tipo {
+  color: #880000;
+}
+
+/* Cookies */
+pre#block_cookie {
+  border: 1px inset #000000;
+  font-size: small;
+  margin-left: 10px;
+  margin-right: 10px;
+  overflow: auto;
+  padding: .5em;
+  width: 100%;
+}
+
+/* Hierarquia */
+ul.hierarquia .comentario {
+  margin: 0;
+}
+
+ul.hierarquia li .valor a {
+  display: block;
+  min-height: 20px;
+}
+
+/* Info */
+table.tabela_info {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 800px !important;
+  width: 800px !important;
+}
+
+table.tabela td {
+  padding: 2px 10px;
+}
+
+td.e {
+  background-color: #DDDDEE;
+  border: 1px outset #DDDDEE;
+  font-size: 90%;
+  font-weight: bold;
+  max-width: 100px;
+  vertical-align: top;
+}
+
+td.v {
+  background-color: #DDDDEE;
+  border: 1px outset #DDDDEE;
+  font-size: 85%;
+  max-width: 700px;
+}
+
+td img {
+  float: right;
+  padding: 10px 20px;
+}
+
+/* Funcoes PHP */
+.funcao {
+  border: 1px dotted #000000;
+  margin-bottom: 2px;
+}
+
+.funcao h3 {
+  background-color: #9090BB;
+  border: 1px outset #9090BB;
+  margin: 2px;
+  padding: 1px 15px;
+}
+
+/* Geral */
+
+#texto_gerado {
+  border: 1px inset #000000;
+  padding: 0.5em;
+  white-space: normal;
+  width: 100%;
+}
+
+#form_exportar {
+  width: 50em;
+}
+
+#form_exportar fieldset {
+  width: 90%;
+}
+
+#form_exportar fieldset .colunas .coluna {
+  float: left;
+  width: 50%;
+}
+
+ul + .titulo {
+  margin-top: 1em;
+}
+
+.resultado {
+  border: 1px #FFFFFF inset;
+  margin: 10px auto;
+  overflow: auto;
+  width: 30em;
+}
+
+.sim {
+  color: #009900;
+}
+
+.nao {
+  color: #BB0000;
+}
+
+.sqls {
+  border: 1px inset #000000;
+  height: 200px;
+  margin-bottom: 2em;
+  overflow: auto;
+}
+
+/* Dados do CFG */
+p.item strong {
+  cursor: pointer;
+  text-decoration: underline;
+}
+p.item + div {
+  border-left: 1px dotted #000000;
+  margin-left: 1em;
+  padding-left: 1em;
+}

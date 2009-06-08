@@ -1,0 +1,43 @@
+div.condicoes {
+  border-spacing: .2em;
+  display: table;
+}
+
+div.condicoes div.linha {
+  display: table-row;
+}
+
+div.condicoes div.linha .condicao,
+div.condicoes div.linha span.abre,
+div.condicoes div.linha span.fecha,
+div.condicoes div.linha span.operando,
+div.condicoes div.linha span.celula {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+div.condicoes div.linha .condicao {
+  white-space: nowrap;
+}
+
+div.condicoes div.linha span.abre,
+div.condicoes div.linha span.fecha {
+  border: 2px solid #000000;
+  width: .2em;
+}
+
+div.condicoes div.linha span.abre {
+  border-right: 0;
+}
+
+div.condicoes div.linha span.fecha {
+  border-left: 0;
+}
+
+div.condicoes span.operando {
+  font-weight: bolder;
+}
+
+input.ativo {
+  border-color: #0000FF;
+}
