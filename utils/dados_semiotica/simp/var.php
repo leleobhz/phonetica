@@ -311,8 +311,8 @@ if (isset($dados_config) && $dados_config->existe()) {
     $CFG->formato_data      = '%d/%m/%Y';
     $CFG->formato_hora      = '%H:%M:%S';
     $CFG->tipo_email        = 1;
-    $CFG->titulo            = 'Analises';
-    $CFG->descricao         = 'Cadastro de Analises sobre Frases';
+    $CFG->titulo            = 'Análises';
+    $CFG->descricao         = 'Cadastro de Análises sobre Frases';
     $CFG->autor             = 'Rubens Takiguti Ribeiro';
     $CFG->link_autor        = 'http://www.tecnolivre.com.br/';
     $CFG->email_padrao      = isset($_SERVER['SERVER_ADMIN']) ? $_SERVER['SERVER_ADMIN'] : 'root@localhost';

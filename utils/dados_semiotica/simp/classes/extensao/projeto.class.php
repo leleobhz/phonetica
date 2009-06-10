@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// Versao: 1.0.0.1
 // Data: 29/05/2009
-// Modificado: 29/05/2009
+// Modificado: 10/06/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -27,7 +27,7 @@ final class projeto extends projeto_base {
             $dados->icone     = icone::endereco('livro');
             $dados->arquivo   = 'index.php';
             $dados->modulo    = $modulo.'/textos_analises';
-            $dados->descricao = 'Textos para Analise';
+            $dados->descricao = 'Textos para An&aacute;lise';
             $dados->id        = '';
             $dados->class     = '';
             return $dados;

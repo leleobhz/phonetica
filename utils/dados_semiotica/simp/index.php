@@ -67,10 +67,10 @@ function apresentacao() {
 
     // CENTRO PRINCIPAL
     echo "<div id=\"centro_principal\" class=\"texto\">\n";
-    echo "<p>SIMP &eacute; um framework para desenvolvimento de Sistemas de Informa&ccedil;&atilde;o".
-         " Modulares em PHP.</p>\n".
-         "<p>Para facilitar o desenvolvimento, consulte o m&oacute;dulo ".
-         "<a href=\"{$CFG->wwwmods}devel/index.php\">Desenvolvimento</a>.".
+    echo "<p>{$CFG->titulo} &eacute; um sistema para cadastrar projetos de an&aacute;lises ".
+         "sobre frases em textos. Este cadastro &eacute; sempre associado a um analista. ".
+         "A hierarquia de cadastros permitidos no sistema &eacute;:<br />".
+         "Analista &rarr; Projeto &rarr; Texto &rarr; Frase &rarr; An&aacute;lise".
          "</p>\n";
 
     echo '<noscript>'.
