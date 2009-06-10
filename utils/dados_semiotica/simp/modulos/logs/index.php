@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.3
+// Versao: 1.1.1.4
 // Data: 23/05/2007
-// Modificado: 22/05/2009
+// Modificado: 09/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -48,8 +48,7 @@ AJUDA;
 $titulo  = 'Logs';
 $nav[]   = '#index.php';
 $nav[]   = $modulo.'#'.basename(__FILE__);
-$estilos = array($CFG->wwwlayout.'calendario.css',
-                 $CFG->wwwmods.$modulo.'/estilos.css');
+$estilos = array($CFG->wwwmods.$modulo.'/estilos.css');
 
 
 /// Imprimir pagina

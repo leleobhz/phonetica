@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.17
+// Versao: 1.3.0.18
 // Data: 27/08/2007
-// Modificado: 11/05/2009
+// Modificado: 09/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -1786,6 +1786,7 @@ abstract class objeto_formulario extends objeto {
 
                 $nome_objeto = implode(':', $vt_atributo);
                 $form->set_nome($vt_nome);
+                $this->__get($nome_objeto)->set_id_form($this->id_form);
                 $inseriu_campo = $this->__get($nome_objeto)->campo_formulario($form, $nome_campo, $valor);
                 if (!$inseriu_campo) {
                     trigger_error('O campo "'.$nome_objeto.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo retorou um tipo "'.gettype($inseriu_campo).'" e deveria retornar um "bool")', E_USER_ERROR);

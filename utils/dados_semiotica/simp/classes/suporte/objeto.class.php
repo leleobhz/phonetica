@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.36
+// Versao: 1.3.0.41
 // Data: 06/08/2007
-// Modificado: 05/06/2009
+// Modificado: 09/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -1966,8 +1966,12 @@ XML;
         if (self::$em_transacao) {
             return true;
         }
-        self::$em_transacao = true;
-        return self::$dao->inicio_transacao($modo);
+        if (is_null($modo)) {
+            self::$em_transacao = (bool)self::$dao->inicio_transacao();
+        } else {
+            self::$em_transacao = (bool) self::$dao->inicio_transacao($modo);
+        }
+        return self::$em_transacao;
     }
 
 
@@ -2014,26 +2018,12 @@ XML;
         if (!empty($prefixo)) {
             $prefixo .= '_';
         }
-
-        // Definir o id_form da entidade
-        if (!empty($id_form))  {
-            $this->id_form = $prefixo.$id_form;
-        } else {
+        if (empty($id_form))  {
             trigger_error('O ID do formulario nao pode ser nulo', E_USER_ERROR);
         }
 
-        // Definir o id_form dos objetos filhos
-        if ($this->existe()) {
-            $this->consultar_campos(array_keys($this->get_definicoes_rel_uu()));
-        }
-        foreach ($this->get_definicoes_rel_uu() as $chave_fk => $def) {
-            $obj_filho = $this->__get($def->nome);
-            if ($def->forte) {
-                $obj_filho->set_id_form($this->id_form);
-            } elseif (isset(self::$instancias[$def->classe][$obj_filho->get_valor_chave()])) {
-                self::$instancias[$def->classe][$obj_filho->get_valor_chave()]->id_form = $this->id_form;
-            }
-        }
+        // Definir o id_form da entidade
+        $this->id_form = $prefixo.$id_form;
     }
 
 
@@ -2558,16 +2548,19 @@ XML;
     //
     //     Define o valor de um atributo simples, passando por uma filtragem e validacao
     //
-    final public function set_atributo($nome_atributo, $valor) {
+    final public function set_atributo($nome_atributo, $valor, $filtrar = true) {
     // String $nome_atributo: nome do atributo
     // Mixed $valor: valor do atributo
+    // Bool $filtrar: flag indicando se o valor deve ser filtrado ou nao
     //
         // Se usou a notacao objeto:atributo
         if (strpos($nome_atributo, ':') !== false) {
             $args = func_get_args();
             return $this->recursao_atributo(__FUNCTION__, $args);
         }
-        $valor = $this->filtrar_valor($nome_atributo, $valor);
+        if ($filtrar) {
+            $valor = $this->filtrar_valor($nome_atributo, $valor);
+        }
         $valor_flag = $this->get_valor_flag_mudanca($nome_atributo, $valor);
 
         $atribuiu = false;
@@ -4202,13 +4195,19 @@ XML;
                               "<legend class=\"drag\" id=\"{$regioes[$chave]}\">{$chave}</legend>\n";
                         if ($this->possui_dados($campo)) {
                             foreach ($campo as $c) {
-                                $s .= $this->imprimir_atributo_filtrado($c, $chaves);
+                                if ($c == '-') {
+                                    $s .= "<hr />\n";
+                                } else {
+                                    $s .= $this->imprimir_atributo_filtrado($c, $chaves);
+                                }
                             }
                         } else {
                             $s .= "<p>N&atilde;o possui</p>\n";
                         }
                         $s .= "</fieldset>\n";
                     }
+                } elseif ($campo == '-') {
+                    $s .= "<hr />\n";
                 } else {
                     $s .= $this->imprimir_atributo_filtrado($campo, $chaves);
                 }

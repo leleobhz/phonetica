@@ -5,9 +5,9 @@
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 13/078/2007
-// Modificado: 27/02/2009
+// Modificado: 09/06/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -34,7 +34,5 @@ $dados_pagina->nav[] = '#index.php';
 $dados_pagina->nav[] = $modulo.'#index.php';
 $dados_pagina->nav[] = $modulo.'#exibir_eventos.php';
 $dados_pagina->nav[] = $modulo.'#'.basename(__FILE__);
-$dados_pagina->estilos = array($CFG->wwwlayout.'calendario.css',
-                               $CFG->wwwmods.$modulo.'/estilos.css.php');
 
 modulo::alterar('evento', $dados_form, $dados_pagina);

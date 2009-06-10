@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.3
+// Versao: 1.1.1.4
 // Data: 03/03/2007
-// Modificado: 16/03/2009
+// Modificado: 08/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -323,7 +323,7 @@ function desativar_usuario($cod_usuario, &$erros = array()) {
         $erros[] = 'O usu&aacute;rio n&atilde;o pode ser desativado pois n&atilde;o existe';
         return false;
     }
-    $usuario->cancelado = 1;
+    $usuario->cancelado = true;
     if (!$usuario->salvar()) {
         $erros = $usuario->get_erros();
         return false;
@@ -346,7 +346,7 @@ function ativar_usuario($cod_usuario, &$erros = array()) {
         $erros[] = 'O usu&aacute;rio n&atilde;o pode ser ativado pois n&atilde;o existe';
         return false;
     }
-    $usuario->cancelado = 0;
+    $usuario->cancelado = false;
     if (!$usuario->salvar()) {
         $erros = $usuario->get_erros();
         return false;

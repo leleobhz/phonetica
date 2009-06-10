@@ -4,9 +4,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.27
+// Versao: 1.0.0.28
 // Data: 20/12/2007
-// Modificado: 04/05/2009
+// Modificado: 09/06/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -1166,6 +1166,22 @@ function class_calendario(div) {
     //     Adiciona um link ao div
     //
     this.adicionar_link = function() {
+
+        // Incluir CSS de calendario como processing instruction
+        if (class_calendario.instancias.length == 1) {
+            try {
+                var estilo = document.createProcessingInstruction('xml-stylesheet', 'href="' + wwwroot + 'layout/calendario.css" type="text/css" media="screen" charset="utf-8"');
+                document.insertBefore(estilo, document.firstChild);
+            } catch (e) {
+                var estilo = document.createElement("link");
+                estilo.setAttribute("rel", "stylesheet");
+                estilo.setAttribute("type", "text/css");
+                estilo.setAttribute("charset", "utf-8");
+                estilo.setAttribute("media", "screen");
+                estilo.setAttribute("href", wwwroot + "layout/calendario.css");
+                document.getElementsByTagName("head").item(0).appendChild(estilo);
+            }
+        }
 
         // Criar imagem de um calendario
         var s = "Selecionar pelo Calendario";

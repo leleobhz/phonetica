@@ -2,8 +2,6 @@
 //@ignoredoc
 require_once('../config.php');
 
-$estilos = array($CFG->wwwlayout.'calendario.css');
-
 $dados    = formulario::get_dados();
 $arquivos = formulario::get_arquivos();
 
@@ -11,7 +9,7 @@ $arquivos = formulario::get_arquivos();
 $captcha_valido = $dados && captcha::validar($dados->captcha);
 
 $pagina = new pagina();
-$pagina->cabecalho('teste', array('' => 'Teste'), $estilos, false);
+$pagina->cabecalho('teste', array('' => 'Teste'), false);
 $pagina->inicio_conteudo();
 imprimir_form($dados);
 if ($dados) {
