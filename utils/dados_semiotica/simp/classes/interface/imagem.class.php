@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// Versao: 1.0.0.6
 // Data: 28/02/2008
-// Modificado: 29/09/2008
+// Modificado: 10/06/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -482,6 +482,49 @@ final class imagem {
                 $tom_cinza = min(255, max(0, $tom_cinza));
                 $cor_cinza = imagecolorallocate($this->img, $tom_cinza, $tom_cinza, $tom_cinza);
                 imagesetpixel($this->img, $x, $y, $cor_cinza);
+            }
+        }
+    }
+
+
+    //
+    //     Inclui quadriclado na imagem
+    //
+    public function incluir_quadriculado($largura = '20px', $altura = '20px', $cor_linha = '#000000') {
+    // String $largura: largura das celulas (px ou %)
+    // String $altura: altura das celulas (px ou %)
+    // String $cor_linha: cor em HTML da linha usada no quadriculado
+    //
+        $altura_img = $this->get_altura();
+        $largura_img = $this->get_largura();
+
+        // Converter altura
+        sscanf($altura, '%d%s', $altura, $unidade);
+        switch ($unidade) {
+        case '%':
+            $altura = $altura * $altura_img / 100;
+            break;
+        }
+
+        // Converter largura
+        sscanf($largura, '%d%s', $largura, $unidade);
+        switch ($unidade) {
+        case '%':
+            $largura = $largura * $largura_img / 100;
+            break;
+        }
+
+        $cor_linha = $this->get_cor($cor_linha);
+
+        for ($x = $largura; $x < $largura_img; $x += $largura) {
+
+            // Criar linha vertical
+            imageline($this->img, $x, 0, $x, $altura_img, $cor_linha);
+
+            for ($y = $altura; $y < $altura_img; $y += $altura) {
+
+                // Criar linha horizontal
+                imageline($this->img, 0, $y, $largura_img, $y, $cor_linha);
             }
         }
     }

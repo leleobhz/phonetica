@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.11
+// Versao: 1.1.1.12
 // Data: 01/02/2008
-// Modificado: 27/05/2009
+// Modificado: 12/06/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -102,6 +102,7 @@ final class modulo {
                     case 'inserir.php':
                         $class = 'inserir';
                         break;
+                    case 'importar.php':
                     case 'importar_csv.php':
                     case 'importar_xml.php':
                         $class = 'importar';

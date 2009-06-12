@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.18
+// Versao: 1.0.0.19
 // Data: 12/09/2007
-// Modificado: 02/04/2009
+// Modificado: 10/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -100,6 +100,7 @@ function listar_classes() {
     echo '<p>'.icone::img('amarelo', 'protected').' = protected</p>';
     echo '<p>'.icone::img('verde', 'public').' = public</p>';
     echo '<p>'.icone::img('adicionar', 'sobrescrever').' = pode ser sobrescrito(a)</p>';
+    echo '<p>* = Classe derivada da classe "objeto" (entidade do sistema)</p>';
 }
 
 
@@ -125,13 +126,17 @@ function imprimir_classe($classe) {
     }
     if ($tipo) { $tipo = '<span class="tipo">'.trim($tipo).'</span> '; }
 
+    $rc_objeto = new ReflectionClass('objeto');
+    $eh_entidade = $rc->isSubclassOf($rc_objeto);
+    $asterisco = $eh_entidade ? '*' : '';
+
     $link = $CFG->site;
     link::normalizar($link, true);
     $link = link::adicionar_atributo($link, 'classe', $classe);
 
     echo "<div id=\"classe_{$classe}\">\n";
     echo "<p><strong>";
-    link::texto($link, $tipo.$classe);
+    link::texto($link, $tipo.$classe.$asterisco);
     echo "</strong></p>\n";
     if ($_SESSION['devel']['classe_aberta'] == $classe) {
         $arquivo = $rc->getFileName();
@@ -142,7 +147,7 @@ function imprimir_classe($classe) {
         echo "<p><strong>Arquivo:</strong> {$arquivo}</p>\n";
         echo "<p><strong>Instanci&aacute;vel:</strong> {$instanciavel}</p>\n";
         echo "<p><strong>Iter&aacute;vel:</strong> {$iteravel}</p>\n";
-        imprimir_atributos($classe, $rc);
+        imprimir_atributos($classe, $rc, $eh_entidade);
         imprimir_metodos($classe, $rc);
         echo "</div>\n";
     }
@@ -153,22 +158,14 @@ function imprimir_classe($classe) {
 //
 //     Imprime os atributos da classe informada
 //
-function imprimir_atributos($classe, $rc) {
+function imprimir_atributos($classe, $rc, $entidade) {
 // String $classe: nome da classe
 // ReflectionClass $rc: dados da classe
+// Bool $entidade: indica se eh uma entidade ou nao
 //
     global $CFG;
     if ($rc->isInstantiable()) {
-        $extensao_objeto = false;
-        $pai = $rc;
-        do {
-            $pai = $pai->getParentClass();
-            if ($pai && $pai->name == 'objeto') {
-                $extensao_objeto = true;
-                break;
-            }
-        } while ($pai);
-        if ($extensao_objeto) {
+        if ($entidade) {
             $obj = new $classe();
             $atributos  = $obj->get_atributos();
             $implicitos = $obj->get_implicitos();
@@ -192,11 +189,14 @@ function imprimir_atributos($classe, $rc) {
                     $link = link::adicionar_atributo($link, 'atributo', $nome);
 
                     $tipo = '<span class="tipo">'.$atributo->tipo.'</span> ';
-                    $descricao = $tipo.$nome;
+
+                    $enum = $rc->hasMethod('get_vetor_'.$nome) ? ' <span>{enum}</span>' : '';
+
+                    $descricao = $tipo.$nome.$enum;
                     echo "<li>\n";
                     link::texto($link, $descricao);
                     if (isset($_SESSION['devel']['atributos'][$nome])) {
-                        imprimir_atributo_virtual_simples($atributo);
+                        imprimir_atributo_virtual_simples($obj, $rc, $atributo);
                     }
                     echo "</li>\n";
                 }
@@ -429,7 +429,9 @@ function imprimir_metodo($m) {
 //
 //     Imprime um atributo virtual simples (derivado da classe objeto)
 //
-function imprimir_atributo_virtual_simples($atributo) {
+function imprimir_atributo_virtual_simples($obj, $rc, $atributo) {
+// objeto $obj: objeto da classe
+// ReflectionClass $rc: dados da classe
 // atributo $atributo: definicao do atributo
 //
     global $CFG;
@@ -473,6 +475,20 @@ function imprimir_atributo_virtual_simples($atributo) {
         echo "<p><strong>Tamanho:</strong> {$tamanho}</p>\n";
         break;
     }
+
+    // Se eh um tipo enum
+    $metodo = 'get_vetor_'.$atributo->nome;
+    if ($rc->hasMethod($metodo)) {
+        $valores = $obj->{$metodo}();
+
+        echo "<p><strong>Enum:</strong></p>\n";
+        echo "<ul>\n";
+        foreach ($valores as $chave => $valor) {
+            echo "<li>{$chave} = {$valor}</li>\n";
+        }
+        echo "</ul>\n";
+    }
+    
     echo "</div>\n";
 }
 

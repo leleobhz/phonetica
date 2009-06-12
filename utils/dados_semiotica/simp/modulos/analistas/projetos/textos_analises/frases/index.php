@@ -21,6 +21,10 @@ $dados_lista = new stdClass();
 $dados_lista->opcoes = array('exibir', 'alterar', 'analises', 'excluir');
 $dados_lista->campos = array('conteudo');
 $dados_lista->ordem  = 'cod_frase';
+$dados_lista->links = array(
+    'inserir.php',
+    'importar.php'
+);
 
 /// Dados da Pagina
 $dados_pagina = new stdClass();
