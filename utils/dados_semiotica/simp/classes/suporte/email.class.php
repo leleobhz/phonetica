@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.19
+// Versao: 1.0.0.20
 // Data: 16/08/2007
-// Modificado: 02/06/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -741,12 +741,20 @@ final class email {
     //
         if (extension_loaded('mhash')) {
             if ($key === '') {
-                $mhash = mhash(MHASH_MD5, $data);
+                $hmac = mhash(MHASH_MD5, $data);
             } else {
-                $mhash = mhash(MHASH_MD5, $data, $key);
+                $hmac = mhash(MHASH_MD5, $data, $key);
             }
-            return $mhash;
+            return $hmac;
+        } elseif (extension_loaded('hash') && in_array('md5', hash_algos())) {
+            if (!$chave) {
+                $hmac = hash('md5', $str, true);
+            } else {
+                $hmac = hash_hmac('md5', $str, $chave, true);
+            }
+            return $hmac;
         }
+
         if (!$key) {
             return pack('H*', md5($data));
         }

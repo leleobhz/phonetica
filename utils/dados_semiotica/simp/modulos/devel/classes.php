@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.19
+// Versao: 1.0.1.0
 // Data: 12/09/2007
-// Modificado: 10/06/2009
+// Modificado: 29/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -15,6 +15,7 @@ require_once('../../config.php');
 
 
 /// Dados do quadro
+$dados  = formulario::get_dados();
 $modulo = util::get_modulo(__FILE__);
 $titulo = 'Classes do Sistema';
 $nav = array();
@@ -31,16 +32,67 @@ require_once($CFG->dirmods.$modulo.'/bloqueio.php');
 $pagina = new pagina();
 $pagina->cabecalho($titulo, $nav, $estilos);
 $pagina->inicio_conteudo($titulo);
-listar_classes();
+logica_listar_classes($dados);
 $pagina->fim_conteudo();
 $pagina->rodape();
 exit(0);
 
 
 //
+//     Gera a logica de listagem de classes
+//
+function logica_listar_classes($dados) {
+// Object $dados: dados submetidos
+//
+    imprimir_formulario($dados);
+    if ($dados) {
+        $_SESSION['devel']['form_classes'] = serialize($dados);
+        listar_classes($dados);
+    } elseif (isset($_SESSION['devel']['form_classes'])) {
+        $dados = unserialize($_SESSION['devel']['form_classes']);
+        listar_classes($dados);
+    }
+}
+
+
+//
+//     Imprime o formulario de selecao de classes
+//
+function imprimir_formulario($dados) {
+// Object $dados: dados submetidos
+//
+    global $CFG;
+    $action = $CFG->site;
+    link::normalizar($action, true);
+
+    $vt_tipos = array('Tradicionais' =>
+                          array(
+                              'suporte'      => 'Suporte',
+                              'interface'    => 'Interface',
+                              'dao'          => 'Acesso a Dados',
+                              'autenticacao' => 'Autentica&ccedil;&atilde;o',
+                              'tradicionais' => 'Todas'
+                          ),
+                      'Entidades da Aplica&ccedil;&atilde;o' =>
+                          array(
+                              'entidades' => 'Todas'
+                          )
+                      );
+
+    $form = new formulario($action, 'form_classes');
+    $form->titulo_formulario('Filtro de classes');
+    $form->campo_select('tipo', 'tipo', $vt_tipos, $dados->tipo, 'Tipo');
+    $form->campo_submit('enviar', 'enviar', 'Filtrar');
+    $form->imprimir();
+}
+
+
+//
 //     Lista as classes do sistema
 //
-function listar_classes() {
+function listar_classes($dados) {
+// Object $dados: dados submetidos
+//
     global $CFG;
 
     if (!extension_loaded('reflection')) {
@@ -83,7 +135,26 @@ function listar_classes() {
     }
 
     try {
-        $classes = listas::get_classes($CFG->dirclasses, false, false);
+        switch ($dados->tipo) {
+        case 'suporte':
+        case 'interface':
+        case 'dao':
+        case 'autenticacao':
+            $classes = listas::get_classes($CFG->dirclasses.$dados->tipo.'/', false, false);
+            break;
+        case 'tradicionais':
+            $classes = listas::get_classes($CFG->dirclasses.'suporte/', false, false) +
+                       listas::get_classes($CFG->dirclasses.'interface/', false, false) +
+                       listas::get_classes($CFG->dirclasses.'dao/', false, false) +
+                       listas::get_classes($CFG->dirclasses.'autenticacao/', false, false);
+            break;
+        case 'entidades':
+            $classes = listas::get_classes($CFG->dirclasses.'extensao/', 'objeto', true);
+            break;
+        default:
+            mensagem::erro('Tipo de classe inv&aacute;lido: '.texto::codificar($dados->tipo));
+            return false;
+        }
     } catch (Exception $e) {
         mensagem::erro('Alguma classe possui um erro conceitual');
         return false;
@@ -100,7 +171,6 @@ function listar_classes() {
     echo '<p>'.icone::img('amarelo', 'protected').' = protected</p>';
     echo '<p>'.icone::img('verde', 'public').' = public</p>';
     echo '<p>'.icone::img('adicionar', 'sobrescrever').' = pode ser sobrescrito(a)</p>';
-    echo '<p>* = Classe derivada da classe "objeto" (entidade do sistema)</p>';
 }
 
 
@@ -124,11 +194,12 @@ function imprimir_classe($classe) {
     } elseif ($rc->isFinal()) {
         $tipo .= 'final ';
     }
-    if ($tipo) { $tipo = '<span class="tipo">'.trim($tipo).'</span> '; }
+    if ($tipo) {
+        $tipo = '<span class="tipo">'.trim($tipo).'</span> ';
+    }
 
     $rc_objeto = new ReflectionClass('objeto');
     $eh_entidade = $rc->isSubclassOf($rc_objeto);
-    $asterisco = $eh_entidade ? '*' : '';
 
     $link = $CFG->site;
     link::normalizar($link, true);
@@ -136,7 +207,7 @@ function imprimir_classe($classe) {
 
     echo "<div id=\"classe_{$classe}\">\n";
     echo "<p><strong>";
-    link::texto($link, $tipo.$classe.$asterisco);
+    link::texto($link, $tipo.$classe, false, false, false, false, true, false);
     echo "</strong></p>\n";
     if ($_SESSION['devel']['classe_aberta'] == $classe) {
         $arquivo = $rc->getFileName();
@@ -194,7 +265,7 @@ function imprimir_atributos($classe, $rc, $entidade) {
 
                     $descricao = $tipo.$nome.$enum;
                     echo "<li>\n";
-                    link::texto($link, $descricao);
+                    link::texto($link, $descricao, false, false, false, false, true, false);
                     if (isset($_SESSION['devel']['atributos'][$nome])) {
                         imprimir_atributo_virtual_simples($obj, $rc, $atributo);
                     }
@@ -216,7 +287,7 @@ function imprimir_atributos($classe, $rc, $entidade) {
                     $link = link::adicionar_atributo($link, 'atributo', $nome);
 
                     echo "<li>\n";
-                    link::texto($link, $nome);
+                    link::texto($link, $nome, false, false, false, false, true, false);
                     if (isset($_SESSION['devel']['atributos'][$nome])) {
                         imprimir_atributo_virtual_implicito($implicito);
                     }
@@ -239,7 +310,7 @@ function imprimir_atributos($classe, $rc, $entidade) {
                     $tipo = '<span class="tipo">'.$def->classe.'</span> ';
                     $descricao = $tipo.$def->nome;
                     echo "<li>\n";
-                    link::texto($link, $descricao);
+                    link::texto($link, $descricao, false, false, false, false, true, false);
                     if (isset($_SESSION['devel']['atributos'][$def->nome])) {
                          imprimir_atributo_virtual_uu($def);
                     }
@@ -262,7 +333,7 @@ function imprimir_atributos($classe, $rc, $entidade) {
                     $tipo = '<span class="tipo">'.$def->classe.'[]</span> ';
                     $descricao = $tipo.$nome;
                     echo "<li>\n";
-                    link::texto($link, $descricao);
+                    link::texto($link, $descricao, false, false, false, false, true, false);
                     if (isset($_SESSION['devel']['atributos'][$nome])) {
                          imprimir_atributo_virtual_un($def);
                     }
@@ -381,14 +452,16 @@ function imprimir_metodos($classe, $rc) {
                 $img_escrever = '';
             }
 
-            if ($tipo) { $tipo = '<span class="tipo">'.trim($tipo).'</span> '; }
+            if ($tipo) {
+                $tipo = '<span class="tipo">'.trim($tipo).'</span> ';
+            }
 
             $link = $CFG->site;
             link::normalizar($link, true);
             $link = link::adicionar_atributo($link, 'metodo', $m->getName());
 
             echo "<li>\n";
-            link::texto($link, $img.$img_escrever.' '.$tipo.$m->getName());
+            link::texto($link, $img.$img_escrever.' '.$tipo.$m->getName(), false, false, false, false, true, false);
             if (isset($_SESSION['devel']['metodos'][$m->getName()])) {
                 imprimir_metodo($m);
             }

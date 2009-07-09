@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.23
+// Versao: 1.1.0.26
 // Data: 03/03/2007
-// Modificado: 16/04/2009
+// Modificado: 08/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -61,12 +61,13 @@ require_once($dirroot.'constantes.php');
 /// VARIAVEIS UTEIS
 $CFG->sistema    = $sistema;
 $CFG->dominio    = $dominio;
+$CFG->localhost  = $localhost;
 $CFG->path       = $path;
 $CFG->versao     = $versao;
 $CFG->instalacao = $instalacao;
 $CFG->charset    = $charset;
 $CFG->utf8       = strcasecmp($CFG->charset, 'utf-8') == 0;
-$CFG->ip         = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '?.?.?.?';
+$CFG->ip         = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
 $CFG->microtime  = microtime(1);
 $CFG->time       = time();
 $CFG->time_simp  = strftime('%d-%m-%Y-%H-%M-%S', $CFG->time);
@@ -75,6 +76,12 @@ $CFG->gmt        = '%a, %d %b %Y %T %Z';
 $CFG->id         = $CFG->ip.$CFG->sistema;
 $CFG->vt_temas   = $vt_temas;
 unset($sistema, $dominio, $path, $versao, $instalacao, $charset, $vt_temas);
+
+if ($CFG->localhost) {
+    $CFG->dominio_cookies = false;
+} else {
+    $CFG->dominio_cookies = $CFG->dominio;
+}
 
 
 /// COOKIES E SESSOES
@@ -127,6 +134,7 @@ unset($bd_config);
 
 
 /// FUNCOES PARA CARREGAMENTO AUTOMATICO DE CLASSES
+$CFG->classes_carregadas = 0;
 
 
 //
@@ -185,6 +193,7 @@ function simp_autoload($classe) {
 
     // Se existem arquivos a serem incluidos
     if (count($arquivos)) {
+        $CFG->classes_carregadas += 1;
         foreach ($arquivos as $a) {
             require_once($a);
         }
@@ -216,13 +225,8 @@ unset($funcoes_autoload);
 
 
 /// INICIAR SESSAO
-$CFG->localhost = $localhost;
 session_name($CFG->id_session);
-if (!$CFG->localhost) {
-    session_set_cookie_params($CFG->time + $CFG->tempo_session, $CFG->path, $CFG->dominio, 0);
-} else {
-    session_set_cookie_params($CFG->time + $CFG->tempo_session, $CFG->path);
-}
+session_set_cookie_params($CFG->time + $CFG->tempo_session, $CFG->path, $CFG->dominio_cookies);
 
 // Path para guardar as sessoes (caso o sistema esteja instalado)
 if ($CFG->versao && !isset($_COOKIE['instalando'])) {
@@ -240,8 +244,8 @@ if ($CFG->versao && !isset($_COOKIE['instalando'])) {
         $novo_save_path = realpath($save_path).'/'.$CFG->path_session;
         if (!is_dir($novo_save_path) && is_writeable($save_path)) {
             if (mkdir($novo_save_path)) {
-                chmod($novo_save_path, 0330);
-                chown($novo_save_path, 'root');
+                @chmod($novo_save_path, 0333);
+                @chown($novo_save_path, 'root');
             } else {
                 $novo_save_path = $save_path;
             }
@@ -263,13 +267,8 @@ if (!defined('IGNORAR_SESSAO') && php_sapi_name() != 'cli') {
     // Se o tempo expirou: apagar a sessao e o cookie de sessao
     } elseif ($_SESSION['inicio_sessao'] + $CFG->tempo_session < $CFG->time) {
         session_destroy();
-        if (!$CFG->localhost) {
-            setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path, $CFG->dominio);
-            setcookie('sessao_expirada', 1, $CFG->time + 10, $CFG->path, $CFG->dominio);
-        } else {
-            setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path);
-            setcookie('sessao_expirada', 1, $CFG->time + 10, $CFG->path);
-        }
+        setcookie($CFG->id_session, false, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
+        setcookie('sessao_expirada', 1, $CFG->time + 10, $CFG->path, $CFG->dominio_cookies);
         unset($_SESSION, $_COOKIE[$CFG->id_session]);
     }
 } else {

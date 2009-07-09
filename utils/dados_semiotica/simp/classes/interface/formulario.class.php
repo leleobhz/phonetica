@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.27
+// Versao: 1.1.1.28
 // Data: 06/08/2007
-// Modificado: 01/06/2009
+// Modificado: 19/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -146,7 +146,7 @@ class formulario {
             return is_array($submetidos) ? $submetidos : array();
         }
 
-        // Para cada chava desejada: checar se foi submtido o valor
+        // Para cada chave desejada: checar se foi submtido o valor
         foreach ($padrao as $chave => $valor) {
             if (is_array($submetidos) && isset($submetidos[$chave])) {
                 $valor_submetido = $submetidos[$chave];
@@ -256,10 +256,10 @@ class formulario {
     public function montar_id($campo) {
     // String $campo: nome do campo
     //
-        if (!count($this->vt_nome)) { return $campo; }
-        $vetor = array_values($this->vt_nome);
-        $ultimo = array_pop($vetor);
-        return $ultimo.'-'.$campo;
+        if (!count($this->vt_nome)) {
+            return $campo;
+        }
+        return implode('-', $this->vt_nome).'-'.$campo;
     }
 
 
@@ -1469,6 +1469,20 @@ class formulario {
         $icone_ajuda = self::montar_ajuda($ajuda);
         $dois_pontos = ($dois_pontos && FORMULARIO_IE) ? ':' : '';
         return "  <label id=\"label_{$id}\" for=\"{$id}\"{$class}>{$nome}{$icone_ajuda}{$dois_pontos}</label>\n";
+    }
+
+
+    //
+    //     Insere uma meta-informacao sobre determinado campo do formulario
+    //
+    public function meta_informacao($id_campo, $valor, $return = false) {
+    // String $id_campo: identificador do campo ao qual estara associada a meta-informacao
+    // String $valor: valor da meta-informacao
+    // Bool $return: indica se a meta-informacao deve ser retornada ou inserida no formulario
+    //
+        $m = "<meta name=\"{$id_campo}\" content=\"{$valor}\" />";
+        if ($return) { return $m; }
+        $this->campos[] = $m;
     }
 
 

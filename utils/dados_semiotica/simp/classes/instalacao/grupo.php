@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// Versao: 1.0.0.6
 // Data: 05/09/2007
-// Modificado: 04/06/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -21,13 +21,17 @@ function instalar_grupo(&$erros) {
     $r = true;
 
     $g = new grupo();
-    if ($g->quantidade_registros()) {
+    if ($g->possui_registros()) {
         return true;
     }
 
-    $r = $r && inserir_grupo('Administradores', $erros);
-    $r = $r && inserir_grupo('Gerentes', $erros);
-    $r = $r && inserir_grupo('Analistas', $erros);
+    $grupos = array('Administradores',
+                    'Gerentes',
+                    'Analistas');
+
+    foreach ($grupos as $grupo) {
+        $r = $r && inserir_grupo($grupo, $erros);
+    }
 
     return $r;
 }
@@ -36,8 +40,9 @@ function instalar_grupo(&$erros) {
 //
 //     Insere um novo grupo
 //
-function inserir_grupo($nome) {
+function inserir_grupo($nome, &$erros) {
 // String $nome: nome do grupo
+// Array[String] $erros: vetor de erros
 //
     $g = new grupo();
     $g->nome = $nome;

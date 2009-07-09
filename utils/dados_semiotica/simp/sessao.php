@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// Versao: 1.0.0.12
 // Data: 03/03/2007
-// Modificado: 18/03/2009
+// Modificado: 22/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -72,7 +72,7 @@ try {
 
 // Checar permissoes de acesso a pagina
 $arq = $CFG->site;
-if (eregi($CFG->wwwmods, $arq)) {
+if (strpos($arq, $CFG->wwwmods) !== false) {
     $arq = str_replace($CFG->wwwmods, '', $arq);
 
     // Separar o que vem antes da ultima barra do restante (diretorio e arquivo)

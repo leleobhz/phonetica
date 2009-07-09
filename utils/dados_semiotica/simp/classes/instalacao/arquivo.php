@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.17
+// Versao: 1.0.0.19
 // Data: 10/09/2007
-// Modificado: 18/03/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -21,7 +21,7 @@ function instalar_arquivo(&$erros) {
     $r = true;
 
     $a = new arquivo();
-    if ($a->quantidade_registros()) {
+    if ($a->possui_registros()) {
         return true;
     }
 
@@ -82,12 +82,8 @@ function inserir_arquivo($modulo, $arquivo, $descricao, &$erros) {
     $r = $a->validacao_final($dados) && $a->salvar();
 
     if (!$r) {
-        $vetor_erros  = $a->get_erros();
-        $vetor_erros2 = array();
-        foreach ($vetor_erros as $item) {
-            $vetor_erros2[] = $item." (arquivo: {$arquivo} / m&oacute;dulo: {$modulo})";
-        }
-        $erros = array_merge($erros, $vetor_erros2);
+        $erros[] = "Erro no arquivo {$arquivo} / m&oacute;dulo {$modulo}:";
+        $erros[] = $a->get_erros();
     }
     return $r;
 }

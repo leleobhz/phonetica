@@ -5,16 +5,14 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// Versao: 1.0.1.0
 // Data: 17/04/2008
-// Modificado: 22/05/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
-//TODO: Criar um mecanismo de criacao de consultas de forma textual (inclui a definicao de uma gramatica e um parser de conversao)
-
-// Constantes
+// Tipos de condicao
 define('CONDICAO_SQL_VAZIA',       0); // Nenhuma condicao
 define('CONDICAO_SQL_SIMPLES',     1); // Dois operandos
 define('CONDICAO_SQL_COMPOSTA',    2); // N operandos
@@ -148,7 +146,7 @@ final class condicao_sql {
                     return "condicao_sql::montar('{$operando1}', '&lt;&gt;', null, false{$id})";
                 }
             } else {
-                $operando2 = texto::codificar($this->valores['operando2']);
+                $operando2 = str_replace("'", "\\'", texto::codificar($this->valores['operando2']));
                 $operador = texto::codificar($this->valores['operador']);
                 $entre_atributos = $this->valores['entre_atributos'] ? 'true' : 'false';
                 return "condicao_sql::montar('{$operando1}', '{$operador}', '{$operando2}', {$entre_atributos}{$id})";
@@ -167,7 +165,7 @@ final class condicao_sql {
             $operador = $this->valores['operador'];
             if ($operador == 'NOT') {
                 $condicao = strval($this->valores['condicao']);
-                return "condicao_sql::sql_not({$condicao})";
+                return "condicao_sql::sql_not(\n{$condicao}\n)";
             }
             break;
         case CONDICAO_SQL_AGRUPAMENTO:
@@ -213,6 +211,7 @@ final class condicao_sql {
 
         // Operadores especiais
         switch ($operador) {
+        case '!~':
         case 'UNLIKE':
             $operador = 'LIKE';
             $condicao = new $classe(CONDICAO_SQL_SIMPLES);
@@ -703,6 +702,297 @@ final class condicao_sql {
             $obj = (object)$valores;
             $obj->condicao = $this->valores['condicao']->exportar();
             return $obj;
+        }
+    }
+
+
+/// @ METODOS DO PARSER
+
+
+    //
+    //     Cria uma condicao a partir de uma string "SIMP SQL"
+    //
+    public static function parse($simp_sql) {
+    // String $simp_sql: SQL especial do Simp
+    //
+        // Quebrar a string em tokens
+        $tokens = self::get_tokens($simp_sql);
+
+        // Estruturar os tokens hierarquicamente
+        $tokens = self::estruturar_tokens($tokens, 0, count($tokens));
+
+        return self::criar_condicao_token($tokens);
+    }
+
+
+    //
+    //     Quebra uma string "SIMP SQL" em tokens
+    //
+    public static function get_tokens($simp_sql) {
+    // String $simp_sql: SQL especial do Simp
+    //
+        $tokens = array();
+
+        $parenteses = 0;
+        $contexto_valor = false;
+        $buffer = '';
+
+        $len = strlen($simp_sql);
+        for ($i = 0; $i < $len; ++$i) {
+            $char = $simp_sql[$i];
+            switch ($char) {
+            case '(':
+                if ($contexto_valor) {
+                    $buffer .= '(';
+                } else {
+                    if ($buffer !== '') {
+                        $token = new token_sql(TOKEN_SQL_STRING, $buffer);
+                        $tokens[] = $token;
+                        $buffer = '';
+                    }
+                    $tokens[] = new token_sql(TOKEN_SQL_ABRE_PARENTESES, '(');
+                    $contexto_valor = false;
+                }
+                break;
+            case ')':
+                if ($contexto_valor) {
+                    $buffer .= ')';
+                } else {
+                    if ($buffer !== '') {
+                        $token = new token_sql(TOKEN_SQL_STRING, $buffer);
+                        $tokens[] = $token;
+                        $buffer = '';
+                    }
+                    $tokens[] = new token_sql(TOKEN_SQL_FECHA_PARENTESES, ')');
+                    $contexto_valor = false;
+                }
+                break;
+
+            case ' ':
+            case "\t":
+            case "\n":
+            case "\r":
+                if ($contexto_valor) {
+                    $buffer .= $char;
+                } else {
+                    if ($buffer !== '') {
+                        $token = new token_sql(TOKEN_SQL_STRING, $buffer);
+                        $tokens[] = $token;
+                        $buffer = '';
+                    }
+                }
+                break;
+
+            case '\\':
+                if ($contexto_valor) {
+
+                    // Escapou o abre aspas
+                    if ($simp_sql[$i + 1] == "'") {
+                        $buffer .= "'";
+                        $i += 1;
+                    } else {
+                        $buffer .= $char;
+                    }
+                } else {
+                    $buffer .= $char;
+                }
+                break;
+
+            case "'":
+                if ($contexto_valor) {
+                    $token = new token_sql(TOKEN_SQL_STRING_ASPAS, $buffer);
+                    $tokens[] = $token;
+                    $buffer = '';
+                    $contexto_valor = false;
+                } else {
+                    $contexto_valor = true;
+                }
+                break;
+            default:
+                $buffer .= $char;
+                break;
+            }
+        }
+        if ($buffer !== '') {
+            $token = new token_sql(TOKEN_SQL_STRING, $buffer);
+            $tokens[] = $token;
+            $buffer = '';
+        }
+
+        if ($parenteses != 0) {
+            trigger_error('Erro na condicao "'.$simp_sql.'": erro na quantidade de parenteses', E_USER_ERROR);
+        }
+        return $tokens;
+    }
+
+
+    //
+    //     Estrutura os tokens hierarquicamente
+    //
+    public static function estruturar_tokens($tokens, $posicao, $total) {
+    // Array[token_sql] $tokens: vetor de tokens
+    // Int $posicao: posicao do vetor de tokens
+    // Int $total: tamanho do vetor de tokens
+    //
+        $vetor = array();
+
+        $parenteses = 0;
+        $parar = false;
+        for ($i = $posicao; $i < $total && !$parar; $i++) {
+            $token = $tokens[$i];
+            switch ($token->valor) {
+            case '(':
+                $parenteses += 1;
+                if ($parenteses == 1) {
+                    $vetor[] = self::estruturar_tokens($tokens, $i + 1, $total);
+                }
+                break;
+            case ')':
+                if ($parenteses == 0) {
+                    $parar = true;
+                    break;
+                }
+                $parenteses -= 1;
+                break;
+            default:
+                if ($parenteses == 0) {
+                    $vetor[] = $token;
+                }
+                break;
+            }
+        }
+        return $vetor;
+    }
+
+
+    //
+    //     Cria a condicao a partir de um vetor estruturado de tokens
+    //
+    public static function criar_condicao_token($tokens) {
+    // Array[token_sql || Type] $tokens: vetor de tokens
+    //
+        $count = count($tokens);
+        if ($count == 0) {
+            return self::vazia();
+        } elseif ($count == 1) {
+            if (!is_array($tokens[0])) {
+                trigger_error('Token invalido: esperado um vetor', E_USER_ERROR);
+            }
+            return self::criar_condicao_token($tokens[0]);
+        }
+
+        $vt_condicoes = array();
+        $tipo_agrupamento = false;
+        do {
+
+            // Obter token
+            $token = array_shift($tokens);
+
+            if (is_array($token)) {
+                $vt_condicoes[] = self::criar_condicao_token($token);
+            } else {
+
+                switch (strtoupper($token->valor)) {
+
+                // Checar se e' um operador unitario
+                case 'NOT':
+                case '!':
+                    $token = array_shift($tokens);
+                    if (!is_array($token)) {
+                        trigger_error('Token invalido: esperado um vetor na condicao de negacao', E_USER_ERROR);
+                    }
+                    $vt_condicoes[] = self::sql_not(self::criar_condicao_token($token));
+                    break;
+
+                // Checar se e' um operador de agrupamento
+                case 'AND':
+                case 'OR':
+                    $novo_tipo_agrupamento = strtoupper($token->valor);
+                    if (!$tipo_agrupamento || $novo_tipo_agrupamento == $tipo_agrupamento) {
+                        $tipo_agrupamento = $novo_tipo_agrupamento;
+                    } else {
+                        switch ($tipo_agrupamento) {
+                        case 'AND':
+                            $condicao = condicao_sql::sql_and($vt_condicoes);
+                            $vt_condicoes = array($condicao);
+                            break;
+                        case 'OR':
+                            $condicao = condicao_sql::sql_or($vt_condicoes);
+                            $vt_condicoes = array($condicao);
+                            break;
+                        }
+                        $tipo_agrupamento = $novo_tipo_agrupamento;
+                    }
+                    break;
+
+                default:
+                    if (is_array($token)) {
+                        $vt_condicoes[] = self::criar_condicao_token($token);
+                    } else {
+                        $operando1 = $token;
+                        $operador = array_shift($tokens);
+                        $nome_operador = strtoupper($operador->valor);
+                        switch ($nome_operador) {
+                        case '=':
+                        case '<>':
+                        case '!=':
+                        case '<':
+                        case '<=':
+                        case '>':
+                        case '>=':
+                        case '~':
+                        case '!~':
+                        case 'LIKE':
+                        case 'UNLIKE':
+                            $operando2 = array_shift($tokens);
+                            $entre_atributos = $operando2->tipo == TOKEN_SQL_STRING && !is_numeric($operando2->valor);
+                            $vt_condicoes[] = self::montar($operando1->valor, $nome_operador, $operando2->valor, $entre_atributos);
+                            break;
+
+                        case 'IS':
+                            $operando2 = array_shift($tokens);
+                            switch (strtoupper($operando2->valor)) {
+                            case 'NULL':
+                                $vt_condicoes[] = self::montar($operando1->valor, '=', null);
+                                break;
+                            case 'NOT':
+                                $operando3 = array_shift($tokens);
+                                switch (strtoupper($operando3->valor)) {
+                                case 'NULL':
+                                    $vt_condicoes[] = self::montar($operando1->valor, '<>', null);
+                                    break;
+                                default:
+                                    trigger_error('SQL invalida: aceita-se "IS NULL" ou "IS NOT NULL", mas foi informado "IS NOT '.$operando3->valor.'"', E_USER_ERROR);
+                                }
+                                break;
+                            default:
+                                trigger_error('SQL invalida: aceita-se "IS NULL" ou "IS NOT NULL", mas foi informado "IS '.$operando2->valor.'"', E_USER_ERROR);
+                            }
+                            break;
+
+                        default:
+                            trigger_error('SQL invalida: operador desconhecido "'.$operador->valor.'"', E_USER_ERROR);
+                        }
+                    }
+                }
+            }
+
+        } while (count($tokens));
+
+        $quantidade_condicoes = count($vt_condicoes);
+        switch ($quantidade_condicoes) {
+        case 0:
+            return self::vazia();
+        case 1:
+            return array_pop($vt_condicoes);
+        default:
+            switch ($tipo_agrupamento) {
+            case 'AND':
+                return self::sql_and($vt_condicoes);
+            case 'OR':
+                return self::sql_or($vt_condicoes);
+            }
+            break;
         }
     }
 

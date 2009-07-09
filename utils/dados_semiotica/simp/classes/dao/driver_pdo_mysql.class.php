@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.3
+// Versao: 1.0.0.4
 // Data: 14/10/2008
-// Modificado: 03/06/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -319,7 +319,7 @@ class driver_pdo_mysql extends driver_base {
     //
     //     Converte um registro para objeto
     //
-    public function fetch_object(&$resultado) {
+    public function fetch_object($resultado) {
     // PDOStatement $resultado: resultado de uma consulta
     //
         $classe = 'PDOStatement';
@@ -334,7 +334,7 @@ class driver_pdo_mysql extends driver_base {
     //
     //     Obtem o numero de resultados de um PDOStatement
     //
-    public function quantidade_registros(&$resultado) {
+    public function quantidade_registros($resultado) {
     // PDOStatement $resultado: resultado de uma consulta
     //
         $classe = 'PDOStatement';
@@ -349,7 +349,7 @@ class driver_pdo_mysql extends driver_base {
     //
     //     Obtem o numero de registros atingidos na ultima consulta
     //
-    public function registros_atingidos(&$resultado) {
+    public function registros_atingidos($resultado) {
     // PDOStatement $resultado: resultado a ser analisado
     //
         $classe = 'PDOStatement';

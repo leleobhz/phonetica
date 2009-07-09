@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.10
 // Data: 10/09/2007
-// Modificado: 10/02/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -66,10 +66,9 @@ function instalar_config(&$erros) {
     $c->estado = INSTALACAO_CONFIG_ESTADO;
     $c->palavras = INSTALACAO_CONFIG_PALAVRAS;
 
-    $r = $r && $c->salvar();
-
-    if (!$r) {
-        $erros = array_merge($erros, $c->get_erros());
+    if (!$c->salvar()) {
+        $r = false;
+        $erros[] = $c->get_erros();
     }
 
     return $r;

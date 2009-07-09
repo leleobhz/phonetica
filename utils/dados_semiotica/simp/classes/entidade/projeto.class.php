@@ -49,7 +49,7 @@ abstract class projeto_base extends objeto_formulario {
         unset($atributo);
 
         // CAMPO: data_entrada_dados
-        $atributo = new atributo('data_entrada_dados', 'Data Entrada Dados', '00-00-0000');
+        $atributo = new atributo('data_entrada_dados', 'Data de Entrada dos Dados', '00-00-0000');
         $atributo->set_tipo('data', true, false);
         $atributo->set_campo_formulario('data_hora');
         $atributo->set_validacao(false, false, false);

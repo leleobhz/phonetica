@@ -179,14 +179,13 @@ include_once($CFG->dirlayout.$tema.'/basico.css.php');
 #menu ul {
   list-style-type: none;
   list-style-image: none;
-  margin: 0px;
-  margin-bottom: 5px;
-  padding: 0px;
+  margin: 0 0 5px 0;
+  padding: 0;
 }
 
 #menu ul li {
   margin-top: 2px;
-  padding: 0px 4px 0px 4px;
+  padding: 0 4px 0 4px;
 }
 
 #menu a {

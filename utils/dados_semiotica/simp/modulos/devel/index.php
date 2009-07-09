@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// Versao: 1.0.0.12
 // Data: 30/07/2007
-// Modificado: 09/06/2009
+// Modificado: 24/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -42,20 +42,21 @@ function listar_opcoes_devel() {
     global $CFG, $modulo;
 
     // Informacoes
-    $info = array('info.php'         => 'Informa&ccedil;&otilde;es do Servidor',
-                  'modulos_php.php'  => 'M&oacute;dulos do PHP',
-                  'arquivos.php'     => 'Arquivos do Sistema',
-                  'funcoes.php'      => 'Fun&ccedil;&otilde;es do Sistema',
-                  'classes.php'      => 'Classes do Sistema',
-                  'constantes.php'   => 'Constantes',
-                  'cookies.php'      => 'Cookies do Sistema',
-                  'sessao.php'       => 'Dados da Sess&atilde;o',
-                  'config.php'       => 'Dados do $CFG');
+    $info = array('info.php'        => 'Informa&ccedil;&otilde;es do Servidor',
+                  'modulos_php.php' => 'M&oacute;dulos do PHP',
+                  'arquivos.php'    => 'Arquivos do Sistema',
+                  'funcoes.php'     => 'Fun&ccedil;&otilde;es do Sistema',
+                  'classes.php'     => 'Classes do Sistema',
+                  'constantes.php'  => 'Constantes',
+                  'cookies.php'     => 'Cookies do Sistema',
+                  'sessao.php'      => 'Dados da Sess&atilde;o',
+                  'config.php'      => 'Dados do $CFG');
 
     // Informacoes do BD
-    $info_bd = array('tabelas_bd.php'   => 'Tabelas do BD',
-                     'sqls.php'         => 'SQLs de Instala&ccedil;&atilde;o',
-                     'consulta.php'     => 'Consulta Gen&eacute;rica');
+    $info_bd = array('tabelas_bd.php' => 'Tabelas do BD',
+                     'sqls.php'       => 'SQLs de Instala&ccedil;&atilde;o',
+                     'consulta.php'   => 'Consulta',
+                     'insercao.php'   => 'Inser&ccedil;&atilde;o');
 
     // Utilitarios
     $util = array('exportar.php'         => 'Exportar Dados',

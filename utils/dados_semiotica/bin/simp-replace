@@ -6,9 +6,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.3
+// Versao: 1.0.0.4
 // Data: 15/07/2008
-// Modificado: 24/03/2009
+// Modificado: 08/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -17,12 +17,17 @@ $dirroot = `simp-config --dirweb`;
 require_once($dirroot.'config.php');
 
 /// Obter argumentos
-$opcoes = getopt('a:d:ft');
+$opcoes = getopt('a:d:ftn');
 
 // Trocar tabs por 4 espacos
 if (isset($opcoes['t'])) {
     $antes = "\t";
     $depois = '    ';
+
+// Trocar \r\n por \n
+} elseif (isset($opcoes['n'])) {
+    $antes = "\r\n";
+    $depois = "\n";
 
 // Trocar alguma palavra
 } else {

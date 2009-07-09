@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// Versao: 1.0.0.3
 // Data: 05/09/2007
-// Modificado: 23/07/2008
+// Modificado: 06/07/2008
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -30,16 +30,16 @@ function instalar_usuario(&$erros) {
     $u->login = 'admin';
     $u->senha = 'admin';
     $u->email = isset($_SERVER['SERVER_ADMIN']) ? $_SERVER['SERVER_ADMIN'] : 'root@localhost';
-    $r = $r && $u->salvar();
-
-    if ($r) {
+    if (!$u->salvar()) {
+        $r = false;
+        $erros[] = $u->get_erros();
+    } else {
         $grupo = new stdClass();
         $grupo->cod_grupo = COD_ADMIN;
-        $r = $r && $u->inserir_elemento_rel_un('grupos', $grupo);
-    }
-
-    if (!$r) {
-        $erros = array_merge($erros, $u->get_erros());
+        if (!$u->inserir_elemento_rel_un('grupos', $grupo)) {
+            $r = false;
+            $erros[] = $u->get_erros();
+        }
     }
 
     $u->limpar_objeto();
@@ -47,16 +47,15 @@ function instalar_usuario(&$erros) {
     $u->login = 'gerente';
     $u->senha = 'gerente';
     $u->email = 'gerente@semiofon.org';
-    $r = $r && $u->salvar();
-
-    if ($r) {
+    if (!$u->salvar()) {
+        $r = false;
+        $erros[] = $u->get_erros();
+    } else {
         $grupo = new stdClass();
         $grupo->cod_grupo = COD_GERENTES;
-        $r = $r && $u->inserir_elemento_rel_un('grupos', $grupo);
-    }
-
-    if (!$r) {
-        $erros = array_merge($erros, $u->get_erros());
+        if (!$u->inserir_elemento_rel_un('grupos', $grupo)) {
+            $erros[] = $u->get_erros();
+        }
     }
 
     return $r;

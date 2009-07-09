@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.22
+// Versao: 1.0.0.25
 // Data: 03/03/2007
-// Modificado: 02/06/2009
+// Modificado: 08/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -32,6 +32,23 @@ $id_pagina = 'pagina_login';
 $titulo    = 'Log-in';
 $nav[]     = $modulo.'#'.basename(__FILE__);
 $estilos   = array($CFG->wwwmods.$modulo.'/estilos.css');
+
+if ($CFG->autenticacao == 'simp') {
+    $mensagem_senha = '<p>Caso voc&ecirc; tenha esquecido a sua senha, favor acessar a '.
+                      'op&ccedil;&atilde;o "Esqueci Minha Senha", abaixo do formul&aacute;rio.</p>';
+} else {
+    $mensagem_senha = '<p>Caso voc&ecirc; tenha esquecido a sua senha, favor entrar em contato '.
+                      'com os respons&aacute;veis pelo sistema ('.$CFG->email_padrao.')</p>';
+}
+
+$ajuda = <<<AJUDA
+  <p>Este formul&aacute;rio &eacute; respons&aacute;vel pela autentica&ccedil;&atilde;o de 
+     usu&aacute;rios para acessar o sistema.</p>
+  <p>O login &eacute; um texto que identifica, de maneira &uacute;nica, determinado usu&aacute;rio do
+     sistema. A senha, &eacute; um texto que garante que o informante do login realmente &eacute; quem
+     diz ser.</p>
+  {$mensagem_senha}
+AJUDA;
 
 
 // Avisos e Erros
@@ -77,11 +94,7 @@ $dados = formulario::get_dados();
 if (!$dados) {
 
     // Destruir o cookie que guarda o ID da sessao
-    if (!$CFG->localhost) {
-        setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path, $CFG->dominio);
-    } else {
-        setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path);
-    }
+    setcookie($CFG->id_session, false, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
 
     // Imprimir pagina
     $pagina = new pagina($id_pagina);
@@ -89,6 +102,7 @@ if (!$dados) {
     $pagina->inicio_conteudo();
     if ($avisos) { mensagem::aviso($avisos); }
     if ($erros)  { mensagem::erro($erros);   }
+    mensagem::comentario($CFG->site, $ajuda);
     imprimir_form();
     $pagina->fim_conteudo();
     $pagina->rodape();
@@ -102,11 +116,7 @@ if (!$dados) {
 } elseif (possui_erros($dados, $erros)) {
 
     // Destruir o cookie que guarda o ID da sessao
-    if (!$CFG->localhost) {
-        setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path, $CFG->dominio);
-    } else {
-        setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path);
-    }
+    setcookie($CFG->id_session, false, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
 
     // Gerar log de erro
     $usuario = new usuario('login', $dados->login);
@@ -119,6 +129,7 @@ if (!$dados) {
     $pagina->cabecalho($titulo, $nav, $estilos);
     $pagina->inicio_conteudo();
     mensagem::erro($erros);
+    mensagem::comentario($CFG->site, $ajuda);
     imprimir_form($dados);
     $pagina->fim_conteudo();
     $pagina->rodape();
@@ -259,6 +270,19 @@ function possui_erros(&$dados, &$erros) {
 
     $validacao = validacao::get_instancia();
 
+    // Checar se os cookies estao habilitados
+    if (!isset($_COOKIE[$CFG->nome_cookie])) {
+        $erros[] = 'Seu navegador n&atilde;o est&aacute; salvando os cookies. Procure saber se seu navegador d&aacute; suporte a este recurso ou se ele apenas est&aacute; desabilitado. Este sistema requer cookies para funcionar.';
+        if (!DEVEL_BLOQUEADO) {
+            if ($CFG->localhost) {
+                $erros[] = '[DEBUG-DEVEL] As configura&ccedil;&otilde;es (arquivo config.php) indicam que o host &eacute; local.';
+            } else {
+                $erros[] = '[DEBUG-DEVEL] As configura&ccedil;&otilde;es (arquivo config.php) indicam que o host &eacute; registrado. Se isso n&atilde;o &eacute; verdade, altere as configura&ccedil;&otilde;es definindo "$localhost = true;" no local adequado.';
+            }
+        }
+        return true;
+    }
+
     // Login
     if (empty($dados->login)) {
         $erros[] = 'Faltou preencher o login';
@@ -355,17 +379,13 @@ function destruir_sessao($cookie = true) {
     if (isset($_COOKIE[$CFG->id_session])) {
         if (isset($_SESSION)) {
             $_SESSION[$CFG->codigo_session] = 0;
-            session_destroy();
+            @session_destroy();
             unset($_SESSION);
         }
 
         // Destruir o cookie que guarda o ID da sessao
         if ($cookie) {
-            if (!$CFG->localhost) {
-                setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path, $CFG->dominio);
-            } else {
-                setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->path);
-            }
+            setcookie($CFG->id_session, false, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
         }
     }
 }

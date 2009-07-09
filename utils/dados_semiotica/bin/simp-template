@@ -6,28 +6,28 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// Versao: 1.1.0.0
 // Data: 01/04/2009
-// Modificado: 01/04/2009
+// Modificado: 08/07/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 /// Estruturas gerais do PHP
 
-$t['class'] = <<<PHP
+$t['class'] = <<<'PHP'
 class | {
     
 }//class
 PHP;
 
-$t['interface'] = <<<PHP
+$t['interface'] = <<<'PHP'
 interface | {
     
 }
 PHP;
 
-$t['function'] = <<<PHP
+$t['function'] = <<<'PHP'
 //
 //     
 //
@@ -37,7 +37,7 @@ function |() {
 }
 PHP;
 
-$t['procedure'] = <<<PHP
+$t['procedure'] = <<<'PHP'
 //
 //     
 //
@@ -46,14 +46,14 @@ function |() {
 }
 PHP;
 
-$t['define'] = <<<PHP
+$t['define'] = <<<'PHP'
 define('|', );
 PHP;
 
-$t['try'] = <<<PHP
+$t['try'] = <<<'PHP'
 try {
     |
-} catch (Exception \$e) {
+} catch (Exception $e) {
     
 }
 PHP;
@@ -61,25 +61,25 @@ PHP;
 
 /// Estruturas de repeticao do PHP
 
-$t['do'] = <<<PHP
+$t['do'] = <<<'PHP'
 do {
     
 } while (|);
 PHP;
 
-$t['foreach'] = <<<PHP
+$t['foreach'] = <<<'PHP'
 foreach ($| as $ => $) {
     
 }
 PHP;
 
-$t['for'] = <<<PHP
+$t['for'] = <<<'PHP'
 for (|; ; ) {
     
 }
 PHP;
 
-$t['while'] = <<<PHP
+$t['while'] = <<<'PHP'
 while (|) {
     
 }
@@ -88,13 +88,13 @@ PHP;
 
 /// Estruturas condicionais do PHP
 
-$t['if'] = <<<PHP
+$t['if'] = <<<'PHP'
 if (|) {
     
 }
 PHP;
 
-$t['ife'] = <<<PHP
+$t['ife'] = <<<'PHP'
 if (|) {
     
 } else {
@@ -102,21 +102,24 @@ if (|) {
 }
 PHP;
 
-$t['elseif'] = <<<PHP
+$t['elseif'] = <<<'PHP'
 elseif (|) {
     
 }
 PHP;
 
-$t['else'] = <<<PHP
+$t['else'] = <<<'PHP'
 else {
     |
 }
 PHP;
 
-$t['switch'] = <<<PHP
-switch (\$|) {
+$t['switch'] = <<<'PHP'
+switch (|) {
 case :
+    
+    break;
+default:
     
     break;
 }
@@ -126,34 +129,37 @@ PHP;
 /// Metodos magicos do PHP
 
 
-$t['__get'] = <<<PHP
+$t['__get'] = <<<'PHP'
 //
 //     Obtem um atributo da classe
 //
-public function __get(\$atributo) {
-// String \$atributo: nome do atributo a ser obtido
+public function __get($atributo) {
+// String $atributo: nome do atributo a ser obtido
 //
-    |
-    return ;
+    switch ($atributo) {
+    case '|':
+        
+        break;
+    }
 }
 PHP;
 
-$t['__set'] = <<<PHP
+$t['__set'] = <<<'PHP'
 //
 //     Define o valor de um atributo da classe
 //
-public function __set(\$atributo, \$valor) {
-// String \$atributo: nome do atributo a ser definido
-// Mixed \$valor: valor do atributo
+public function __set($atributo, $valor) {
+// String $atributo: nome do atributo a ser definido
+// Mixed $valor: valor do atributo
 //
-    switch (\$atributo) {
+    switch ($atributo) {
     case '|':
         break;
     }
 }
 PHP;
 
-$t['__toString'] = <<<PHP
+$t['__toString'] = <<<'PHP'
 //
 //     Define a forma como um objeto sera exibido
 //
@@ -165,7 +171,32 @@ PHP;
 
 /// Atalhos de pontos de extensao do SIMP
 
-$t['get_campo_nome'] = <<<PHP
+$t['definir_entidade'] = <<<'PHP'
+//
+//     Cria a definicao de entidade
+//
+protected function definir_entidade() {
+    $this->criar_entidade(
+        /* Nome Entidade   */ '|',
+        /* Entidade Plural */ '?',
+        /* Genero          */ '?',
+        /* Classe          */ '?',
+        /* Tabela          */ '?',
+        /* Desc. Tabela    */ 'Tabela de ?');
+}
+PHP;
+
+$t['definir_atributos'] = <<<'PHP'
+//
+//     Cria os atributos da classe
+//
+protected function definir_atributos() {
+
+    |
+}
+PHP;
+
+$t['get_campo_nome'] = <<<'PHP'
 //
 //     Retorna o NOME DO ATRIBUTO (simples, implicito ou relacionamento 1:1) usado para identificar o objeto
 //
@@ -174,16 +205,16 @@ public function get_campo_nome() {
 }
 PHP;
 
-$t['validacao_final'] = <<<PHP
+$t['validacao_final'] = <<<'PHP'
 //
 //     Realiza a validacao final dos dados antes de salva-los (util para validar atributos dependentes)
 //
-public function validacao_final(&\$dados) {
-// Object \$dados: dados a serem validados
+public function validacao_final(&$dados) {
+// Object $dados: dados a serem validados
 //
-    \$r = true;
-    switch (\$this->id_form) {
-    case \$this->id_formulario_|():
+    $r = true;
+    switch ($this->id_form) {
+    case $this->id_formulario_|():
         
         break;
     }
@@ -191,169 +222,202 @@ public function validacao_final(&\$dados) {
 }
 PHP;
 
-$t['pre_salvar'] = <<<PHP
+$t['pre_salvar'] = <<<'PHP'
 //
 //     Operacoes realizadas antes de salvar os dados no BD
 //
-public function pre_salvar(&\$salvar_campos) {
-// Array[String] \$salvar_campos: vetor de campos a serem salvos
+public function pre_salvar(&$salvar_campos) {
+// Array[String] $salvar_campos: vetor de campos a serem salvos
 //
-    \$r = true;
-    switch (\$this->id_form) {
-    case \$this->id_formulario_|():
+    $r = true;
+    switch ($this->id_form) {
+    case $this->id_formulario_|():
         
         break;
     }
-    return \$r;
+    return $r;
 }
 PHP;
 
-$t['pos_salvar'] = <<<PHP
+$t['pos_salvar'] = <<<'PHP'
 //
 //     Operacoes realizadas apos salvar os dados no BD
 //
 public function pos_salvar() {
-    \$r = true;
+    $r = true;
     switch (\$this->id_form) {
-    case \$this->id_formulario_|():
+    case $this->id_formulario_|():
         
         break;
     }
-    return \$r;
+    return $r;
 }
 PHP;
 
-$t['dados_opcao'] = <<<PHP
+$t['dados_opcao'] = <<<'PHP'
 //
 //     Retorna um vetor com os dados da opcao (icone) que aparece na lista de entidades
 //
-public function dados_opcao(\$opcao, \$modulo) {
-// String \$opcao: identificador da opcao
-// String \$modulo: nome do modulo
+public function dados_opcao($opcao, $modulo) {
+// String $opcao: identificador da opcao
+// String $modulo: nome do modulo
 //
-    \$dados = new stdClass();
+    $dados = new stdClass();
 
-    switch (\$opcao) {
+    switch ($opcao) {
     case '|':
-        \$dados->icone     = icone::endereco('?');
-        \$dados->arquivo   = '?.php';
-        \$dados->modulo    = \$modulo;
-        \$dados->descricao = '?';
-        \$dados->id        = '';
-        \$dados->class     = '';
-        return \$dados;
+        $dados->icone     = icone::endereco('?');
+        $dados->arquivo   = '?.php';
+        $dados->modulo    = $modulo;
+        $dados->descricao = '?';
+        $dados->id        = '';
+        $dados->class     = '';
+        return $dados;
     }
 
-    return parent::dados_opcao(\$opcao, \$modulo);
+    return parent::dados_opcao($opcao, $modulo);
 }
 PHP;
 
-$t['exibir_atributo'] = <<<PHP
+$t['exibir_atributo'] = <<<'PHP'
 //
 //     Define a forma como um atributo simples e' exibido
 //
-public function exibir_atributo(\$nome_atributo) {
-// String \$nome_atributo: nome do atributo a ser exibido
+public function exibir_atributo($nome_atributo) {
+// String $nome_atributo: nome do atributo a ser exibido
 //
-    switch (\$nome_atributo) {
+    switch ($nome_atributo) {
     case '|':
         return ?;
     }
-    return parent::exibir_atributo(\$nome_atributo);
+    return parent::exibir_atributo($nome_atributo);
 }
 PHP;
 
-$t['exibir_atributo_implicito'] = <<<PHP
+$t['exibir_atributo_implicito'] = <<<'PHP'
 //
 //     Define a forma como um atributo implicito e' exibido
 //
-public function exibir_atributo_implicito(\$nome_atributo) {
-// String \$nome_atributo: nome do atributo implicito a ser exibido
+public function exibir_atributo_implicito($nome_atributo) {
+// String $nome_atributo: nome do atributo implicito a ser exibido
 //
-    switch (\$nome_atributo) {
+    switch ($nome_atributo) {
     case '|':
         return ?;
     }
-    return parent::exibir_atributo_implicito(\$nome_atributo);
+    return parent::exibir_atributo_implicito($nome_atributo);
 }
 PHP;
 
-$t['pode_exibir'] = <<<PHP
+$t['pode_exibir'] = <<<'PHP'
 //
 //     Indica se o registro pode ser exibido ou nao por um usuario
 //
-public function pode_exibir(&\$usuario, &\$motivo = '') {
-// usuario \$usuario: usuario a ser testado
-// String \$motivo: motivo pelo qual nao se pode exibir registro
+public function pode_exibir(&$usuario, &$motivo = '') {
+// usuario $usuario: usuario a ser testado
+// String $motivo: motivo pelo qual nao se pode exibir registro
 //
-    \$r = true;
+    $r = true;
     if (|) {
         
-        \$r = false;
-        \$motivo = '';
+        $r = false;
+        $motivo = '';
     }
-    return \$r;
+    return $r;
 }
 PHP;
 
-$t['campo_formulario'] = <<<PHP
+$t['campo_formulario'] = <<<'PHP'
 //
 //     Indica como um campo deve ser apresentado no formulario
 //
-public function campo_formulario(&\$form, \$campo, \$valor) {
-// formulario \$form: formulario que deve receber o campo
-// String \$campo: nome do campo a ser inserido
-// Mixed \$valor: valor padrao do campo
+public function campo_formulario(&$form, $campo, $valor) {
+// formulario $form: formulario que deve receber o campo
+// String $campo: nome do campo a ser inserido
+// Mixed $valor: valor padrao do campo
 //
-    if (\$this->possui_atributo(\$campo)) {
-        \$atributo = \$this->get_definicao_atributo(\$campo);
+    if ($this->possui_atributo($campo)) {
+        $atributo = $this->get_definicao_atributo($campo);
     }
-    switch (\$campo) {
+    switch ($campo) {
     case '|':
-        \$form->campo_(?);
+        $form->campo_();
         return true;
     }
-    return parent::campo_formulario(\$form, \$campo, \$valor);
+    return parent::campo_formulario($form, $campo, $valor);
 }
 PHP;
 
-$t['pode_ser_manipulado'] = <<<PHP
+$t['get_info_campo'] = <<<'PHP'
+//
+//     Obtem informacoes sobre um campo do formulario
+//
+public function get_info_campo($campo) {
+// String $campo: campo desejado
+//
+    switch ($campo) {
+    case '|':
+        $atributo = new atributo(...);
+        return $atributo;
+    }
+    return parent::get_info_campo($campo);
+}
+PHP;
+
+$t['pode_ser_manipulado'] = <<<'PHP'
 //
 //     Indica se o registro pode ser manipulado pelo usuario
 //
-public function pode_ser_manipulado(&\$usuario) {
-// usuario \$usuario: usuario a ser testado
+public function pode_ser_manipulado(&$usuario) {
+// usuario $usuario: usuario a ser testado
 //
-    \$r = false;
+    $r = false;
     if (|) {
-        \$r = true;
+        $r = true;
     }
-    return \$r;
+    return $r;
 }
 PHP;
 
-$t['pode_acessar_formulario'] = <<<PHP
+$t['pode_acessar_formulario'] = <<<'PHP'
 //
 //     Indica se o formulario de um registro pode ser acessado ou nao por um usuario
 //
-public function pode_acessar_formulario(&\$usuario, &\$motivo = '') {
-// usuario \$usuario: usuario a ser testado
-// String \$motivo: motivo pelo qual nao se pode acessar o registro
+public function pode_acessar_formulario(&$usuario, &$motivo = '') {
+// usuario $usuario: usuario a ser testado
+// String $motivo: motivo pelo qual nao se pode acessar o registro
 //
-    \$r = true;
-    switch (\$this->id_form) {
-    case \$this->id_formulario_|():
-        if (?) {
-            \$r = false;
-            \$motivo = '';
+    $r = true;
+    switch ($this->id_form) {
+    case $this->id_formulario_|():
+        if () {
+            $r = false;
+            $motivo = '';
         }
         break;
     }
-    return \$r;
+    return $r;
 }
 PHP;
 
-$t['get_vetor'] = <<<PHP
+$t['converter_componente'] = <<<'PHP'
+// 
+//     Converte as componentes de um atributo no respectivo valor do atributo final
+//
+protected function converter_componente($campo, $valor, $valores) {
+// String $campo: nome do campo
+// Mixed $valor: valor do campo
+// Object $valores: valores a serem convertidos
+//
+    switch ($campo) {
+    case |:
+        return /* TODO */;
+    }
+    return parent::converter_componente($campo, $valor, $valores);
+}
+PHP;
+
+$t['get_vetor'] = <<<'PHP'
 //
 //     Obtem a lista de ?
 //
@@ -366,18 +430,22 @@ PHP;
 
 /// Atalhos gerais do Simp
 
-$t['nav'] = <<<PHP
-\$nav[] = '|#';
+$t['nav'] = <<<'PHP'
+$nav[] = '|#';
 PHP;
 
-$t['header'] = <<<PHP
+$t['navv'] = <<<'PHP'
+$dados_pagina->nav[] = '|#';
+PHP;
+
+$t['header'] = <<<'PHP'
 setlocale(LC_TIME, 'C');
 header("X-Framework: SIMP/".VERSAO_SIMP);
 header("Content-Type: |");
 header("Content-Disposition: inline; filename=?");
-header('Date: '.gmstrftime(\$CFG->gmt, \$CFG->time));
-header('Last-Modified: '.gmstrftime(\$CFG->gmt, filemtime(\$CFG->dirroot)));
-header('Expires: '.gmstrftime(\$CFG->gmt, \$CFG->time));
+header('Date: '.gmstrftime($CFG->gmt, $CFG->time));
+header('Last-Modified: '.gmstrftime($CFG->gmt, filemtime($CFG->dirroot)));
+header('Expires: '.gmstrftime($CFG->gmt, $CFG->time));
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 setlocale(LC_TIME, \$CFG->localidade);

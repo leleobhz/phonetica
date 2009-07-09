@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.14
+// Versao: 1.0.0.15
 // Data: 20/08/2007
-// Modificado: 02/06/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -23,7 +23,7 @@ final class config extends config_base {
         case $this->id_formulario_alterar('email');
 
             // Se selecionar SMTP, validar o host e porta
-            if ($this->__get('tipo_email') == CONFIG_EMAIL_SMTP) {
+            if ($this->get_atributo('tipo_email') == CONFIG_EMAIL_SMTP) {
                 $validacao = validacao::get_instancia();
 
                 $erro = '';

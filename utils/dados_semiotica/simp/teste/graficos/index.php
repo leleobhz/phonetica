@@ -21,7 +21,7 @@ $pagina->cabecalho($titulo, $nav, false);
 $pagina->inicio_conteudo($titulo);
 
 foreach ($arquivos as $arquivo) {
-    $html = (eregi('simples', $arquivo));
+    $html = strpos($arquivo, 'simples') !== false;
     grafico::exibir_grafico('Teste', $CFG->wwwroot.'teste/graficos/'.$arquivo, $CFG->dirroot.'teste/graficos/'.$arquivo, false, $html);
 }
 

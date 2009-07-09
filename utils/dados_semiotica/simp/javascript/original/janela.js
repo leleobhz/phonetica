@@ -4,9 +4,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.28
+// Versao: 1.0.0.29
 // Data: 20/12/2007
-// Modificado: 09/06/2009
+// Modificado: 25/06/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -45,6 +45,7 @@ function foco_janela(j) {
 function class_janela() {
     var that     = this;
     this.caixa   = null;
+    this.titulo  = null;
     this.pai     = null;
     this.visivel = false;
 
@@ -70,6 +71,24 @@ function class_janela() {
         if (!that.visivel) { return; }
         that.pai.removeChild(that.caixa);
         that.visivel = false;
+    };
+
+
+    //
+    //     Muda o titulo da janela
+    //
+    this.set_titulo = function(texto_titulo) {
+    // String texto_titulo: novo titulo da janela
+    //
+        var divs = that.titulo.getElementsByTagName("div");
+        for (var i = 0; i < divs.length; i++) {
+            var div = divs.item(i);
+            if (get_classe(div) == "texto") {
+                limpar(div);
+                div.appendChild(document.createTextNode(texto_titulo));
+                return;
+            }
+        }
     };
 
 
@@ -799,7 +818,7 @@ function class_hierarquia(link) {
 
             // Criar espaco para o status
             var status = document.createElement("div");
-            definir_classe(status, "status")
+            definir_classe(status, "status");
         }//caixa
 
         // Adicionar elementos na caixa

@@ -5,9 +5,9 @@
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.15
+// Versao: 1.0.0.16
 // Data: 20/08/2007
-// Modificado: 07/04/2009
+// Modificado: 19/06/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -184,7 +184,7 @@ abstract class config_base extends objeto_formulario {
         $atributo = new atributo('autor', 'Autor', null);
         $atributo->set_tipo('string', false);
         $atributo->set_intervalo(1, 128);
-        $atributo->set_validacao('TEXTO_LINHA', '', false);
+        $atributo->set_validacao('TEXTO_LINHA', false, false);
         $this->adicionar_atributo($atributo);
         unset($atributo);
 
@@ -192,7 +192,7 @@ abstract class config_base extends objeto_formulario {
         $atributo = new atributo('link_autor', 'Link do Autor', null);
         $atributo->set_tipo('string', true);
         $atributo->set_intervalo(1, 255);
-        $atributo->set_validacao('TEXTO_LINHA', '', false);
+        $atributo->set_validacao('SITE', false, false);
         $this->adicionar_atributo($atributo);
         unset($atributo);
 

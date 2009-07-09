@@ -1,0 +1,117 @@
+#!/usr/bin/env php
+<?php
+//
+// SIMP
+// Descricao: Script para criar a base de dados
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.ufla.br
+// Versao: 1.0.0.0
+// Data: 29/06/2009
+// Modificado: 29/06/2009
+// Utilizacao: $ ./simp-criarbase [-s sgbd] [-P porta] [-b base] [-h host] [-u usuario] [-p senha]
+// Copyright (C) 2009  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+define('IGNORAR_SESSAO', 1);
+$dir_root = `simp-config --dirweb`;
+$dir_home = `simp-config --dirhome`;
+require_once($dir_root.'config.php');
+error_reporting(0);
+
+$sistema = basename($dir_home);
+
+/// Obter argumentos
+$opcoes = getopt('s:b:P:h:u:p:');
+
+$dados = new stdClass();
+$dados->usar_bd = true;
+$dados->usar_usuario = true;
+$dados->sgbd = isset($opcoes['s']) ? $opcoes['s'] : 'mysql';
+
+if (isset($opcoes['P'])) {
+    $dados->porta = $opcoes['P'];
+} else {
+    $vt_driver = objeto_dao::get_drivers();
+    if (!isset($vt_driver[$dados->sgbd])) {
+        echo "SGBD invalido: {$dados->sgbd}\n";
+        exit(1);
+    }
+    $dados->porta = $vt_driver[$dados->sgbd]->porta;
+}
+
+$dados->base     = isset($opcoes['b']) ? $opcoes['b'] : $sistema;
+$dados->servidor = isset($opcoes['h']) ? $opcoes['h'] : 'localhost';
+$dados->usuario  = isset($opcoes['u']) ? $opcoes['u'] : $sistema.'user';
+$dados->senha    = isset($opcoes['p']) ? $opcoes['p'] : 'pass'.$sistema;
+
+// Sistema
+$dados->sistema  = $sistema;
+$dados->dominio  = 'localhost';
+$dados->path     = '/'.$sistema;
+$dados->wwwroot  = 'http://localhost/'.$sistema.'/';
+$dados->dirroot  = $dir_root;
+$dados->charset  = 'UTF-8';
+
+
+// Criar objeto de instalacao
+$instalacao = new instalacao();
+
+echo "Criando base de dados: ";
+$bd_config = new stdClass();
+$bd_config->sgbd     = $dados->sgbd;
+$bd_config->porta    = $dados->porta;
+$bd_config->base     = $dados->base;
+$bd_config->servidor = $dados->servidor;
+$bd_config->usuario  = $dados->usuario;
+$bd_config->senha    = $dados->senha;
+$instalacao->set_bd_config($bd_config);
+if ($instalacao->criar_tabelas(INSTALACAO_TODAS_TABELAS, $erros, $avisos, $resultado)) {
+    echo "OK\n";
+} else {
+    echo "Erro\n";
+    imprimir_erros($erros);
+    exit(1);
+}
+
+// Criando o arquivo de configuracoes
+echo "Gerando o arquivo de configuracoes: ";
+if ($instalacao->criar_arquivo($dados, $erros, $avisos)) {
+    echo "OK\n";
+} else {
+    echo "Erro\n";
+    imprimir_erros($erros);
+    exit(2);
+}
+exit(0);
+
+
+/// Funcoes
+
+
+//
+//     Imprime as mensagens de erro
+//
+function imprimir_erros($erros) {
+// Array[String || Type] $erros: vetor de mensagens de erros
+//
+    imprimir_erros_nivel($erros, 0);
+}
+
+//
+//     Imprime as mensagens de erro em um nivel de identacao
+//
+function imprimir_erros_nivel($erros, $nivel) {
+// Array[String || Type] $erros: vetor de mensagens de erros
+// Int $nivel: nivel de identacao
+//
+    $identacao = 3;
+    foreach ($erros as $erro) {
+        if (is_string($erro)) {
+            echo str_repeat(' ', $nivel * $identacao);
+            echo '* '.trim(texto::decodificar($erro))."\n";
+        } else {
+            imprimir_erros_nivel($erro, $nivel + 1);
+        }
+    }
+}

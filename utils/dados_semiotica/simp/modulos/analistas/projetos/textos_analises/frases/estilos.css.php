@@ -17,5 +17,5 @@ require_once('../../../../../config.php');
 $opcoes = new stdClass();
 $opcoes->icone = icone::endereco('lista');
 
-modulo::estilos('projeto', $opcoes);
+modulo::estilos('frase', $opcoes);
 

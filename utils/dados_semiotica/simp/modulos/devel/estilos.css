@@ -155,3 +155,8 @@ p.item + div {
   margin-left: 1em;
   padding-left: 1em;
 }
+
+/* Insercao generica */
+#insercao .formulario {
+  width: 100%;
+}

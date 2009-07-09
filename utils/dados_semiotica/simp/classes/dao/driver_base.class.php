@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// Versao: 1.0.0.10
 // Data: 17/04/2008
-// Modificado: 03/06/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -161,7 +161,7 @@ abstract class driver_base {
     //
     //     Converte um registro para objeto
     //
-    abstract public function fetch_object(&$resultado);
+    abstract public function fetch_object($resultado);
     // Resource $resultado: resultado de uma consulta
     //
 
@@ -169,7 +169,7 @@ abstract class driver_base {
     //
     //     Obtem o numero de resultados de um resource
     //
-    abstract public function quantidade_registros(&$resultado);
+    abstract public function quantidade_registros($resultado);
     // Resource $resultado: resultado de uma consulta
     //
 
@@ -177,7 +177,7 @@ abstract class driver_base {
     //
     //     Obtem o numero de registros atingidos na ultima consulta
     //
-    abstract public function registros_atingidos(&$resultado);
+    abstract public function registros_atingidos($resultado);
     // Resource $resultado: resultado a ser analisado
     //
 
@@ -239,15 +239,6 @@ abstract class driver_base {
         // Se deseja usar o usuario root
         if ($this->usuario == '[root]') {
             $this->usuario = $this->get_root();
-        }
-
-        // Checar se pode utilizar o SGBD desejado
-        if ($this->get_versao() && !$this->versao_valida()) {
-            $exigida = $this->get_versao_exigida();
-            $erro = 'Vers&atilde;o do SGBD &eacute; inferior &agrave; esperada '.
-                    '(instalada '.$this->versao().' / exigida '.$exigida.')';
-            $this->erros[] = $erro;
-            trigger_error($erro, E_USER_NOTICE);
         }
     }
 
@@ -370,7 +361,9 @@ abstract class driver_base {
             }
             return $resultados;
         } else {
+//if (headers_sent()) {
 //echo '<p style="overflow: auto; border: 1px dotted #000000; font-family: monospace; background-color: #EEEEEE; color: #660000; padding: 1em;">'.texto::codificar($sql).'</p>';
+//}
             $resultado = $this->query($sql);
             self::$instrucoes += 1;
             if (!$resultado) {

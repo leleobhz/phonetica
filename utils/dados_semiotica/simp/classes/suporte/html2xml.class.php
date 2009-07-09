@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// Versao: 1.0.0.3
 // Data: 28/01/2008
-// Modificado: 26/03/2009
+// Modificado: 22/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 //
@@ -589,7 +589,7 @@ final class html2xml {
             break;
         case 'meta':
             if (isset($vt['http-equiv']) &&
-                eregi('http-equiv="content-type"', $vt['http-equiv']) &&
+                strpos($vt['http-equiv'], 'http-equiv="content-type"') !== false &&
                 isset($vt['content'])) {
                 $vt['content'] = 'content="application/xhtml+xml; charset=UTF-8"';
             }

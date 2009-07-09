@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.12
+// Versao: 1.1.1.14
 // Data: 01/02/2008
-// Modificado: 12/06/2009
+// Modificado: 01/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -325,6 +325,9 @@ final class modulo {
         $modulo_pai = util::get_modulo_pai($modulo);
         $modulo_rel = util::get_modulo($arquivo, false);
         $dados      = formulario::get_dados();
+        if (!$dados && isset($dados_form->dados)) {
+            $dados = $dados_form->dados;
+        }
         $campos     = isset($dados_form->campos)     ? $dados_form->campos     : true;
         $opcoes     = isset($dados_form->opcoes)     ? $dados_form->opcoes     : array();
         $class      = isset($dados_form->class)      ? $dados_form->class      : false;
@@ -363,10 +366,18 @@ final class modulo {
         if (isset($dados_form->ajuda)) {
             $ajuda = &$dados_form->ajuda;
         } else {
-            $ajuda = "<p>Este formul&aacute;rio destina-se a cria&ccedil;&atilde;o de novos(as) ".$entidade->get_entidade(1)." no sistema.</p>";
-        }
-        if (isset($dados_form->dados)) {
-            $dados = $dados_form->dados;
+            switch ($entidade->get_genero()) {
+            case 'M':
+                $novos = 'novos';
+                break;
+            case 'F':
+                $novos = 'novas';
+                break;
+            case 'I':
+                $novos = 'novos(as)';
+                break;
+            }
+            $ajuda = "<p>Este formul&aacute;rio &eacute; respons&aacute;vel pela cria&ccedil;&atilde;o de {$novos} ".$entidade->get_entidade(1)." no sistema.</p>";
         }
 
         // Dados da Pagina
@@ -480,7 +491,7 @@ final class modulo {
         if (isset($dados_form->ajuda)) {
             $ajuda = &$dados_form->ajuda;
         } else {
-            $ajuda = "<p>Este formul&aacute;rio destina-se a altera&ccedil;&atilde;o de ".$entidade->get_entidade(1)." no sistema.</p>";
+            $ajuda = "<p>Este formul&aacute;rio &eacute; respons&aacute;vel pela altera&ccedil;&atilde;o de ".$entidade->get_entidade(1)." no sistema.</p>";
         }
 
         // Dados da Pagina
@@ -740,7 +751,7 @@ final class modulo {
         if (isset($dados_form->ajuda)) {
             $ajuda = &$dados_form->ajuda;
         } else {
-            $ajuda = "<p>Este formul&aacute;rio destina-se a associa&ccedil;&atilde;o entre ".$entidade->get_entidade(true)." e ".$entidade_rel->get_entidade(true).".</p>";
+            $ajuda = "<p>Este formul&aacute;rio &eacute; respons&aacute;vel pela associa&ccedil;&atilde;o entre ".$entidade->get_entidade(true)." e ".$entidade_rel->get_entidade(true).".</p>";
         }
 
         // Dados da Pagina
@@ -854,7 +865,7 @@ final class modulo {
         if (isset($dados_form->ajuda)) {
             $ajuda = &$dados_form->ajuda;
         } else {
-            $ajuda = "<p>Este formul&aacute;rio destina-se a altera&ccedil;&atilde;o de ".$entidade->get_entidade(1)." mediante uma confirma&ccedil;&atilde;o.</p>";
+            $ajuda = "<p>Este formul&aacute;rio &eacute; respons&aacute;vel pela altera&ccedil;&atilde;o de ".$entidade->get_entidade(1)." mediante uma confirma&ccedil;&atilde;o.</p>";
         }
 
         // Dados da Pagina
@@ -998,6 +1009,15 @@ final class modulo {
                      "podem ser alterados de acordo com as caracter&iacute;sticas do arquivo.</p>".
                      "<p>Importar diretamente para o BD significa que os dados n&atilde;o passar&atilde;o por ".
                      "uma valida&ccedil;&atilde;o, logo ser&atilde;o inseridos da forma como est&atilde;o no arquivo.</p>";
+            $ajuda .= "<p>Lista de campos e tipos:</p>";
+            $ajuda .= "<ul>";
+            foreach ($entidade->get_atributos() as $nome => $def) {
+                if ($def->chave == 'PK') {
+                    continue;
+                }
+                $ajuda .= "<li>{$nome} ({$def->tipo})</li>";
+            }
+            $ajuda .= "</ul>";
         }
 
         // Dados da Pagina
@@ -1137,6 +1157,15 @@ final class modulo {
                      "{$st_campos}.</p><p>A estrutura do XML deve seguir o modelo:</p><pre>".texto::codificar($formato).'</pre>'.
                      "<p>Importar diretamente para o BD significa que os dados n&atilde;o passar&atilde;o por ".
                      "uma valida&ccedil;&atilde;o, logo ser&atilde;o inseridos da forma como est&atilde;o no arquivo.</p>";
+            $ajuda .= "<p>Lista de campos e tipos:</p>";
+            $ajuda .= "<ul>";
+            foreach ($entidade->get_atributos() as $nome => $def) {
+                if ($def->chave == 'PK') {
+                    continue;
+                }
+                $ajuda .= "<li>{$nome} ({$def->tipo})</li>";
+            }
+            $ajuda .= "</ul>";
         }
 
         // Dados da Pagina

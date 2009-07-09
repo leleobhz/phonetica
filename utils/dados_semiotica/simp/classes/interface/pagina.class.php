@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.44
+// Versao: 1.0.0.45
 // Data: 21/05/2007
-// Modificado: 28/04/2009
+// Modificado: 24/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -628,7 +628,7 @@ final class pagina {
             $m2 = '';
         }
         $instrucoes = driver_base::get_quantidade_instrucoes();
-        echo "<!-- Carregamento: {$t} segundos / Load AVG: {$CFG->load_avg} / Memoria: {$m} {$m2}/ SQL: {$instrucoes} -->";
+        echo "<!-- Carregamento: {$t} segundos / Load AVG: {$CFG->load_avg} / Memoria: {$m} {$m2}/ SQL: {$instrucoes} / Classes: {$CFG->classes_carregadas} -->";
     }
 
 

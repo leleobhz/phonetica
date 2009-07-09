@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// Versao: 1.0.0.6
 // Data: 01/11/2007
-// Modificado: 29/09/2008
+// Modificado: 22/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -35,9 +35,9 @@ final class rss {
         // Montando o XML
         $rss_base = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         if ($this->style) {
-            if (eregi('.css', $this->style)) {
+            if (preg_match('/\.css$/', $this->style)) {
                 $mime_style = 'text/css';
-            } elseif (eregi('.xsl', $this->style)) {
+            } elseif (preg_match('/\.xsl$/', $this->style)) {
                 $mime_style = 'text/xsl';
             } else {
                 $mime_style = 'text/css';

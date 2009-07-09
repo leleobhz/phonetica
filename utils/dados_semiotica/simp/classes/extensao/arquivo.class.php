@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.6
+// Versao: 1.1.0.7
 // Data: 10/09/2007
-// Modificado: 01/06/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -38,10 +38,10 @@ final class arquivo extends arquivo_base {
         switch ($this->id_form) {
         case $this->id_formulario_inserir():
         case $this->id_formulario_alterar():
-            if ($this->__get('modulo')) {
-                $arq = ARQUIVO_DIR_MODULOS.$this->__get('modulo').'/'.$this->__get('arquivo');
+            if ($this->get_atributo('modulo')) {
+                $arq = ARQUIVO_DIR_MODULOS.$this->get_atributo('modulo').'/'.$this->get_atributo('arquivo');
             } else {
-                $arq = ARQUIVO_DIR_ROOT.$this->__get('arquivo');
+                $arq = ARQUIVO_DIR_ROOT.$this->get_atributo('arquivo');
             }
             if (!is_file($arq)) {
                 $this->erros[] = 'Arquivo '.$arq.' n&atilde;o existe no sistema';

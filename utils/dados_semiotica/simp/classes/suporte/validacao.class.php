@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.42
+// Versao: 1.0.0.44
 // Data: 09/08/2007
-// Modificado: 05/06/2009
+// Modificado: 29/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -15,7 +15,7 @@
 // Constantes
 define('VALIDACAO_CHARSET',              strtolower($CFG->charset));
 define('VALIDACAO_UTF8',                 $CFG->utf8);
-define('VALIDACAO_CHECAR_DOMINIO_EMAIL', true);  // Nao disponivel para Windows
+define('VALIDACAO_CHECAR_DOMINIO_EMAIL', true);  // Disponivel para Windows a partir do PHP 5.3
 
 final class validacao {
     private static $instancia = null;
@@ -191,6 +191,168 @@ final class validacao {
 
 
     //
+    //     Obtem a definicao dos tipos de validacao (a maioria deles esta na descricao do metodo validar_campo)
+    //
+    static public function get_definicao_tipo($tipo) {
+    // String $tipo: nome do tipo de validacao
+    //
+        $definicao = new stdClass();
+
+        // Lista de caracteres
+        $letras_maiusculas = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $letras_minusculas = 'abcdefghijklmnopqrstuvwxyz';
+        $letras_acentuadas = self::acentos(true);
+        $str_simbolos      = self::simbolos(true);
+        $str_quebra_linha  = self::quebra_linha(true);
+        $str_espaco        = self::espaco(true);
+        $numeros           = '0123456789';
+        $acentos           = self::acentos();
+        $simbolos          = self::simbolos();
+        $quebra_linha      = self::quebra_linha();
+        $espaco            = self::espaco();
+
+        $u = VALIDACAO_UTF8 ? 'u' : '';
+        switch ($tipo) {
+        case 'BD':
+            $definicao->padrao = '/^[A-z0-9-_]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_';
+            $definicao->instrucoes = 'Preencha o nome do BD. Use letras, n&uacute;meros, menos ou underscore.';
+            $definicao->exemplo = 'teste';
+            break;
+        case 'CEP':
+            $definicao->padrao = '/^[0-9]{5}-[0-9]{3}$/'.$u;
+            $definicao->permite = $numeros.'-';
+            $definicao->instrucoes = 'Preencha o CEP com o formato XXXXX-XXX.';
+            $definicao->exemplo = '37200-000';
+            break;
+        case 'CPF':
+            $definicao->padrao = '/^[0-9]{11}$/'.$u;
+            $definicao->permite = $numeros;
+            $definicao->instrucoes = 'Preencha o CPF apenas com n&uacute;meros, inclusive o digito verificador';
+            $definicao->exemplo = '12345678901';
+            break;
+        case 'DN':
+            $definicao->padrao = '/^([A-z0-0-_'.$acentos.$espaco.',=])+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$str_espaco.'=-_,';
+            $definicao->instrucoes = 'Preencha o DN usando letras, n&uacute;meros, menos, underscore, acentos, espa&ccedil;o, v&iacute;rgula e sinal de igual.';
+            $definicao->exemplo = 'o=TecnoLivre, c=BR';
+            break;
+        case 'DOMINIO': // completo ou nao
+            $definicao->padrao = '/^(\.?[A-z0-9-_]+)+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_.';
+            $definicao->instrucoes = 'Preencha o dom&iacute;nio usando palavras com letras, n&uacute;meros, menos e underscore separadas por ponto';
+            $definicao->exemplo = 'exemplo.com.br';
+            break;
+        case 'EMAIL':
+            $definicao->padrao = '/^[A-z0-9]+[\.A-z0-9-_]*@(([A-z0-9-_]+)(\.[A-z0-9-_]+)+)$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'.-_@';
+            $definicao->instrucoes = 'Preencha com um e-mail v&aacute;lido, composto por um prefixo, um sinal arroba (@) e um sufixo';
+            $definicao->exemplo = 'exemplo@dominio.com.br';
+            break;
+        case 'FONE':
+            $definicao->padrao = '/^(\+[0-9]{2,4}\040)?\([0-9]{2}\) [0-9]{4}-[0-9]{4}$/'.$u;
+            $definicao->permite = $numeros.'()-+ ';
+            $definicao->instrucoes = 'Preencha com um telefone no formato (XX) XXXX-XXXX ou ent&atilde;o +XX (XX) XXXX-XXXX';
+            $definicao->exemplo = '(35) 9876-5432';
+            break;
+        case 'HOST': // completo
+            $definicao->padrao = '/^([A-z0-9-_]+)|[A-z0-9-_]+(\.[A-z0-9-_]+)+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_.';
+            $definicao->instrucoes = 'Preencha com um host completo. Use palavras com letras, n&uacute;meros, menos ou underscore separadas por ponto.';
+            $definicao->exemplo = 'exemplo.com.br';
+            break;
+        case 'IP':
+            $definicao->padrao = '/^[0-9]{3}(\.[0-9]{3}){3}$/'.$u;
+            $definicao->permite = $numeros.'.';
+            $definicao->instrucoes = 'Preencha com um IP v&aacute;lido. Use quatro n&uacute;meros entre 0 e 255 separados por ponto.';
+            $definicao->exemplo = '123.255.1.142';
+            break;
+        case 'LETRAS':
+            $definicao->padrao = '/^[A-z]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas;
+            $definicao->instrucoes = 'Preenchar com letras n&atilde;o acentuadas';
+            $definicao->exemplo = 'abcd';
+            break;
+        case 'LOGIN':
+            $definicao->padrao = '/^[A-z0-9-_\.'.$acentos.']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.'-_.';
+            $definicao->instrucoes = 'Preencha o login com letras, n&uacute;meros, menos, underscore, ponto ou acentos';
+            $definicao->exemplo = 'pacabral';
+            break;
+        case 'MODULO':
+            $definicao->padrao = '/^[A-z0-9-_\/]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_/';
+            $definicao->instrucoes = 'Preencha o nome do m&oacute;dulo usando letras, n&uacute;meros, menos, underscore ou barra';
+            $definicao->exemplo = 'servidores/docentes';
+            break;
+        case 'NOME':
+            $definicao->padrao = '/^[A-z-'.$acentos.$espaco.'\']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'";
+            $definicao->instrucoes = 'Preencha com um nome completo usando letras, acentos, espa&ccedil;os, h&iacute;fen ou ap&oacute;strofo';
+            $definicao->exemplo = 'Jos&eacute; Sim&atilde;o McDonald\'s';
+            break;
+        case 'NOME_ARQUIVO':
+            $definicao->padrao = '/^[A-z0-9-_\.\/]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_./';
+            $definicao->instrucoes = 'Preencha com um nome de arquivo usando letras, n&uacute;meros, h&iacute;fen, underscore, ponto ou barra';
+            $definicao->exemplo = '/tmp/arquivo.txt';
+            break;
+        case 'NOME_INCOMPLETO':
+            $definicao->padrao = '/^[A-z-'.$acentos.$espaco.'\'\.]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'.";
+            $definicao->instrucoes = 'Preencha com um nome completo ou incompleto. Use letras, acentos, espa&ccedil;o, ap&oacute;strofo ou ponto para abreviar.';
+            $definicao->exemplo = 'Jos&eacute; S. McDonald\'s';
+            break;
+        case 'NUMERICO':
+            $definicao->padrao = '/^[0-9]+$/'.$u;
+            $definicao->permite = $numeros;
+            $definicao->instrucoes = 'Preencha com n&uacute;meros sem ponto';
+            $definicao->exemplo = '12345';
+            break;
+        case 'NUMERICO_PONTO':
+            $definicao->padrao = '/^[0-9\.]+$/'.$u;
+            $definicao->permite = $numeros.'.';
+            $definicao->instrucoes = 'Preencha com n&uacute;meros, podendo usar ponto';
+            $definicao->exemplo = '12.83.629';
+            break;
+        case 'RG':
+            $definicao->padrao = '/^[A-z0-9-\.'.$espaco.']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.$str_espaco.'-.';
+            $definicao->instrucoes = 'Preencha com um RG usando letras, n&uacute;meros, menos, ponto e espa&ccedil;o';
+            $definicao->exemplo = '92.073.455-1';
+            break;
+        case 'SENHA':
+            $definicao->padrao = '/^[A-z0-9'.$simbolos.$acentos.$espaco.']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.$str_simbolos.$letras_acentuadas.$numeros.$str_espaco;
+            $definicao->instrucoes = 'Preencha a senha usando letras, n&uacute;meros, s&iacute;mbolos, acentos ou espa&ccedil;o';
+            $definicao->exemplo = chr(rand(97, 122)).'a&ccedil;%'.chr(rand(65, 90)).'Rn#x'.rand(0, 99);
+            break;
+        case 'SITE':
+            $definicao->padrao = '/^http:\/\/[A-z0-9-_\.\?&~%=\/]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.':/-_.?&~%=';
+            $definicao->instrucoes = 'Preencha o endere&ccedil;o do site. Use o prefixo "http://" seguido do endere&ccedil;o.';
+            $definicao->exemplo = 'http://www.exemplo.com';
+            break;
+        case 'TEXTO':
+            $definicao->padrao = '/^[A-z0-9'.$simbolos.$acentos.$quebra_linha.$espaco.']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.$str_simbolos.$str_quebra_linha.$str_espaco;
+            $definicao->instrucoes = 'Preencha o texto usando letras, n&uacute;meros, acentos, s&iacute;mbolos, espa&ccedil;o e quebras de linha.';
+            $definicao->exemplo = 'A casa &eacute; bonita, mas &eacute; antiga.';
+            break;
+        case 'TEXTO_LINHA':
+            $definicao->padrao = '/^[A-z0-9'.$simbolos.$acentos.$espaco.']+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.$str_simbolos.$str_espaco;
+            $definicao->instrucoes = 'Preencha o texto de uma linha usando letras, n&uacute;meros, acentos, s&iacute;mbolos, espa&ccedil;o sem usar quebras de linha.';
+            $definicao->exemplo = 'A casa &eacute; bonita, mas &eacute; antiga.';
+            break;
+        default:
+            return false;
+        }
+        return $definicao;
+    }
+
+
+    //
     //     Valida um campo (geralmente baseado em expressao regular)
     //     O tipo de campo pode assumir um dos valores:
     //     * ARQUIVO: o arquivo deve existir no servidor
@@ -225,7 +387,7 @@ final class validacao {
     //
         $erro_campo = false;
 
-        // Tipos especiais
+        // Tipos especiais (especificos)
         switch ($tipo) {
         case 'ARQUIVO':
             if (!file_exists($valor)) {
@@ -243,112 +405,22 @@ final class validacao {
             return $this->validar_ip($valor, $erro_campo);
         }
 
-        static $letras_maiusculas = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        static $letras_minusculas = 'abcdefghijklmnopqrstuvwxyz';
-        $letras_acentuadas        = self::acentos(true);
-        $str_simbolos             = self::simbolos(true);
-        $str_quebra_linha         = self::quebra_linha(true);
-        $str_espaco               = self::espaco(true);
-
-        static $numeros = '0123456789';
-        $acentos        = self::acentos();
-        $simbolos       = self::simbolos();
-        $quebra_linha   = self::quebra_linha();
-        $espaco         = self::espaco();
-
-        $u = VALIDACAO_UTF8 ? 'u' : '';
-        switch ($tipo) {
-        case 'BD':
-            $padrao = '/^[A-z0-9-_]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_';
-            break;
-        case 'CEP':
-            $padrao = '/^[0-9]{5}-[0-9]{3}$/'.$u;
-            $permite = $numeros.'-';
-            break;
-        case 'DN':
-            $padrao = '/^([A-z0-0-_'.$acentos.$espaco.',=])+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$str_espaco.'=-_,';
-            break;
-        case 'DOMINIO': // completo ou nao
-            $padrao = '/^(\.?[A-z0-9-_]+)+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_.';
-            break;
-        case 'FONE':
-            $padrao = '/^(\+[0-9]{2,4}\040)?\([0-9]{2}\) [0-9]{4}-[0-9]{4}$/'.$u;
-            $permite = $numeros.'()-+ ';
-            break;
-        case 'HOST': // completo
-            $padrao = '/^([A-z0-9-_]+)|[A-z0-9-_]+(\.[A-z0-9-_]+)+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_.';
-            break;
-        case 'LETRAS':
-            $padrao = '/^[A-z]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas;
-            break;
-        case 'LOGIN':
-            $padrao = '/^[A-z0-9-_\.'.$acentos.']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.'-_.';
-            break;
-        case 'MODULO':
-            $padrao = '/^[A-z0-9-_\/]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_/';
-            break;
-        case 'NOME':
-            $padrao = '/^[A-z-'.$acentos.$espaco.'\']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'";
-            break;
-        case 'NOME_ARQUIVO':
-            $padrao = '/^[A-z0-9-_\.\/]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_./';
-            break;
-        case 'NOME_INCOMPLETO':
-            $padrao = '/^[A-z-'.$acentos.$espaco.'\'\.]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'.";
-            break;
-        case 'NUMERICO':
-            $padrao = '/^[0-9]+$/'.$u;
-            $permite = $numeros;
-            break;
-        case 'NUMERICO_PONTO':
-            $padrao = '/^[0-9\.]+$/'.$u;
-            $permite = $numeros.'.';
-            break;
-        case 'RG':
-            $padrao = '/^[A-z0-9-\.'.$espaco.']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.$str_espaco.'-.';
-            break;
-        case 'SENHA':
-            $padrao = '/^[A-z0-9'.$simbolos.$acentos.$espaco.']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$numeros.$str_simbolos.$letras_acentuadas.$numeros.$str_espaco;
-            break;
-        case 'SITE':
-            $padrao = '/^http:\/\/[A-z0-9-_\.\?&~%=\/]+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.':/-_.?&~%=';
-            break;
-        case 'TEXTO':
-            $padrao = '/^[A-z0-9'.$simbolos.$acentos.$quebra_linha.$espaco.']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.$str_simbolos.$str_quebra_linha.$str_espaco;
-            break;
-        case 'TEXTO_LINHA':
-            $padrao = '/^[A-z0-9'.$simbolos.$acentos.$espaco.']+$/'.$u;
-            $permite = $letras_maiusculas.$letras_minusculas.$letras_acentuadas.$numeros.$str_simbolos.$str_espaco;
-            break;
-        }
+        // Validar de acordo com expressao regular
+        $definicao = self::get_definicao_tipo($tipo);
 
         // Se validou
-        if (preg_match($padrao, $valor)) {
+        if (preg_match($definicao->padrao, $valor)) {
             return true;
         }
 
         // Checando os caracteres que nao podiam ser usados
-        if (isset($permite)) {
+        if (isset($definicao->permite)) {
             $len = texto::strlen($valor);
             $caracteres_invalidos = array();
             $posicoes = array();
             for ($i = 0; $i < $len; $i++) {
                 $char = texto::get_char($valor, $i);
-                if (strpos($permite, $char) === false) {
+                if (strpos($definicao->permite, $char) === false) {
                     $caracteres_invalidos[] = htmlspecialchars("\"{$char}\"");
                     $posicoes[] = $i + 1;
                 }
@@ -494,9 +566,9 @@ final class validacao {
         } elseif ($email == 'root@localhost') {
             return true;
         }
-        $u = VALIDACAO_UTF8 ? 'u' : '';
-        $exp = '/^[A-z0-9]+[\.A-z0-9-_]*@(([A-z0-9-_]+)(\.[A-z0-9-_]+)+)$/'.$u;
-        if (!preg_match($exp, $email, $match)) {
+
+        $definicao = self::get_definicao_tipo('EMAIL');
+        if (!preg_match($definicao->padrao, $email, $match)) {
             $email = texto::codificar($email);
             $erro_campo = "O e-mail n&atilde;o est&aacute; no padr&atilde;o ou possui caracteres inv&aacute;lidos ({$email}).";
             return false;
@@ -519,8 +591,9 @@ final class validacao {
     public static function acentos($forcar_chr = false) {
     // Bool $forcar_chr: forca o retorno da funcao na forma de chr
     //
-        $letras = array(192, 193, 194, 195, 196, 199, 201, 202, 205, 209, 211, 212, 213, 218, 220,
-                        224, 225, 226, 227, 228, 231, 233, 234, 237, 241, 243, 244, 245, 250, 252);
+        $letras = array(192, 193, 194, 195, 196, 199, 200, 201, 202, 203, 204, 205, 209, 210, 
+                        211, 212, 213, 218, 220, 224, 225, 226, 227, 228, 231, 233, 234, 237,
+                        241, 243, 244, 245, 250, 252);
         $str = '';
         if (VALIDACAO_UTF8) {
             foreach ($letras as $l) {
@@ -548,12 +621,13 @@ final class validacao {
         $simbolos = array(
                           /* Caracteres ASCII */
                           33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 58,
-                          59, 60, 61, 62, 63, 64, 91, 92, 93, 95, 124, 161, 167, 168, 169,
-                          170, 174, 176, 178, 179, 180, 185, 186, 191, 194, 200, 203, 204,
-                          206, 207, 210, 214, 215, 216, 217, 219, 221, 229, 232, 235, 236,
-                          238, 239, 246, 247, 248, 249,
+                          59, 60, 61, 62, 63, 64, 91, 92, 93, 95, 124,
 
                           /* Caracteres UTF-8 */
+                          161, 167, 168, 169, 170, 174, 176, 178, 179, 180, 185, 186, 191,
+                          194, 200, 203, 204, 206, 207, 210, 214, 215, 216, 217, 219, 221,
+                          229, 232, 235, 236, 238, 239, 246, 247, 248, 249,
+
                           8211, 8216, 8217, 8218, 8219, 8220, 8221, 8222, 8223, 8242, 8243,
                           8244, 8245, 8246, 8247, 8364, 8373, 8482);
 

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// Versao: 1.0.0.2
 // Data: 20/11/2008
-// Modificado: 21/11/2008
+// Modificado: 29/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 //
@@ -245,7 +245,7 @@ function exibir_char($c, $faixas_completas) {
 
     echo '<fieldset>';
     echo '<legend>Dados do Caractere</legend>';
-    echo '<p><strong>Caractere:</strong> '.$c.'</p>';
+    echo '<p><strong>Caractere:</strong> '.htmlspecialchars($c, ENT_NOQUOTES, 'UTF-8').'</p>';
     echo '<p><strong>C&oacute;digo:</strong> '.$ord.'</p>';
     echo '<p><strong>Hexadecimal:</strong> 0x'.dechex($ord).'</p>';
     if ($entity !== $c) {

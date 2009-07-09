@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.10
 // Data: 30/01/2008
-// Modificado: 16/03/2009
+// Modificado: 19/06/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -66,6 +66,9 @@ final class captcha {
         $chave = self::gerar_chave();
 
         // Salvar chave criptografada na sessao
+        if (!isset($_SESSION)) {
+            trigger_error("A sessao nao foi aberta", E_USER_ERROR);
+        }
         $_SESSION[__CLASS__]['chave'] = self::codificar($chave);
 
         // Gerar imagem
@@ -205,6 +208,10 @@ final class captcha {
     static public function validar($chave) {
     // String $chave: chave informada pelo usuario
     //
+        if (!isset($_SESSION)) {
+            trigger_error("A sessao nao foi aberta", E_USER_ERROR);
+        }
+
         // Checar se foi salvo na sessao
         if (!isset($_SESSION[__CLASS__]['chave'])) {
             return false;
@@ -272,6 +279,9 @@ final class captcha {
         }
 
         // Salvar chave criptografada na sessao
+        if (!isset($_SESSION)) {
+            trigger_error("A sessao nao foi aberta", E_USER_ERROR);
+        }
         $_SESSION[__CLASS__]['chave'] = self::codificar($obj->resposta);
         return $obj;
     }

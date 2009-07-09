@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.3
+// Versao: 1.1.0.4
 // Data: 25/09/2007
-// Modificado: 22/01/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -26,7 +26,7 @@ modulo::pagina('listar_arquivos', $dados_pagina);
 //
 //     Imprime a lista de arquivos por modulos
 //
-function listar_arquivos(&$pagina) {
+function listar_arquivos($pagina) {
 // pagina $pagina: objeto da classe pagina
 //
     global $CFG, $modulo;

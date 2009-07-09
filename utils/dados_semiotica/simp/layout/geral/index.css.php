@@ -453,6 +453,7 @@ ul.hierarquia li .valor img.bt_expandir {
 
 .caixa h2.titulo {
   background-color: #FFFFFF;
+  background-image: none;
   border: 1px inset #FFFFFF;
   color: #000000;
   font-size: 14px;

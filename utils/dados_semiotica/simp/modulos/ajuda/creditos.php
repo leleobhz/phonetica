@@ -60,7 +60,9 @@ function imprimir_creditos() {
 
     $equipe = file_get_contents($CFG->dirmods.$modulo.'/equipe.html');
     if (file_exists($CFG->dirmods.$modulo.'/creditos.html')) {
-        $creditos = file_get_contents($CFG->dirmods.$modulo.'/creditos.html');
+        $creditos = '<div id="creditos">'.
+                    file_get_contents($CFG->dirmods.$modulo.'/creditos.html').
+                    '</div>';
     } else {
         $creditos = '';
     }
@@ -68,9 +70,9 @@ function imprimir_creditos() {
     echo <<<CREDITOS
 <h4><strong>{$nome_sistema}</strong> - {$descricao_sistema} - <em>Vers&atilde;o {$versao_sistema}</em></h4>
 <p>Este sistema foi desenvolvido por:</p>
-<blockquote>
+<div id="equipe">
 {$equipe}
-</blockquote>
+</div>
 <hr />
 {$creditos}
 

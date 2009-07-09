@@ -5,13 +5,12 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.7
+// Versao: 1.1.0.10
 // Data: 10/09/2007
-// Modificado: 18/03/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
-global $CFG;
 
 
 //
@@ -23,7 +22,7 @@ function instalar_permissao(&$erros) {
     global $CFG;
     $r = true;
 
-    if (objeto::get_objeto('permissao')->quantidade_registros()) {
+    if (objeto::get_objeto('permissao')->possui_registros()) {
         return true;
     }
 
@@ -115,7 +114,6 @@ function inserir_permissao($cod_grupo, $modulo, $arquivo, $visivel, $posicao, &$
 
     if (!$consultou) {
         $erros[] = "O arquivo {$arquivo} (m&oacute;dulo {$modulo}) n&atilde;o foi cadastrado, mas foi solicitado no arquivo de instala&ccedil;&atilde;o \"{$arq_ini}\"";
-        $erros = array_merge($erros, $arq->get_erros());
         return false;
     }
     $cod_arquivo = $arq->cod_arquivo;
@@ -131,12 +129,8 @@ function inserir_permissao($cod_grupo, $modulo, $arquivo, $visivel, $posicao, &$
     $r = $p->validacao_final($dados) && $p->salvar();
 
     if (!$r) {
-        $vetor_erros = $p->get_erros();
-        $vetor_erros2 = array();
-        foreach ($vetor_erros as $item) {
-            $vetor_erros2[] = $item." (arquivo {$arquivo} / m&oacute;dulo {$modulo} / INI {$arq_ini})";
-        }
-        $erros = array_merge($erros, $vetor_erros2);
+        $erros[] = "Erro ao instalar arquivo {$arquivo} / m&oacute;dulo {$modulo}";
+        $erros[] = $p->get_erros();
     }
     return $r;
 }

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.17
+// Versao: 1.0.0.18
 // Data: 31/07/2007
-// Modificado: 01/06/2009
+// Modificado: 24/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -97,6 +97,7 @@ function imprimir_arquivos() {
             echo '<h2>Sistemas</h2>';
             echo '<ul>';
             foreach ($estatisticas->sistemas as $sistema) {
+                $sistema->porcentagem = new stdClass();
                 $sistema->porcentagem->total = round($sistema->total * 100 / $estatisticas->total, 2);
                 $sistema->porcentagem->tamanho_total = round($sistema->tamanho_total * 100 / $estatisticas->tamanho_total, 2);
                 $sistema->porcentagem->tamanho_real = round($sistema->tamanho_real * 100 / $estatisticas->tamanho_real, 2);

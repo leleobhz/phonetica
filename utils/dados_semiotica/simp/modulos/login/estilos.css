@@ -40,3 +40,9 @@
   margin-top: 3em;
   margin-bottom: 0px;
 }
+
+.bloco_ajuda_aberto,
+.bloco_ajuda_fechado {
+  margin-right: 1em;
+}
+

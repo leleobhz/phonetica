@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.18
+// Versao: 1.3.0.27
 // Data: 27/08/2007
-// Modificado: 09/06/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -22,7 +22,7 @@ abstract class objeto_formulario extends objeto {
     //public function campo_formulario(&$form, $campo, $valor)
     //public function pode_ser_manipulado(&$usuario)
     //public function pode_acessar_formulario(&$usuario, &$motivo = '')
-
+    //public function get_info_campo($campo)
 
 /// @ METODOS DE LOGICA
 
@@ -125,7 +125,7 @@ abstract class objeto_formulario extends objeto {
 
         // Se o formulario possui um campo captcha
         if ($captcha && !captcha::validar($dados->captcha)) {
-            $this->erros[] = 'O texto da imagem est&aacute; incorreto';
+            $this->erros[] = 'O texto da imagem est&aacute; incorreto ('.texto::codificar($dados->captcha).')';
         }
 
         // Se conseguir salvar
@@ -688,10 +688,14 @@ abstract class objeto_formulario extends objeto {
                 $obj->limpar_objeto();
                 $obj->set_id_form($this->id_form);
                 $obj->set_valores($entidade, false, true);
+                $campos_entidade = array_keys((array)$entidade);
+
+                // Se salvou, limpar a instancia para economizar memoria
+                if ($obj->salvar_completo($campos_entidade)) {
+                    objeto::remover_instancia($classe, $obj->get_valor_chave());
 
                 // Se possui erros
-                $campos_entidade = array_keys((array)$entidade);
-                if (!$obj->salvar_completo($campos_entidade)) {
+                } else {
                     $r = false;
                     $this->erros[] = 'Erro ao importar '.$this->get_entidade()." (registro {$n})";
                     $this->erros[] = $obj->get_erros();
@@ -858,7 +862,7 @@ abstract class objeto_formulario extends objeto {
         }
 
         // Obter valor padrao
-        if ($atributo->usar_valor_padrao && ($valor === '' || is_null($valor))) {
+        if ($atributo->usar_valor_padrao && $atributo->is_null($valor)) {
             switch ($atributo->tipo) {
             case 'data':
                 if ($atributo->padrao == 'agora') {
@@ -1005,7 +1009,7 @@ abstract class objeto_formulario extends objeto {
 
                 // Se sao poucos elementos possiveis: campo select
                 if (((abs($atributo->maximo) - abs($atributo->minimo)) < 100) ||
-                    ($obj->quantidade_registros() < 100)) {
+                    (!$obj->possui_registros(null, 100))) {
                     $vetor = $obj->vetor_associativo();
                     if ($atributo->chave == 'OFK') {
                         $vetor = array('0' => 'Nenhum') + $vetor;
@@ -1296,13 +1300,13 @@ abstract class objeto_formulario extends objeto {
                 echo '<p>';
                 switch ($this->get_genero()) {
                 case 'M':
-                    link::texto($action, 'Cadastrar outro');
+                    link::texto($action, 'Cadastrar outro '.$this->get_entidade());
                     break;
                 case 'F':
-                    link::texto($action, 'Cadastrar outra');
+                    link::texto($action, 'Cadastrar outra '.$this->get_entidade());
                     break;
                 case 'I':
-                    link::texto($action, 'Cadastrar outro(a)');
+                    link::texto($action, 'Cadastrar outro(a) '.$this->get_entidade());
                     break;
                 }
                 echo '</p>';
@@ -1695,9 +1699,17 @@ abstract class objeto_formulario extends objeto {
                 $valores = new stdClass();
                 $valores->$classe = $this->get_dados($vt_campos);
             } else {
-                $valores_classe = util::objeto($vt_campos, $valores);
-                $valores = new stdClass();
-                $valores->$classe = $valores_classe;
+                $vt_campos = array();
+                foreach ($campos as $campo) {
+                    if (is_array($campo)) {
+                        $vt_campos = array_merge($vt_campos, $campo);
+                    } else {
+                        $vt_campos[] = $campo;
+                    }
+                }
+                $this->montar_opcoes($valores, $vt_campos, $opcoes);
+                $vt_campos = objeto::converter_notacao_vetor($vt_campos);
+                $valores->$classe = $this->converter_componentes($valores->$classe, $vt_campos);
             }
             $valores->default = true;
 
@@ -1772,6 +1784,11 @@ abstract class objeto_formulario extends objeto {
                 trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo deveria retornar um valor "bool" e esta retornando um "'.gettype($inseriu_campo).'")', E_USER_ERROR);
             } else {
                 $this->names[] = $nome_campo;
+                if (FORMULARIO_AJAX && $this->get_info_campo($nome_campo)) {
+                    $id_campo = $form->montar_id($nome_campo);
+                    $meta_valor = base64_encode($this->get_classe().':'.$nome_campo.':'.$this->id_form);
+                    $form->meta_informacao($id_campo, $meta_valor);
+                }
             }
 
         // Se e' o atributo de um objeto filho
@@ -1786,17 +1803,36 @@ abstract class objeto_formulario extends objeto {
 
                 $nome_objeto = implode(':', $vt_atributo);
                 $form->set_nome($vt_nome);
-                $this->__get($nome_objeto)->set_id_form($this->id_form);
-                $inseriu_campo = $this->__get($nome_objeto)->campo_formulario($form, $nome_campo, $valor);
+                $this->get_objeto_rel_uu($nome_objeto)->set_id_form($this->id_form);
+
+                $inseriu_campo = $this->get_objeto_rel_uu($nome_objeto)->campo_formulario($form, $nome_campo, $valor);
                 if (!$inseriu_campo) {
-                    trigger_error('O campo "'.$nome_objeto.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo retorou um tipo "'.gettype($inseriu_campo).'" e deveria retornar um "bool")', E_USER_ERROR);
+                    trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo retorou um tipo "'.gettype($inseriu_campo).'" e deveria retornar um "bool")', E_USER_ERROR);
                 } else {
+                    if (FORMULARIO_AJAX && $this->get_objeto_rel_uu($nome_objeto)->get_info_campo($nome_campo)) {
+                        $id_campo = $form->montar_id($nome_campo);
+                        $meta_valor = base64_encode($this->get_objeto_rel_uu($nome_objeto)->get_classe().':'.$nome_campo.':'.$this->id_form);
+                        $form->meta_informacao($id_campo, $meta_valor);
+                    }
                     $php = '$this->names["'.implode('"]["', $vt_atributo).'"][] = $nome_campo;';
                     eval($php);
                 }
             }
         }
         return true;
+    }
+
+
+    //
+    //     Obtem informacoes sobre um campo do formulario
+    //
+    public function get_info_campo($campo) {
+    // String $campo: campo desejado
+    //
+        if ($this->possui_atributo($campo)) {
+            return $this->get_definicao_atributo($campo);
+        }
+        return false;
     }
 
 }//class

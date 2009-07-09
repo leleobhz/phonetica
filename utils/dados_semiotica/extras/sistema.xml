@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sistema>
   <dados>
-    <nome>SIMP</nome>
-    <descricao>Framework de Desenvolvimento</descricao>
+    <nome>ANALISES</nome>
+    <descricao>Cadastro de Analises sobre Frases</descricao>
   </dados>
   <orgaos>
     <orgao id="tecnolivre">TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres</orgao>

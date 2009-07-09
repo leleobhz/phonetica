@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// Versao: 1.0.0.6
 // Data: 17/04/2008
-// Modificado: 03/06/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -328,7 +328,7 @@ class driver_mysql extends driver_base {
     //
     //     Converte um registro para objeto
     //
-    public function fetch_object(&$resultado) {
+    public function fetch_object($resultado) {
     // Resource $resultado: resultado de uma consulta
     //
         if (is_resource($resultado)) {
@@ -342,7 +342,7 @@ class driver_mysql extends driver_base {
     //
     //     Obtem o numero de resultados de um resource
     //
-    public function quantidade_registros(&$resultado) {
+    public function quantidade_registros($resultado) {
     // Resource $resultado: resultado de uma consulta
     //
         if (is_resource($resultado)) {
@@ -356,7 +356,7 @@ class driver_mysql extends driver_base {
     //
     //     Obtem o numero de registros atingidos na ultima consulta
     //
-    public function registros_atingidos(&$resultado) {
+    public function registros_atingidos($resultado) {
     // Resource $resultado: resultado a ser analisado
     //
         if ($this->conexao) {

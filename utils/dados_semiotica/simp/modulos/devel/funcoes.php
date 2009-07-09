@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// Versao: 1.0.0.14
 // Data: 31/07/2007
-// Modificado: 01/06/2009
+// Modificado: 24/06/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -157,7 +157,7 @@ function get_arquivos($dir, $dir_rel, $abertos) {
     $arquivos = $diretorios = array();
     foreach ($itens as $i) {
         if ($i[0] == '.') { continue; }
-        if (is_file($dir.$i) && preg_match('/^.+\.php$/', $i)) {
+        if (is_file($dir.$i) && preg_match('/\.php$/', $i)) {
             $arquivos[] = $i;
         } elseif (is_dir($dir.$i)) {
             $diretorios[] = $i;
@@ -497,7 +497,7 @@ function calcular_estatisticas_dir($dir, &$obj) {
     $itens = scandir($dir);
     foreach ($itens as $i) {
         if ($i[0] == '.') { continue; }
-        if (is_file($dir.$i) && preg_match('/^.+\.php$/', $i)) {
+        if (is_file($dir.$i) && preg_match('/\.php$/', $i)) {
             contar_funcoes_arquivo($dir.$i, $obj);
         } elseif (is_dir($dir.$i)) {
             calcular_estatisticas_dir($dir.$i.'/', $obj);

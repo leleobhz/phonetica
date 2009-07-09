@@ -17,4 +17,4 @@ require_once('../../../../config.php');
 $opcoes = new stdClass();
 $opcoes->icone = icone::endereco('livro');
 
-modulo::estilos('projeto', $opcoes);
+modulo::estilos('texto_analise', $opcoes);

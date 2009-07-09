@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.2.5
+// Versao: 1.0.2.7
 // Data: 06/08/2007
-// Modificado: 06/04/2009
+// Modificado: 25/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -33,6 +33,7 @@ final class atributo {
         case 'descricao': return '';                 // Descricao do atributo (nome apresentado ao usuario)
         case 'label': return false;                  // Nome do label nos formularios (string ou array indexado pelo ID do formulario)
         case 'ajuda': return false;                  // Ajuda do atributo em formularios
+        case 'exemplo': return false;                // Exemplo(s) de valor que pode(m) ser assumido(s) pelo campo
         case 'tipo': return 'string';                // Tipo (int, float, string, char, bool, binario ou data)
         case 'chave': return false;                  // Indica o tipo de Chave (PK, FK, OFK, CK ou false)
         case 'minimo': return false;                 // Valor minimo do campo ou false caso nao exista
@@ -67,6 +68,7 @@ final class atributo {
         $caracteristicas = array('nome',
                                  'label',
                                  'ajuda',
+                                 'exemplo',
                                  'tipo',
                                  'chave',
                                  'minimo',
@@ -218,6 +220,7 @@ final class atributo {
         case 'nome':
         case 'descricao':
         case 'classe':
+        case 'exemplo':
             $valor = (string)$valor;
             break;
 
@@ -345,10 +348,16 @@ final class atributo {
     //
     //     Define uma ajuda a ser exibida nos formularios
     //
-    public function set_ajuda($ajuda = false) {
+    public function set_ajuda($ajuda = false, $exemplo = false) {
     // String || Array[String => String] $ajuda: mensagem de ajuda ou vetor com as possicoes "link" e (opcionalmente) "texto"
+    // String $exemplo: exemplo de preenchimento do atributo
     //
-        $this->__set('ajuda', $ajuda);
+        if ($ajuda !== false) {
+            $this->__set('ajuda', $ajuda);
+        }
+        if ($exemplo !== false) {
+            $this->__set('exemplo', $exemplo);
+        }
     }
 
 
@@ -453,6 +462,22 @@ final class atributo {
     //
         $this->__set('tipo_data_fim', $tipo_data);
         $this->__set('data_fim', $fim);
+    }
+
+
+    //
+    //     Indica se um determinado valor e' considerado nulo para o tipo do atributo
+    //
+    public function is_null($valor) {
+    // Mixed $valor: valor a ser testado
+    //
+        switch ($this->__get('tipo')) {
+        case 'data':
+            $data = objeto::parse_data($valor, false);
+            return is_null($valor) || $valor === '' || $data['ano'] == 0;
+        default:
+            return is_null($valor) || $valor === '';
+        }
     }
 
 }//class

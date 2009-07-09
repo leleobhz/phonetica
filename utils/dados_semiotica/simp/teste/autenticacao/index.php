@@ -65,7 +65,7 @@ if (!isset($_POST['tipo'])) {
                 if ($definicao->maximo) {
                     $maxlength = ' maxlength="'.$definicao->maximo.'"';
                 }
-                $type = (eregi($definicao->nome, 'senha')) ? 'password' : 'text';
+                $type = strpos($definicao->nome, 'senha') !== false ? 'passoword' : 'text';
             }
             echo '<p>';
             echo '<label for="param_'.$parametro.'">'.$definicao->descricao.':</label> ';

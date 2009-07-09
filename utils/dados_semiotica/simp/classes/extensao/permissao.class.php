@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.5
+// Versao: 1.1.0.7
 // Data: 10/09/2007
-// Modificado: 05/06/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -19,8 +19,8 @@ final class permissao extends permissao_base {
     public function pre_salvar(&$salvar_campos) {
     // Array[String] $salvar_campos: campos a serem salvos
     //
-        $posicao = $this->__get('posicao');
-        $grupo   = $this->__get('cod_grupo');
+        $posicao = $this->get_atributo('posicao');
+        $grupo   = $this->get_atributo('cod_grupo');
 
         switch ($this->id_form) {
         case $this->id_formulario_excluir():
@@ -42,12 +42,11 @@ final class permissao extends permissao_base {
 
         case $this->id_formulario_inserir():
             $vt_condicoes = array();
-            $vt_condicoes[] = condicao_sql::montar('cod_arquivo', '=', $this->__get('cod_arquivo'));
-            $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->__get('cod_grupo'));
+            $vt_condicoes[] = condicao_sql::montar('cod_arquivo', '=', $this->get_atributo('cod_arquivo'));
+            $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->get_atributo('cod_grupo'));
             $condicoes = condicao_sql::sql_and($vt_condicoes);
 
-            $quantidade = objeto::get_objeto($this->get_classe())->quantidade_registros($condicoes);
-            if ($quantidade) {
+            if ($this->possui_registros($condicoes)) {
                 $this->erros[] = 'Este grupo j&aacute; tem permiss&atilde;o para este arquivo';
                 return false;
             }
@@ -110,8 +109,8 @@ final class permissao extends permissao_base {
         $classe = $this->get_classe();
         $proxima_permissao = new $classe();
         $vt_condicoes = array();
-        $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->__get('cod_grupo'));
-        $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->__get('posicao') + 1);
+        $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->get_atributo('cod_grupo'));
+        $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->get_atributo('posicao') + 1);
         $condicoes = condicao_sql::sql_and($vt_condicoes);
         $proxima_permissao->consultar_condicoes($condicoes, array('posicao'));
 
@@ -122,7 +121,7 @@ final class permissao extends permissao_base {
         }
 
         // Alterar as posicoes
-        $posicao = $this->__get('posicao');
+        $posicao = $this->get_atributo('posicao');
         $this->__set('posicao', $posicao + 1);
         $proxima_permissao->__set('posicao', $posicao);
 
@@ -150,8 +149,8 @@ final class permissao extends permissao_base {
         $classe = $this->get_classe();
         $permissao_anterior = new $classe();
         $vt_condicoes = array();
-        $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->__get('cod_grupo'));
-        $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->__get('posicao') - 1);
+        $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->get_atributo('cod_grupo'));
+        $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->get_atributo('posicao') - 1);
         $condicoes = condicao_sql::sql_and($vt_condicoes);
         $permissao_anterior->consultar_condicoes($condicoes, array('posicao'));
 
@@ -162,7 +161,7 @@ final class permissao extends permissao_base {
         }
 
         // Alterar as posicoes
-        $posicao = $this->__get('posicao');
+        $posicao = $this->get_atributo('posicao');
         $this->__set('posicao', $posicao - 1);
         $permissao_anterior->__set('posicao', $posicao);
 
@@ -190,7 +189,7 @@ final class permissao extends permissao_base {
         switch ($campo) {
         case 'cod_arquivo':
             $modulos = listas::get_modulos();
-            $obj = $this->__get('arquivo');
+            $obj = $this->get_objeto_rel_uu('arquivo');
             $vetor = array();
             foreach ($modulos as $modulo) {
                 $condicoes = condicao_sql::montar('modulo', '=', $modulo);
@@ -200,7 +199,7 @@ final class permissao extends permissao_base {
             return true;
 
         case 'posicao':
-            if ($cod_grupo = $this->__get('cod_grupo')) {
+            if ($cod_grupo = $this->get_atributo('cod_grupo')) {
                 if (!$valor) {
                     $condicao = condicao_sql::montar('cod_grupo', '=', $cod_grupo);
                     $valor = $this->quantidade_registros($condicao) + 1;

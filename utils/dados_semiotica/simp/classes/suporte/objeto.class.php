@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.41
+// Versao: 1.3.0.51
 // Data: 06/08/2007
-// Modificado: 09/06/2009
+// Modificado: 02/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -149,6 +149,11 @@ abstract class objeto implements Iterator {
         $this->definir_classe($classe, $tabela, $descricao, $singleton);
         $this->set_nome_entidade($entidade, $entidade_plural, $genero);
 
+        // Checar a consistencia da definicao (leva aproximadamente 0.00006 segundos por classe)
+        if (!DEVEL_BLOQUEADO) {
+            $this->validar_integridade_entidade();
+        }
+
         // Definir uma nova instancia da classe ($this->instancia)
         $this->definir_instancia($classe);
 
@@ -206,8 +211,6 @@ abstract class objeto implements Iterator {
         // Validar os atributos informados
         if ($tabela === false) {
             $tabela = $classe;
-        } elseif (empty($tabela)) {
-            trigger_error('O nome da tabela nao pode ser vazio', E_USER_ERROR);
         }
         if ($descricao === false) {
             $descricao = 'Tabela '.$tabela;
@@ -225,11 +228,6 @@ abstract class objeto implements Iterator {
 
         // Preencher a definicao global com os atributos da entidade (metodo abstrato)
         $this->definir_atributos();
-
-        // Checar a consistencia da definicao (leva aproximadamente 0.00006 segundos por classe)
-        if (!DEVEL_BLOQUEADO) {
-            $this->validar_integridade_entidade();
-        }
     }
 
 
@@ -263,15 +261,36 @@ abstract class objeto implements Iterator {
             trigger_error('Toda entidade precisa de uma chave primaria', E_USER_ERROR);
         }
 
-        // Checar o nome da entidade
+        // Checar o genero da entidade
         if (!preg_match('/^[MFI]$/', $this->definicao->entidade->genero)) {
             trigger_error('Genero invalido "'.$this->definicao->entidade->genero.'"', E_USER_ERROR);
         }
+
+        // Checar o nome da entidade
+        $tr = array('&amp;'  => '',
+                    '&#x26;' => '',
+                    '&#038;' => '');
+
+        // Checar o nome da entidade no singular
         if (!is_string($this->definicao->entidade->singular)) {
             trigger_error('O nome da entidade deve ser uma string ('.gettype($$this->definicao->entidade->singular).')', E_USER_ERROR);
+        } else {
+            $teste = strtr($this->definicao->entidade->singular, $tr);
+            $teste = html_entity_decode($teste, ENT_QUOTES, 'UTF-8');
+            if (strpos($teste, '&') !== false) {
+                trigger_error('A entidade "'.$classe.'" nao possui uma descricao valida no singular (checar entities)', E_USER_ERROR);
+            }
         }
+
+        // Checar o nome da entidade no plural
         if (!is_string($this->definicao->entidade->plural)) {
             trigger_error('O nome da entidade no plural deve ser uma string ('.gettype($this->definicao->entidade->plural).')', E_USER_ERROR);
+        } else {
+            $teste = strtr($this->definicao->entidade->plural, $tr);
+            $teste = html_entity_decode($teste, ENT_QUOTES, 'UTF-8');
+            if (strpos($teste, '&') !== false) {
+                trigger_error('A entidade "'.$classe.'" nao possui uma descricao valida no plural (checar entities)', E_USER_ERROR);
+            }
         }
 
         // Checar se a entidade possui um campo identificador
@@ -491,7 +510,7 @@ abstract class objeto implements Iterator {
     //
     //     Desaloca as instancias da lista de instancias
     //
-    public static function remover_instancias($classe) {
+    final public static function remover_instancias($classe) {
     // String $classe: nome da classe da instancia
     //
         if (isset(self::$instancias[$classe])) {
@@ -505,7 +524,7 @@ abstract class objeto implements Iterator {
     //
     //     Desaloca uma instancia da lista de instancias
     //
-    public static function remover_instancia($classe, $codigo) {
+    final public static function remover_instancia($classe, $codigo) {
     // String $classe: nome da classe da instancia
     // Int $codigo: codigo unico da instancia
     //
@@ -607,6 +626,69 @@ XML;
     }
 
 
+    //
+    //     Retorna um XML com as caracteristicas de um atributo da classe
+    //
+    final public function get_definicao_atributo_xml($atributo) {
+    // String $atributo: nome do atributo
+    //
+        if (!$this->possui_atributo($atributo)) {
+            return ;
+        }
+        $def = $this->get_definicao_atributo($atributo);
+        return $this->gerar_definicao_atributo_xml($def);
+    }
+
+
+    //
+    //     Gera um XML com as caracteristicas de uma definicao de atributo
+    //
+    final public function gerar_definicao_atributo_xml($definicao) {
+    // atributo $definicao: definicao do atributo
+    //
+        $xml = "<atributo>\n";
+        $xml .= "  <descricao><![CDATA[".texto::decodificar($definicao->descricao)."]]></descricao>\n";
+        $xml .= "  <tipo>{$definicao->tipo}</tipo>\n";
+        $xml .= "  <chave>".$definicao->chave."</chave>\n";
+        $xml .= "  <enum>".(method_exists($this, 'get_vetor_'.$definicao->nome) ? '1' : '0')."</enum>\n";
+        $xml .= "  <unico>".($definicao->unico ? '1' : '0')."</unico>\n";
+        $xml .= "  <pode_vazio>".($definicao->pode_vazio ? '1' : '0')."</pode_vazio>\n";
+        switch ($definicao->tipo) {
+        case 'float':
+            $xml .= "  <casas_decimais>{$definicao->casas_decimais}</casas_decimais>\n";
+            $xml .= "  <fixo>{$definicao->fixo}</fixo>\n";
+        case 'int':
+        case 'string':
+        case 'binario':
+        case 'data':
+            $xml .= "  <minimo>{$definicao->minimo}</minimo>\n";
+            $xml .= "  <maximo>{$definicao->maximo}</maximo>\n";
+            break;
+        }
+        if ($definicao->validacao) {
+            $def_validacao = validacao::get_definicao_tipo($definicao->validacao);
+
+            $xml .= "  <validacao>\n";
+            $xml .= "    <nome>{$definicao->validacao}</nome>\n";
+            $xml .= "    <padrao><![CDATA[".texto::decodificar($def_validacao->padrao)."]]></padrao>\n";
+            $xml .= "    <permite><![CDATA[".texto::decodificar($def_validacao->permite)."]]></permite>\n";
+            if ($definicao->ajuda) {
+                $xml .= "    <instrucoes><![CDATA[".texto::decodificar($definicao->ajuda)."]]></instrucoes>\n";
+            } else {
+                $xml .= "    <instrucoes><![CDATA[".texto::decodificar($def_validacao->instrucoes)."]]></instrucoes>\n";
+            }
+            if ($definicao->exemplo) {
+                $xml .= "    <exemplo><![CDATA[".texto::decodificar($definicao->exemplo)."]]></exemplo>\n";
+            } else {
+                $xml .= "    <exemplo><![CDATA[".texto::decodificar($def_validacao->exemplo)."]]></exemplo>\n";
+            }
+            $xml .= "  </validacao>\n";
+        }
+        $xml .= "</atributo>";
+        return $xml;
+    }
+
+
 /// @ METODOS ESPECIFICOS DA CLASSE OBJETO
 
 
@@ -676,6 +758,39 @@ XML;
         util::debug();
         trigger_error('Metodo desconhecido "'.$metodo.'"', E_USER_ERROR);
     }
+
+
+/*
+//TODO Liberar o metodo quando o PHP 5.3.0 estiver mais popular
+
+Este metodo serve para simplificar chamadas ao metodo get_objeto:
+$obj = objeto::get_objeto('usuario');
+
+Transformando em uma forma mais simples:
+$obj = objeto::usuario();
+
+Ou criando uma entidade ja existente
+$obj = objeto::usuario('login', 'admin');
+
+
+    //
+    //     Gera e retorna um novo objeto da classe especificada
+    //
+    public static function __callStatic($metodo, $args) {
+        $classe = $metodo;
+        try {
+            simp_autoload($classe);
+        } catch (Exceptcion $e) {
+            throw new Exception("Classe desconhecida: {$classe}");
+        }
+        if (count($args) >= 2) {
+            $obj = new $classe($args[0], $args[1], $args[2]);
+        } else {
+            $obj = new $classe();
+        }
+        return $obj;
+    }
+*/
 
 
     //
@@ -916,10 +1031,10 @@ XML;
             $nome_obj = substr($nome_atributo, 0, $pos);
             $resto = substr($nome_atributo, $pos + 1);
             if ($this->possui_rel_uu($nome_obj)) {
-                $flag_bd = $this->__get($nome_obj)->instancia->flag_bd;
-                $this->__get($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
-                $this->__get($nome_obj)->__set($resto, $valor);
-                $this->__get($nome_obj)->instancia->flag_bd = $flag_bd;
+                $flag_bd = $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd;
+                $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
+                $this->get_objeto_rel_uu($nome_obj)->__set($resto, $valor);
+                $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $flag_bd;
                 return true;
             } else {
                 trigger_error('A classe "'.$this->get_classe().'" nao possui o objeto "'.$nome_obj.'"', E_USER_WARNING);
@@ -1258,16 +1373,19 @@ XML;
     //
     //     Converte os dados submetidos em campos separados do formulario em valores a serem usados por determinado atributo
     //
-    final protected function converter_componentes($valores, $campos) {
+    final public function converter_componentes($valores, $campos) {
     // Object $valores: objeto com os valores originais valores
-    // Array[String] $campos: vetor de campos a serem convertidos
+    // Array[String || Type] $campos: vetor de campos a serem convertidos
     //
         $obj = new stdClass();
-        foreach ($campos as $campo => $sub_campos) {
-            if (is_array($sub_campos)) {
+        foreach ($campos as $chave => $valor) {
+            if (is_array($valor)) {
+                $campo      = $chave;
+                $sub_campos = $valor;
                 $sub_valores = isset($valores->$campo) ? $valores->$campo : null;
                 $obj->$campo = $this->get_objeto_rel_uu($campo)->converter_componentes($sub_valores, $sub_campos);
             } else {
+                $campo = $valor;
 
                 if ($this->possui_atributo($campo)) {
                     $def = $this->get_definicao_atributo($campo);
@@ -1324,10 +1442,12 @@ XML;
         foreach ($vetor as $atributo) {
             $pos = strpos($atributo, ':');
             if ($pos !== false) {
-                $php = '$novo["'.str_replace(':', '"]["', $atributo).'"] = null;';
+                $vt_atributo = explode(':', $atributo);
+                $ultimo = array_pop($vt_atributo);
+                $php = '$novo["'.str_replace(':', '"]["', implode(':', $vt_atributo)).'"][] = \''.$ultimo.'\';';
                 eval($php);
             } else {
-                $novo[$atributo] = null;
+                $novo[] = $atributo;
             }
         }
         return $novo;
@@ -1358,16 +1478,16 @@ XML;
                 // Se e' um objeto filho
                 if ($this->possui_rel_uu($campo)) {
                     $nome_obj = $campo;
-                    $flag_bd = $this->__get($campo)->instancia->flag_bd;
-                    $this->__get($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
-                    $r_obj = $this->__get($nome_obj)->set_valores($valor, $campos, $sobrescrever);
-                    $this->__get($nome_obj)->instancia->flag_bd = $flag_bd;
+                    $flag_bd = $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd;
+                    $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
+                    $r_obj = $this->get_objeto_rel_uu($nome_obj)->set_valores($valor, $campos, $sobrescrever);
+                    $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $flag_bd;
 
                     $r = $r && $r_obj;
 
                     // Se tem erros no objeto filho: informar os erros para o objeto pai
                     if (!$r_obj) {
-                        switch ($this->__get($nome_obj)->get_genero()) {
+                        switch ($this->get_objeto_rel_uu($nome_obj)->get_genero()) {
                         case 'M':
                             $de = 'do';
                             break;
@@ -1378,9 +1498,9 @@ XML;
                             $de = 'de';
                             break;
                         }
-                        $this->erros[] = 'Erro ao definir valores '.$de.' '.$this->__get($nome_obj)->get_entidade();
-                        $this->erros[] = $this->__get($nome_obj)->get_erros();
-                        $this->__get($nome_obj)->limpar_erros();
+                        $this->erros[] = 'Erro ao definir valores '.$de.' '.$this->get_objeto_rel_uu($nome_obj)->get_entidade();
+                        $this->erros[] = $this->get_objeto_rel_uu($nome_obj)->get_erros();
+                        $this->get_objeto_rel_uu($nome_obj)->limpar_erros();
                     }
 
                 // Se e' um atributo simples e forcou a sobrescrita
@@ -1420,15 +1540,15 @@ XML;
                     $nome_obj   = $chave;
                     $campos_obj = $valor;
                     if ($this->possui_rel_uu($nome_obj)) {
-                        $flag_bd = $this->__get($nome_obj)->instancia->flag_bd;
-                        $this->__get($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
-                        $r_obj = $this->__get($nome_obj)->set_valores($valores->$nome_obj, $campos_obj, $sobrescrever);
+                        $flag_bd = $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd;
+                        $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
+                        $r_obj = $this->get_objeto_rel_uu($nome_obj)->set_valores($valores->$nome_obj, $campos_obj, $sobrescrever);
                         $r = $r_obj && $r;
-                        $this->__get($nome_obj)->instancia->flag_bd = $flag_bd;
+                        $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $flag_bd;
 
                         // Se tem erros no objeto filho: importar os erros para objeto pai
                         if (!$r_obj) {
-                            switch ($this->__get($nome_obj)->get_genero()) {
+                            switch ($this->get_objeto_rel_uu($nome_obj)->get_genero()) {
                             case 'M':
                                 $de = 'do';
                                 break;
@@ -1439,9 +1559,9 @@ XML;
                                 $de = 'de';
                                 break;
                             }
-                            $this->erros[] = 'Erro ao definir valores '.$de.' '.$this->__get($nome_obj)->get_entidade();
-                            $this->erros[] = $this->__get($nome_obj)->get_erros();
-                            $this->__get($nome_obj)->limpar_erros();
+                            $this->erros[] = 'Erro ao definir valores '.$de.' '.$this->get_objeto_rel_uu($nome_obj)->get_entidade();
+                            $this->erros[] = $this->get_objeto_rel_uu($nome_obj)->get_erros();
+                            $this->get_objeto_rel_uu($nome_obj)->limpar_erros();
                         }
 
                     } else {
@@ -1632,7 +1752,7 @@ XML;
         if (is_array($campos)) {
             foreach (util::array_unique_recursivo($campos) as $i => $campo) {
                 if (is_array($campo)) {
-                    $vt_campos_obj = $this->__get($i)->get_campos_modificados($campo);
+                    $vt_campos_obj = $this->get_objeto_rel_uu($i)->get_campos_modificados($campo);
                     if ($vt_campos_obj) {
                         $vt_campos[$i] = $vt_campos_obj;
                     }
@@ -1681,7 +1801,7 @@ XML;
 
                 // Se e' um relacionamento 1:1
                 } elseif ($this->possui_rel_uu($campo)) {
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->__get($campo)->get_dados();';
+                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_objeto_rel_uu($campo)->get_dados();';
                     eval($php);
 
                 // Se e' um relacionamento 1:N
@@ -1699,7 +1819,7 @@ XML;
 
                 // Se e' um atributo auxiliar
                 } elseif ($this->possui_auxiliar($campo)) {
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->__get($campo);';
+                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_auxiliar($campo);';
                     eval($php);
                 }
             }
@@ -2097,7 +2217,7 @@ XML;
 
         if (self::get_modo_persistencia() == OBJETO_MODO_CONGELAR &&
             $this->get_flag_consulta($chave) &&
-            $this->__get($chave) == $valor) {
+            $this->get_atributo($chave) == $valor) {
             $flag |= OBJETO_REMOVER_CONSULTADOS;
         }
         $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores, $flag);
@@ -2331,12 +2451,12 @@ XML;
 
                     // Se pediu os campos necessarios para obter o nome do objeto
                     if ($flag & OBJETO_ADICIONAR_NOMES) {
-                        $campo_nome = $this->__get($nome_obj)->get_campo_nome();
+                        $campo_nome = $this->get_objeto_rel_uu($nome_obj)->get_campo_nome();
                         if ($campo_nome) {
                             if ($this->possui_atributo($nome_obj.':'.$campo_nome)) {
                                 $vt_campos[] = $nome_obj.':'.$campo_nome;
                             } elseif ($this->possui_atributo_implicito($nome_obj.':'.$campo_nome)) {
-                                $def = $this->__get($nome_obj)->get_definicao_implicito($campo_nome);
+                                $def = $this->get_objeto_rel_uu($nome_obj)->get_definicao_implicito($campo_nome);
                                 if (isset($def->atributos) && is_array($def->atributos)) {
                                     $vt_campo_nome = array();
                                     foreach ($def->atributos as $item_campo_nome) {
@@ -2353,7 +2473,7 @@ XML;
                     // Se pediu pelas chaves dos objetos
                     if ($flag & OBJETO_ADICIONAR_CHAVES) {
                         $vt_campos[] = $this->get_nome_chave_rel_uu($nome_obj);
-                        $vt_campos[] = $nome_obj.':'.$this->__get($nome_obj)->get_chave();
+                        $vt_campos[] = $nome_obj.':'.$this->get_objeto_rel_uu($nome_obj)->get_chave();
                     }
                 } elseif ($this->possui_rel_un($campo)) {
                     $vetores[] = $campo;
@@ -2411,7 +2531,7 @@ XML;
                     }
                 } elseif ($this->possui_rel_uu($campo_ordem)) {
                     $def = $this->get_definicao_rel_uu($campo_ordem);
-                    $campo_ordem = $this->__get($campo_ordem)->get_campo_nome();
+                    $campo_ordem = $this->get_objeto_rel_uu($campo_ordem)->get_campo_nome();
                     if ($campo_ordem) {
                         $ordem = $ordem + $this->get_campos_ordem($campo_ordem);
                     }
@@ -2720,13 +2840,34 @@ XML;
 
 
     //
+    //     Obtem a idade (em anos) de uma entidade atraves de um atributo do tipo data
+    //
+    final public function calcular_anos_atributo_data($atributo) {
+    // String $atributo: nome do atributo do tipo data
+    //
+        $data = $this->get_atributo_data($atributo, false);
+        $data_atual = self::parse_data(strftime('%d-%m-%Y'), false);
+
+        $anos = $data_atual['ano'] - $data['ano'];
+        if ($data_atual['mes'] < $data['mes']) {
+            $anos -= 1;
+        } elseif ($data_atual['mes'] == $data['mes']) {
+            if ($data_atual['dia'] < $data['dia']) {
+                $anos -= 1;
+            }
+        }
+        return $anos;
+    }
+
+
+    //
     //     Checa se a data e' nula (ano zero)
     //
     final public function possui_data_nula($atributo) {
     // String $atributo: nome do atributo do tipo data
     //
-        $data = $this->get_atributo_data($atributo);
-        return intval($data['ano']) == 0;
+        $data = $this->get_atributo_data($atributo, false);
+        return $data['ano'] == 0;
     }
 
 
@@ -2740,8 +2881,7 @@ XML;
     // String $atributo: nome do atributo (do tipo data) a ser comparado
     // String $data: data no formato do Simp
     //
-        $data_atributo = $this->__get($atributo);
-        return self::comparar_datas($data_atributo, $data);
+        return self::comparar_datas($this->__get($atributo), $data);
     }
 
 
@@ -2961,6 +3101,17 @@ XML;
 
 
     //
+    //     Retorna se existem registros no BD com as condicoes especificadas (mais rapido que o metodo quantidade_registros)
+    //
+    final public function possui_registros($condicoes = null, $quantidade = 1) {
+    // condicao_sql $condicoes: condicoes de consulta
+    // Int $quantidade: quantidade de registros a ser verificada (retorna true se existirem pelo menos $quantidade registros)
+    //
+        return (bool)count(self::$dao->select($this, false, $condicoes, false, false, 1, $quantidade - 1));
+    }
+
+
+    //
     //     Consulta os dados pelo maior valor de um campo especificado
     //
     final public function consultar_maior($campo, $campos = false, $condicoes = null) {
@@ -3146,13 +3297,15 @@ XML;
     //
     //     Retorna um vetor associativo hierarquico baseado em um objeto de relacionamento 1:1 (especialmente util para montar campos select com grupos)
     //
-    final public function vetor_associativo_hierarquico($objeto_agrupamento, $campo_agrupamento = false, $campo_index = false, $campo_valor = false, $condicoes = null, $ordem = null) {
+    final public function vetor_associativo_hierarquico($objeto_agrupamento, $campo_agrupamento = false, $campo_index = false, $campo_valor = false, $condicoes = null, $condicoes_agrupamento = null, $ordem = null, $ordem_agrupamento = null) {
     // String $objeto_agrupamento: nome do objeto de relacionamento 1:1 usado para categorizar os itens
     // String $campo_agrupamento: nome do campo do objeto de relacionamento 1:1 usado para nomear os agrupamentos (padrao: retorno de get_nome() da classe objeto_agrupamento)
     // String $campo_index: nome do campo usado para indexacao do vetor (padrao: PK)
     // String $campo_valor: nome do campo usado para guardar os valores (padrao: retorno de get_nome())
     // condicao_sql $condicoes: condicoes da busca
+    // condicao_sql $condicoes_agrupamento: condicoes da consulta do objeto de agrupamento
     // Array[String => Bool] || String $ordem: campo usado para ordenacao
+    // Array[String => Bool] || String $ordem_agrupamento: campo usado para ordenacao do objeto de agrupamento
     //
         if (!$this->possui_rel_uu($objeto_agrupamento)) {
             trigger_error('Parametro invalido para $objeto_agrupamento (esperado um objeto da classe)', E_USER_WARNING);
@@ -3168,7 +3321,8 @@ XML;
             trigger_error('A classe "'.$obj->get_classe().'" nao possui o atributo "'.$campo_agrupamento.'"', E_USER_WARNING);
             return false;
         }
-        $grupos = $obj->consultar_varios(null, array($chave, $campo_agrupamento));
+        $grupos = $obj->consultar_varios($condicoes_agrupamento, array($chave, $campo_agrupamento), $ordem_agrupamento);
+        unset($condicoes_agrupamento, $ordem_agrupamento);
 
         $vetor = array();
 
@@ -3695,7 +3849,7 @@ XML;
 
                 // Se nao pediu para salvar o objeto filho
                 if (!isset($salvar_campos[$nome_obj]) && !isset($salvar_campos[$chave_fk])) {
-                    if (!$this->existe() && !$this->__get($nome_obj)->existe() && $def_obj->forte) {
+                    if (!$this->existe() && !$this->get_objeto_rel_uu($nome_obj)->existe() && $def_obj->forte) {
                         trigger_error('Os dados do objeto "'.$nome_obj.'" (relacionamento forte) nao foram setados na classe "'.$this->get_classe().'"', E_USER_WARNING);
                         $salvo = false;
                     }
@@ -3706,21 +3860,21 @@ XML;
                 // Salva primeiro o objeto filho
                 $e = new stdClass();
                 $e->singular = $this->get_entidade_rel_uu($nome_obj);
-                $e->plural = $this->__get($nome_obj)->get_entidade(true);
-                $e->genero = $this->__get($nome_obj)->get_genero();
-                $salvou_obj = $this->__get($nome_obj)->salvar_completo_entidade($salvar_campos_obj, $operacao, $e);
+                $e->plural = $this->get_objeto_rel_uu($nome_obj)->get_entidade(true);
+                $e->genero = $this->get_objeto_rel_uu($nome_obj)->get_genero();
+                $salvou_obj = $this->get_objeto_rel_uu($nome_obj)->salvar_completo_entidade($salvar_campos_obj, $operacao, $e);
                 $salvo = $salvo && $salvou_obj;
 
                 // Se salvou, obter os avisos e a chave-primaria
                 if ($salvou_obj) {
-                    $this->__set($chave_fk, $this->__get($nome_obj)->get_valor_chave());
+                    $this->__set($chave_fk, $this->get_objeto_rel_uu($nome_obj)->get_valor_chave());
                     $salvar_campos[] = $chave_fk;
-                    $this->avisos = array_merge($this->avisos, $this->__get($nome_obj)->get_avisos());
-                    $this->__get($nome_obj)->limpar_avisos();
+                    $this->avisos = array_merge($this->avisos, $this->get_objeto_rel_uu($nome_obj)->get_avisos());
+                    $this->get_objeto_rel_uu($nome_obj)->limpar_avisos();
 
                 // Se nao salvou, obter os erros
                 } else {
-                    switch ($this->__get($nome_obj)->get_genero()) {
+                    switch ($this->get_objeto_rel_uu($nome_obj)->get_genero()) {
                     case 'M':
                         $de = 'do';
                         break;
@@ -3731,13 +3885,13 @@ XML;
                         $de = 'de';
                         break;
                     }
-                    $this->erros[] = 'Erro ao salvar os dados '.$de.' '.$this->__get($nome_obj)->get_entidade();
-                    $this->erros[] = $this->__get($nome_obj)->get_erros();
-                    $this->__get($nome_obj)->limpar_erros();
+                    $this->erros[] = 'Erro ao salvar os dados '.$de.' '.$this->get_objeto_rel_uu($nome_obj)->get_entidade();
+                    $this->erros[] = $this->get_objeto_rel_uu($nome_obj)->get_erros();
+                    $this->get_objeto_rel_uu($nome_obj)->limpar_erros();
                 }
 
                 // Se o objeto filho nao foi modificado e e' forte
-                if (!$this->existe() && !$this->__get($nome_obj)->existe() && $def_obj->forte) {
+                if (!$this->existe() && !$this->get_objeto_rel_uu($nome_obj)->existe() && $def_obj->forte) {
                     trigger_error('Os dados do objeto "'.$nome_obj.'" (relacionamento forte) nao foram setados na classe "'.$this->get_classe().'"', E_USER_WARNING);
                     $salvo = false;
                 }
@@ -3976,7 +4130,23 @@ XML;
                     if (isset($erros_unicidade[$campo_unico])) { continue; }
                     if ($this->__get($campo_unico) == $obj->__get($campo_unico)) {
                         $def = $this->get_definicao_atributo($campo_unico);
-                        $erros_unicidade[$campo_unico] = "J&aacute; existe \"{$def->descricao}\" com o valor \"".$obj->exibir($campo_unico)."\" e este campo n&atilde;o pode se repetir";
+                        if ($def->chave == 'FK') {
+                            $entidade_relacionada = $this->get_entidade_rel_uu($campo_unico, false);
+                            $entidade = $this->get_entidade();
+                            switch ($this->get_genero()) {
+                            case 'M':
+                                $erros_unicidade[$campo_unico] = "J&aacute; existe um {$entidade} relacionado com o(a) {$entidade_relacionada} escolhido(a)";
+                                break;
+                            case 'F':
+                                $erros_unicidade[$campo_unico] = "J&aacute; existe uma {$entidade} relacionada com o(a) {$entidade_relacionada} escolhido(a)";
+                                break;
+                            case 'I':
+                                $erros_unicidade[$campo_unico] = "J&aacute; existe um(a) {$entidade} relacionado(a) com o(a) {$entidade_relacionada} escolhido(a)";
+                                break;
+                            }
+                        } else {
+                            $erros_unicidade[$campo_unico] = "J&aacute; existe \"{$def->descricao}\" com o valor \"".$obj->exibir($campo_unico)."\" e este campo n&atilde;o pode se repetir";
+                        }
                     }
                 }
             }
@@ -4589,7 +4759,7 @@ XML;
 
                     if (isset($dados_opcao->icone) && $dados_opcao->icone) {
                         if ($dados_opcao->arquivo) {
-                            $vt_opcoes[] = link::icone_modulo($USUARIO, $dados_opcao->modulo, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->icone, $dados_opcao->descricao, $dados_opcao->texto, $dados_opcao->exibir_texto, $dados_opcao->carregar, $dados_opcao->foco);
+                            $vt_opcoes[] = link::icone_modulo($USUARIO, $dados_opcao->modulo, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->icone, $dados_opcao->descricao, $dados_opcao->texto, $dados_opcao->exibir_texto, $dados_opcao->carregando, $dados_opcao->foco);
                         } else {
                             $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
                             $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
@@ -4597,7 +4767,7 @@ XML;
                         }
                     } else {
                         if ($dados_opcao->arquivo) {
-                            $vt_opcoes[] = link::arquivo_modulo($USUARIO, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->modulo, $dados_opcao->descricao, $dados_opcao->id, $dados_opcao->class, true, $dados_opcao->carregar, $dados_opcao->foco);
+                            $vt_opcoes[] = link::arquivo_modulo($USUARIO, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->modulo, $dados_opcao->descricao, $dados_opcao->id, $dados_opcao->class, true, $dados_opcao->carregando, $dados_opcao->foco);
                         } else {
                             $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
                             $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
@@ -5155,7 +5325,7 @@ XML;
     //
         $a = '';
         $def = $this->get_definicao_rel_uu($nome_atributo, true);
-        $obj = $this->__get($nome_atributo);
+        $obj = $this->get_objeto_rel_uu($nome_atributo);
         if ($descricao_alternativa) {
             $descricao = $descricao_alternativa;
         } else {
@@ -5681,6 +5851,12 @@ XML;
     // objeto $elemento: objeto a ser conferido (derivado da classe objeto)
     // String $nome_vetor: nome do vetor
     //
+        // Se usou a notacao objeto:atributo
+        if (strpos($nome_vetor, ':') !== false) {
+            $args = func_get_args();
+            return $this->recursao_atributo(__FUNCTION__, $args);
+        }
+
         if (!$this->possui_rel_un($nome_vetor)) {
             trigger_error('Nao existe o vetor "'.$nome_vetor.'" na classe "'.$this->get_classe().'"', E_USER_WARNING);
             return false;
@@ -5692,12 +5868,35 @@ XML;
         }
 
         $chave = $elemento->get_valor_chave();
-        foreach ($this->__get($nome_vetor) as $elemento_vetor) {
+        foreach ($this->get_vetor_rel_un($nome_vetor) as $elemento_vetor) {
             if ($elemento_vetor->get_valor_chave() == $chave) {
                 return true;
             }
         }
         return false;
+    }
+
+
+    //
+    //     Checa se existem elementos no vetor (relacao 1:N)
+    //
+    final public function possui_elementos_rel_un($nome_vetor, $quantidade = 1) {
+    // String $nome_vetor: nome do vetor
+    // Int $quantidade: quantidade de elementos a ser verificada (retorna true se existirem pelo menos $quantidade elementos)
+    //
+        // Se usou a notacao objeto:atributo
+        if (strpos($nome_vetor, ':') !== false) {
+            $args = func_get_args();
+            return $this->recursao_atributo(__FUNCTION__, $args);
+        }
+
+        if (!$this->possui_rel_un($nome_vetor)) {
+            trigger_error('Nao existe o vetor "'.$nome_vetor.'" na classe "'.$this->get_classe().'"', E_USER_WARNING);
+            return false;
+        }
+        $def = $this->get_definicao_rel_un($nome_vetor);
+        $condicao = condicao_sql::montar($def->chave_fk, '=', $this->get_valor_chave(), false);
+        return objeto::get_objeto($def->classe)->possui_registros($condicao, $quantidade);
     }
 
 

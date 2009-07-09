@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// Versao: 1.0.0.8
 // Data: 19/05/2008
-// Modificado: 01/06/2009
+// Modificado: 24/06/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -85,12 +85,16 @@ final class parser_simp {
     // Bool $ignore_doc: indica se erros com a documentacao devem ser ignorados
     //
         $obj = new stdClass();
+        $obj->linha = 0;
         $obj->nome = '';
         $obj->flags = '';
         $obj->descricao = '';
         $obj->parametros = array();
 
         $total = count($tokens);
+
+        // Obter linha da funcao
+        $obj->linha = $tokens[$i][2];
 
         // Obter nome
         if ($tokens[$i + 2][0] == '&') {
@@ -100,9 +104,13 @@ final class parser_simp {
         }
 
         // Obter flags
-        for ($j = $i - 1; $tokens[$j][0] != T_COMMENT && $j >= 0; $j--) {
+        $linha = $obj->linha;
+        for ($j = $i - 1; $tokens[$j][0] != T_COMMENT && $linha == $obj->linha && $j >= 0; $j--) {
             if (isset($tokens[$j][1])) {
-                $obj->flags = $tokens[$j][1].$obj->flags;
+                $linha = $tokens[$j][2];
+                if ($linha == $obj->linha) {
+                    $obj->flags = $tokens[$j][1].$obj->flags;
+                }
             } else {
                 $obj->flags = $tokens[$j][0].$obj->flags;
             }

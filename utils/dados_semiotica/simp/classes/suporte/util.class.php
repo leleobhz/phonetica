@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.24
+// Versao: 1.0.1.25
 // Data: 22/08/2007
-// Modificado: 01/06/2009
+// Modificado: 22/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -668,8 +668,8 @@ final class util {
 
             // Ex.: 09:13:37 up 7 days,  2:08,  3 users,  load average: 0.00, 0.03, 0.00
             //      13:14:06 up 2 days, 4 min,  1 user,  load average: 0.24, 0.27, 0.14
-            $ereg = '/^(.+)[\040]*up[\040]*(.+),[\040]*([0-9]+)[\040]*user[s]?[\040]*,[\040]*(.+)$/';
-            if (preg_match($ereg, $linha, $match)) {
+            $exp = '/^(.+)[\040]*up[\040]*(.+),[\040]*([0-9]+)[\040]*user[s]?[\040]*,[\040]*(.+)$/';
+            if (preg_match($exp, $linha, $match)) {
                 $tabela = array('days'    => 'dias',
                                 'day'     => 'dia',
                                 'hours'   => 'horas',

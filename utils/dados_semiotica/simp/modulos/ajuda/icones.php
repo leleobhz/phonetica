@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.11
 // Data: 27/09/2007
-// Modificado: 13/05/2009
+// Modificado: 24/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -37,6 +37,7 @@ $icones = array(
     icone::endereco('duplicar')     => 'Ferramenta de duplica&ccedil;&atilde;o de dados',
     icone::endereco('checado')      => 'Ferramenta de confirma&ccedil;&atilde;o/aprova&ccedil;&atilde;o',
     icone::endereco('pdf')          => 'Ferramenta de gera&ccedil;&atilde;o de documentos no formato PDF',
+    icone::endereco('info')         => 'Indica uma informa&ccedil;&atilde;o adicional sobre um campo de formul&aacute;rio ou entidade',
     icone::endereco('ativo')        => 'Indica que um registro est&aacute; ativo ou vis&iacute;vel no sistema (pode ser um link para torn&aacute;-lo inativo)',
     icone::endereco('inativo')      => 'Indica que um registro est&aacute; inativo ou invis&iacute;vel no sistema (pode ser um link para torn&aacute;-lo ativo)',
     icone::endereco('bloqueado')    => 'Indica que um registro est&aacute; bloqueado no sistema (pode ser um link para desbloque&aacute;-lo)',
@@ -48,15 +49,13 @@ $icones = array(
     icone::endereco('hierarquia')   => 'Indica um campo de busca em uma estrutura hier&aacute;rquica',
     icone::endereco('calendario')   => 'Indica um campo de data',
     icone::endereco('lista')        => 'Indica uma lista',
-    icone::endereco('curso')        => 'Indica uma lista de cursos',
     icone::endereco('sede')         => 'Indica uma lista de sedes, departamentos ou locais',
     icone::endereco('grafico')      => 'Indica uma estat&iacute;stica ou gr&aacute;fico',
     icone::endereco('logs')         => 'Indica uma &aacute;rea com relat&oacute;rios ou logs',
     icone::endereco('grupos')       => 'Indica uma equipe ou grupo',
     icone::endereco('rss')          => 'Indica um Feed RSS, que &eacute; uma tecnologia utilizada principalmente para indexar not&iacute;cias',
     icone::endereco('email')        => 'Indica uma &aacute;rea de envio de mensagens',
-    icone::endereco('acessivel')    => 'Indica uma &aacute;rea com dados acess&iacute;veis',
-    icone::endereco('info')         => 'Indica uma informa&ccedil;&atilde;o adicional sobre um campo de formul&aacute;rio ou entidade'
+    icone::endereco('acessivel')    => 'Indica uma &aacute;rea com dados acess&iacute;veis'
    );
 
 /// Imprimir pagina
@@ -97,4 +96,10 @@ function imprimir_icones($icones) {
         echo $icones[$link];
         echo "</p>\n";
     }
+
+    echo "<hr />\n";
+    echo "<p>Alguns &iacute;cones utilizados neste sistema foram criados por Mark James e obtidos de ";
+    echo "<a href=\"http://www.famfamfam.com/lab/icons/silk/\">www.famfamfam.com</a> - ";
+    echo "que est&atilde;o licenciados sobre a <em>Creative Commons Attribution 2.5 License</em>";
+    echo "</p>\n";
 }

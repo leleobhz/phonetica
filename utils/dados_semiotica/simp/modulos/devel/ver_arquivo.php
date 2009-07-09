@@ -31,7 +31,7 @@ echo 'body { background-color: #F5F5F5; margin: 1em; }';
 echo '* { font-size: 1.05em; }';
 echo '</style>';
 echo '<body>';
-if (eregi('.php', $a)) {
+if (preg_match('/\.php$/', $a)) {
     echo '<code style="font-size: 7.5pt;">';
     highlight_file($a);
     echo '</code>';

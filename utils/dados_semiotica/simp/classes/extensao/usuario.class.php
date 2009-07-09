@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.31
+// Versao: 1.0.0.35
 // Data: 22/08/2007
-// Modificado: 22/05/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -20,8 +20,10 @@ final class usuario extends usuario_base {
     // String $nome_atributo: nome do atributo a ser exibido
     //
         switch ($nome_atributo) {
+        case 'senha':
+            return '[valor codificado]';
         case 'email':
-            return texto::proteger_email($this->__get('email'));
+            return texto::proteger_email($this->get_atributo('email'));
         }
         return parent::exibir_atributo($nome_atributo);
     }
@@ -130,12 +132,30 @@ final class usuario extends usuario_base {
 
 
     //
+    //     Obtem informacoes sobre um campo do formulario
+    //
+    public function get_info_campo($campo) {
+    // String $campo: campo desejado
+    //
+        switch ($campo) {
+        case 'confirmacao':
+            $atributo = $this->get_definicao_atributo('senha');
+            $atributo->nome = $campo;
+            $atributo->descricao = 'Conforma&ccedil;&atilde;o';
+            $atributo->ajuda = 'Preencha a confirma&ccedil;&atilde;o com o mesmo valor da senha';
+            return $atributo;
+        }
+        return parent::get_info_campo($campo);
+    }
+
+
+    //
     //     Retorna se o usuario possui o grupo informado
     //
     public function possui_grupo($cod_grupo) {
     // Int $cod_grupo: codigo do grupo
     //
-        return array_key_exists($cod_grupo, $this->__get('grupos'));
+        return array_key_exists($cod_grupo, $this->get_vetor_rel_un('grupos'));
     }
 
 
@@ -162,7 +182,7 @@ final class usuario extends usuario_base {
     //
         // Autenticacao tradicional ou e' o admin
         if (USUARIO_TIPO_AUTENTICACAO == 'simp' || $this->get_valor_chave() == 1) {
-            if (strcmp($this->codificar($senha), $this->__get('senha')) != 0) {
+            if (strcmp($this->codificar($senha), $this->get_atributo('senha')) != 0) {
                 $erros[] = 'Senha inv&aacute;lida';
                 return false;
             }
@@ -306,45 +326,45 @@ final class usuario extends usuario_base {
         // Gerar mensagem
         if (!$nova) {
             $assunto = 'Cadastro no Sistema';
-            $msg = "Prezado(a) ".$this->__get('nome').",\n".
+            $msg = "Prezado(a) ".$this->get_atributo('nome').",\n".
                    "   Informamos que voce acaba de ser cadastrado no Sistema ".
                    USUARIO_NOME_SISTEMA.' - '.USUARIO_DESCRICAO_SISTEMA."\n\n".
                    "   Link para acesso ao Sistema: ".USUARIO_LINK_ACESSO."\n\n".
                    "   Os dados para acesso estao abaixo:\n".
-                   "login: ".$this->__get('login')."\n".
+                   "login: ".$this->get_atributo('login')."\n".
                    "senha: {$senha}\n\n".
                    "Obs: a senha foi gerada aleatoriamente. Por favor nao interprete-a ".
                    "como uma palavra de tom ofensivo.";
 
-            $msg_html = "<p>Prezado(a) <em>".texto::codificar($this->__get('nome'))."</em>,<br />\n".
+            $msg_html = "<p>Prezado(a) <em>".$this->exibir('nome')."</em>,<br />\n".
                         "Informamos que voc&ecirc; acaba de ser cadastrado(a) no Sistema ".
                         USUARIO_NOME_SISTEMA.' - '.USUARIO_DESCRICAO_SISTEMA."</p>\n".
                         "<p>Link para acesso ao Sistema: <a href=\"".USUARIO_LINK_ACESSO."\">".
                         USUARIO_LINK_ACESSO."</a>.</p>\n".
                         "<p>Os dados para acesso est&atilde;o abaixo:</p>\n".
-                        "<p><strong>login:</strong> ".$this->__get('login')."</p>\n".
+                        "<p><strong>login:</strong> ".$this->exibir('login')."</p>\n".
                         "<p><strong>senha:</strong> {$senha}</p>".
                         "<p><small>Obs: a senha foi gerada aleatoriamente. Por favor n&atilde;o ".
                         "interprete-a como uma palavra de tom ofensivo.</small></p>\n";
         } else {
             $assunto = 'Nova senha';
-            $msg = "Prezado(a) ".$this->__get('nome').",\n".
+            $msg = "Prezado(a) ".$this->get_atributo('nome').",\n".
                    "   Informamos a sua nova senha solicitada pelo Sistema ".
                    USUARIO_NOME_SISTEMA.' - '.USUARIO_DESCRICAO_SISTEMA."\n\n".
                    "   Link para acesso ao Sistema: ".USUARIO_LINK_ACESSO."\n\n".
                    "   Os novos dados para acesso estao abaixo:\n".
-                   "login: ".$this->__get('login')."\n".
+                   "login: ".$this->get_atributo('login')."\n".
                    "senha: {$senha}\n".
                    "Obs: a senha foi gerada aleatoriamente. Por favor nao interprete-a ".
                    "como uma palavra de tom ofensivo.";
 
-            $msg_html = "<p>Prezado(a) <em>".texto::codificar($this->__get('nome'))."</em>,<br />\n".
+            $msg_html = "<p>Prezado(a) <em>".$this->exibir('nome')."</em>,<br />\n".
                         "Informamos a sua nova senha solicitada pelo Sistema ".
                         USUARIO_NOME_SISTEMA.' - '.USUARIO_DESCRICAO_SISTEMA."</p>\n".
                         "<p>Link para acesso ao Sistema: <a href=\"".USUARIO_LINK_ACESSO."\">".
                         USUARIO_LINK_ACESSO."</a>.</p>\n".
                         "<p>Os novos dados para acesso est&atilde;o abaixo:</p>\n".
-                        "<p><strong>login:</strong> ".$this->__get('login')."</p>\n".
+                        "<p><strong>login:</strong> ".$this->exibir('login')."</p>\n".
                         "<p><strong>senha:</strong> {$senha}</p>".
                         "<p><small>Obs: a senha foi gerada aleatoriamente. Por favor n&atilde;o ".
                         "interprete-a como uma palavra de tom ofensivo.</small></p>\n";
@@ -352,7 +372,7 @@ final class usuario extends usuario_base {
 
         // Enviar e-mail
         $email = new email($assunto);
-        $email->set_destinatario($this->__get('nome'), $this->__get('email'));
+        $email->set_destinatario($this->get_atributo('nome'), $this->get_atributo('email'));
 
         // Pode-se escolher entre um metodo ou outro (obrigatorio apenas um)
         $email->set_mensagem($msg);
@@ -544,7 +564,7 @@ final class usuario extends usuario_base {
     //
         $config = new config();
         $autenticacao = new autenticacao($config->autenticacao);
-        $credenciais['login'] = $this->__get('login');
+        $credenciais['login'] = $this->get_atributo('login');
         $credenciais['senha'] = $senha;
         $autenticacao->set_credenciais($credenciais);
         return $autenticacao->alterar_senha($this->erros);
@@ -604,7 +624,7 @@ final class usuario extends usuario_base {
         if ($consultou) {
             return isset($vt_cache[$modulo.':'.$arquivo]) ? $vt_cache[$modulo.':'.$arquivo] : false;
         }
-        foreach ($this->__get('grupos') as $usuarios_grupos) {
+        foreach ($this->get_vetor_rel_un('grupos') as $usuarios_grupos) {
             foreach ($usuarios_grupos->grupo->permissoes as $p) {
                 $vt_cache[$p->arquivo->modulo.':'.$p->arquivo->arquivo] = $p->arquivo;
             }

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// Versao: 1.0.0.14
 // Data: 03/03/2007
-// Modificado: 08/06/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -113,7 +113,7 @@ abstract class usuario_base extends objeto_formulario {
     //     Indica se o usuario e' visivel ou nao
     //
     public function get_visivel() {
-        return !$this->__get('cancelado');
+        return !$this->get_atributo('cancelado');
     }
 
 

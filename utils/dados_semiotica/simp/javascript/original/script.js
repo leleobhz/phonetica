@@ -4,9 +4,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.47
+// Versao: 1.0.1.3
 // Data: 12/06/2007
-// Modificado: 02/06/2009
+// Modificado: 25/06/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -920,6 +920,15 @@ function definir_atributos() {
         for (var j = 0; j < campos.length; j++) {
             atualizar_campo(campos.item(j));
         }
+
+        var metas = form.getElementsByTagName("meta");
+        for (var j = 0; j < metas.length; j++) {
+            var meta = metas.item(j);
+            var campo = document.getElementById(meta.getAttribute("name"));
+            if (campo) {
+                atualizar_info_campo(form, campo, meta.getAttribute("content"));
+            }
+        }
     }
 
     // Voltar ao topo
@@ -1044,6 +1053,252 @@ function atualizar_campo(campo) {
 
 
 //
+//     Atualiza um elemento do formulario com informacoes
+//
+function atualizar_info_campo(form, campo, id_campo) {
+// Object form: formulario
+// Object campo: campo do formularo
+// String id_campo: identificador do campo
+//
+    var labels = form.getElementsByTagName("label");
+    var label = false;
+    for (var i = 0; i < labels.length; i++) {
+        if (labels.item(i).getAttribute("for") == campo.id) {
+            label = labels.item(i);
+        }
+    }
+    if (!label) { return false; }
+    campo.label = label;
+    ultima_boia = false;
+
+    campo.onfocus = function() {
+        if (ultima_boia) {
+            ultima_boia.style.visibility = "hidden";
+        }
+
+        var boia = this.label.parentNode.getElementsByTagName("img");
+        if (boia && boia.length > 0) {
+            boia = boia.item(0);
+            boia.style.visibility = "visible";
+        } else {
+            var boia = document.createElement("img");
+            boia.setAttribute("src", wwwroot + "imgs/icones/ajuda.gif");
+            boia.setAttribute("title", "Ajuda sobre o campo");
+            boia.style.cursor = "pointer";
+            boia.style.display = "block";
+            boia.style.position = "absolute";
+            boia.style.marginLeft = "-10px";
+            label.style.clear = "none";
+
+            boia.id_campo = id_campo;
+            boia.janela = false;
+            boia.onclick = function(e) {
+                if (!this.janela) {
+                    var pos = get_posicao_mouse(e);
+                    this.janela = new class_janela();
+                    var caixa = this.janela.criar_janela("Carregando...", pos.x, pos.y + 5, 300);
+
+                    atualizar_info_atributo(this.janela , campo, this.id_campo);
+                }
+                this.janela.abrir(document.getElementsByTagName("body").item(0));
+            };
+            if (label.getElementsByTagName("input").length) {
+                label.parentNode.appendChild(boia);
+            } else {
+                label.parentNode.insertBefore(boia, label);
+            }
+        }
+        ultima_boia = boia;
+    };
+}
+
+
+//
+//     Consuta as informacoes de um atributo e preenche o objeto
+//
+function atualizar_info_atributo(janela, campo, id_campo) {
+// Object janela: janela que recebera as informacoes
+// Object campo: campo associado a ajuda
+// String id_campo: identificador do campo
+//
+    var that = this;
+    this.ajax = new class_ajax();
+    obj = janela.caixa;
+
+    //
+    //     Atualiza a janela de ajuda com a descricao consultada com AJAX
+    //
+    this.atualizar_descricao = function() {
+        var xml = that.ajax.get_retorno("xml");
+
+        // Se veio com erros
+        if (xml.documentElement.getElementsByTagName("erro").length > 0) {
+            janela.set_titulo("Erro");
+            that.inserir_valor(obj, "Erro", "Dados do campo não disponíveis");
+            return;
+        }
+
+        // Atualizar titulo da janela
+        var descricao = that.get_atributo(xml.documentElement, "descricao");
+        janela.set_titulo("Ajuda do campo " + descricao);
+
+        // Checar de acordo com o tipo de campo
+        switch (campo.nodeName) {
+        case "select":
+            that.inserir_valor(obj, "Instrução", "Escolha um elemento da lista");
+            return;
+        case "input":
+            switch (campo.getAttribute("text")) {
+            case "text":
+            case "password":
+                break;
+            case "checkbox":
+                that.inserir_valor(obj, "Instrução", "Marque as opções desejadas");
+                return;
+            case "radio":
+                that.inserir_valor(obj, "Instrução", "Escolha uma opção");
+                return;
+            case "file":
+                that.inserir_valor(obj, "Instrução", "Escolha um arquivo");
+                return;
+            }
+            break;
+        case "textarea":
+            break;
+        }
+
+        var tipo = that.get_atributo(xml.documentElement, "tipo");
+        var minimo = that.get_atributo(xml.documentElement, "minimo");
+        var maximo = that.get_atributo(xml.documentElement, "maximo");
+        var obrigatorio = that.get_atributo(xml.documentElement, "pode_vazio") == '0';
+        var unico = that.get_atributo(xml.documentElement, "unico") == '1';
+
+        if (!minimo) {
+            minimo = "indefinido";
+        }
+        if (!maximo) {
+            maximo = "indefinido";
+        }
+
+        switch (tipo) {
+        case "int":
+            that.inserir_valor(obj, "Tipo", "Número Inteiro");
+            that.inserir_valor(obj, "Intervalo", "de " + minimo + " até " + maximo);
+            if (obrigatorio) {
+                that.inserir_valor(obj, "Obrigatório", "Sim");
+            }
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            break;
+        case "float":
+            that.inserir_valor(obj, "Tipo", "Número Real");
+            that.inserir_valor(obj, "Intervalo", "de " + minimo + " até " + maximo);
+            if (obrigatorio) {
+                that.inserir_valor(obj, "Obrigatório", "Sim");
+            }
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            break;
+        case "string":
+            var validacao = xml.documentElement.getElementsByTagName("validacao");
+            that.inserir_valor(obj, "Tipo", "Texto");
+            if (minimo == maximo) {
+                that.inserir_valor(obj, "Tamanho", "exatamente " + minimo + " caracteres");
+            } else {
+                that.inserir_valor(obj, "Tamanho", "entre " + minimo + " e " + maximo + " caracteres");
+            }
+            if (obrigatorio) {
+                that.inserir_valor(obj, "Obrigatório", "Sim");
+            }
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            if (validacao.length) {
+                var instrucoes = that.get_atributo(validacao.item(0), "instrucoes");
+                var exemplo = that.get_atributo(validacao.item(0), "exemplo");
+                if (instrucoes) {
+                    that.inserir_valor(obj, "Instruções", instrucoes);
+                }
+                if (exemplo) {
+                    that.inserir_valor(obj, "Exemplo", exemplo);
+                }
+            }
+            break;
+        case "binario":
+            that.inserir_valor(obj, "Tipo", "Texto binário");
+            that.inserir_valor(obj, "Tamanho", "entre " + minimo + " e " + maximo);
+            if (obrigatorio) {
+                that.inserir_valor(obj, "Obrigatório", "Sim");
+            }
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            break;
+        case "char":
+            that.inserir_valor(obj, "Tipo", "Caractere");
+            if (obrigatorio) {
+                that.inserir_valor(obj, "Obrigatório", "Sim");
+            }
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            break;
+        case "bool":
+            that.inserir_valor(obj, "Tipo", "Sim ou Não");
+            that.inserir_valor(obj, "Instruções", "Marque a opção em caso positivo ou deixe desmarcada em caso negativo");
+            break;
+        case "data":
+            var unico = that.get_atributo(xml.documentElement, "unico");
+            that.inserir_valor(obj, "Tipo", "Data");
+            if (unico) {
+                that.inserir_valor(obj, "Único no Sistema", "Sim (não podem existir 2 iguais)");
+            }
+            break;
+        }
+    };
+
+    //
+    //     Insere uma chave/valor na janela de ajuda
+    //
+    this.inserir_valor = function(obj, label, valor) {
+    // Object obj: objeto que recebera a linha
+    // String label: texto do label
+    // String valor: texto do valor
+    //
+        var p = document.createElement("p");
+        {
+            var strong = document.createElement("strong");
+            strong.appendChild(document.createTextNode(label + ":"));
+            p.appendChild(strong);
+            p.appendChild(document.createTextNode(" " + valor));
+        }
+        obj.appendChild(p);
+    };
+
+    //
+    //     Obtem um atributo de um elemento recebido por AJAX
+    //
+    this.get_atributo = function(xml, atributo) {
+    // Object xml: elemento XML que deseja-se obter o atributo
+    // String atributo: nome do atributo desejado
+    //
+        var valor = xml.getElementsByTagName(atributo);
+        if (!valor.length || !valor.item(0).hasChildNodes()) {
+            return false;
+        }
+        return valor.item(0).firstChild.nodeValue;
+    };
+
+    // Realizar a consulta com AJAX
+    var link = wwwroot + "webservice/atributo.xml.php?id=" + id_campo;
+    this.ajax.set_funcao(that.atualizar_descricao);
+    this.ajax.consultar("GET", link, true, null);
+}
+
+
+//
 //     Checa se um valor esta dentro de um intervalo
 //
 function entre(valor, minimo, maximo) {
@@ -1145,6 +1400,7 @@ function class_piscar(item, vezes, passo) {
     //
     this.piscar = function() {
         if (this.obj_piscar.innerHTML.length < limite_tamanho) {
+            this.obj_piscar.piscando = true;
             this.obj_piscar.style.opacity = parseFloat(this.opacity);
             this.sentido = false;
             this.timer = window.setInterval("class_piscar.instancias[" + this.id + "].mudar()", 50);
@@ -1186,6 +1442,7 @@ function class_piscar(item, vezes, passo) {
     //     Faz um objeto parar de piscar
     //
     this.parar_piscar = function() {
+        this.obj_piscar.piscando = false;
         this.sentido = false;
         clearInterval(this.timer);
     };
@@ -1198,8 +1455,10 @@ function class_piscar(item, vezes, passo) {
 function fechar(obj) {
 // Object obj: objeto a ser fechado
 //
-    var obj_fechar = new class_fechar(obj);
-    obj_fechar.dissolver(0.1);
+    if (!obj.piscando) {
+        var obj_fechar = new class_fechar(obj);
+        obj_fechar.dissolver(0.1);
+    }
 }
 
 
@@ -1702,6 +1961,10 @@ function buscar(dados) {
                 var texto = document.createTextNode(valor);
                 option.appendChild(texto);
                 option.setAttribute("value", valor);
+                option.ondblclick = function() {
+                    limpar(that.div);
+                    return false;
+                };
                 select.appendChild(option);
             }
             that.div.appendChild(msg);

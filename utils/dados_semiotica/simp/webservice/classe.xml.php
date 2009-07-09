@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// Versao: 1.0.0.1
 // Data: 02/03/2009
-// Modificado: 02/03/2009
+// Modificado: 18/06/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -36,11 +36,11 @@ setlocale(LC_ALL, 'C');
 header('Content-type: text/xml; charset='.$CFG->charset);
 header("Content-Disposition: inline; filename={$classe}.xml");
 header('Content-Language: '.$CFG->lingua);
-header('Cache-Control: no-cache, no-store, must-revalidate');
-header('Pragma: no-cache');
+header('Cache-Control: public');
+header('Pragma: ');
 header('Date: '.gmstrftime($CFG->gmt, $CFG->time));
-header('Last-Modified: '.gmstrftime($CFG->gmt, $CFG->time));
-header('Expires: '.gmstrftime($CFG->gmt, $CFG->time));
+header('Last-Modified: '.gmstrftime($CFG->gmt, filemtime($CFG->dirclasses)));
+header('Expires: '.gmstrftime($CFG->gmt, $CFG->time + TEMPO_EXPIRA));
 setlocale(LC_ALL, $CFG->localidade);
 compactacao::header($xml);
 echo $xml;

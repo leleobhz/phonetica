@@ -5,20 +5,19 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// Versao: 1.0.0.11
 // Data: 22/08/2007
-// Modificado: 29/09/2008
+// Modificado: 08/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 // Constantes
-define('COOKIE_NOME',         $CFG->nome_cookie);
-define('COOKIE_TEMPO_EXPIRA', 31536000);
-define('COOKIE_DOMINIO',      $CFG->dominio);
-define('COOKIE_PATH',         $CFG->path);
-define('COOKIE_LOCALHOST',    $CFG->localhost);
-define('COOKIE_DELIMITADOR',  chr(255).chr(255));
+define('COOKIE_NOME',            $CFG->nome_cookie);
+define('COOKIE_TEMPO_EXPIRA',    31536000);
+define('COOKIE_DOMINIO_COOKIES', $CFG->dominio_cookies);
+define('COOKIE_PATH',            $CFG->path);
+define('COOKIE_DELIMITADOR',     chr(255).chr(255));
 
 final class cookie {
     static private $backup;
@@ -76,11 +75,7 @@ final class cookie {
 
             // Cookie do sistema
             if (strcmp(COOKIE_NOME, 'cookie_instalacao') != 0) {
-                if (!COOKIE_LOCALHOST) {
-                    return setcookie(COOKIE_NOME, $str_campos,  time() + COOKIE_TEMPO_EXPIRA, COOKIE_PATH, COOKIE_DOMINIO);
-                } else {
-                    return setcookie(COOKIE_NOME, $str_campos,  time() + COOKIE_TEMPO_EXPIRA, COOKIE_PATH);
-                }
+                return setcookie(COOKIE_NOME, $str_campos,  time() + COOKIE_TEMPO_EXPIRA, COOKIE_PATH, COOKIE_DOMINIO_COOKIES);
 
             // Cookie da instalacao
             } else {

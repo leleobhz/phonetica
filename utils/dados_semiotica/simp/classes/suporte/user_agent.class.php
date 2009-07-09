@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// Versao: 1.0.0.6
 // Data: 04/06/2007
-// Modificado: 19/02/2009
+// Modificado: 24/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -97,15 +97,37 @@ final class user_agent {
         if (function_exists('get_browser') && ini_get('browscap')) {
             $obj = get_browser($this->user_agent);
 
-            $agent->css        = isset($obj->supportscss)    ? (bool)$obj->supportscss    : 1;
-            $agent->javascript = isset($obj->javascript)     ? (bool)$obj->javascript     : 1;
-            $agent->movel      = isset($obj->ismobiledevice) ? (bool)$obj->ismobiledevice : 0;
+            // Se e' um buscador
+            if (isset($obj->crawler) && $obj->crawler) {
+                $agent->css        = '0';
+                $agent->javascript = '0';
+                $agent->movel      = '0';
+
+            // Se e' um navegador
+            } else {
+
+                if (isset($obj->suportscss)) {
+                    $agent->css = $obj->suportscss ? '1' : '0';
+                } else {
+                    $agent->css = '1';
+                }
+                if (isset($obj->javascript)) {
+                    $agent->javascript = $obj->javascript ? '1' : '0';
+                } else {
+                    $agent->javascript = '1';
+                }
+                if (isset($obj->ismobiledevice)) {
+                    $agent->movel = $obj->ismobiledevice ? '1' : '0';
+                } else {
+                    $agent->movel = '0';
+                }
+            }
 
         // Assumir que da suporte a CSS e JavaScript
         } else {
-            $this->css        = 1;
-            $this->javascript = 1;
-            $this->movel      = 0;
+            $this->css        = '1';
+            $this->javascript = '1';
+            $this->movel      = '0';
         }
     }
 
@@ -116,37 +138,37 @@ final class user_agent {
     private function consultar_navegador() {
 
         // IE
-        if (eregi('msie', $this->user_agent)) {
+        if (preg_match('/msie/i', $this->user_agent)) {
             $this->navegador = 'Internet Explorer';
             $this->versao_navegador = $this->entre('MSIE', ';');
 
         // Derivados Netscape
-        } elseif (eregi('mozilla/5.0', $this->user_agent) &&
-                  eregi('rv:', $this->user_agent) &&
-                  eregi('gecko/', $this->user_agent)) {
+        } elseif (preg_match('/mozilla\/5.0/i', $this->user_agent) &&
+                  preg_match('/rv:/i', $this->user_agent) &&
+                  preg_match('/gecko\//i', $this->user_agent)) {
 
             // Netscape
-            if (eregi('navigator', $this->user_agent)) {
+            if (preg_match('/navigator/i', $this->user_agent)) {
                 $this->navegador = 'Netscape';
                 $this->versao_navegador = $this->entre('Navigator/');
 
             // Iceweasel
-            } elseif (eregi('iceweasel', $this->user_agent)) {
+            } elseif (preg_match('/iceweasel/i', $this->user_agent)) {
                 $this->navegador = 'Iceweasel';
                 $this->versal_navegador = $this->entre('Iceweasel/', ' ');
 
             // SeaMonkey
-            } elseif (eregi('seamonkey', $this->user_agent)) {
+            } elseif (preg_match('/seamonkey/i', $this->user_agent)) {
                 $this->navegador = 'SeaMonkey';
                 $this->versao_navegador = $this->entre('SeaMonkey/', ' ');
 
             // Firefox
-            } elseif (eregi('firefox', $this->user_agent)) {
+            } elseif (preg_match('/firefox/i', $this->user_agent)) {
                 $this->navegador = 'Firefox';
                 $this->versao_navegador = $this->entre('Firefox/', ' ');
 
             // Mozilla
-            } elseif (eregi(' rv:', $this->user_agent)) {
+            } elseif (preg_match('/ rv:/i', $this->user_agent)) {
                 $this->navegador = 'Mozilla';
                 $this->versao_navegador = $this->entre(' rv:', ')');
             }
@@ -154,139 +176,139 @@ final class user_agent {
         }
 
         // Netscape
-        if (eregi('netscape', $this->user_agent)) {
+        if (preg_match('/netscape/i', $this->user_agent)) {
             $this->navegador = 'Netscape';
             $this->versao_navegador = $this->entre('Netscape', ' ');
 
         // Opera
-        } elseif (eregi('opera', $this->user_agent)) {
+        } elseif (preg_match('/opera/i', $this->user_agent)) {
             $this->navegador = 'Opera';
             $this->versao_navegador = $this->entre('Opera/', ' ');
 
         // Chrome
-        } elseif (eregi('chrome', $this->user_agent)) {
+        } elseif (preg_match('/chrome/i', $this->user_agent)) {
             $this->navegador = 'Chrome';
             $this->versao_navegador = $this->entre('Chrome/', ' ');
 
         // Safari
-        } elseif (eregi('safari', $this->user_agent)) {
+        } elseif (preg_match('/safari/i', $this->user_agent)) {
             $this->navegador = 'Safari';
 
         // Galeon
-        } elseif (eregi('galeon', $this->user_agent)) {
+        } elseif (preg_match('/galeon/i', $this->user_agent)) {
             $this->navegador = 'Galeon';
 
         // Konqueror
-        } elseif (eregi('konqueror', $this->user_agent)) {
+        } elseif (preg_match('/konqueror/i', $this->user_agent)) {
             $this->navegador = 'Konqueror';
             $this->versao_navegador = $this->entre('Konqueror/', ';');
 
         // Links
-        } elseif (eregi('links', $this->user_agent)) {
+        } elseif (preg_match('/links/i', $this->user_agent)) {
             $this->navegador = 'Links';
 
         // Lynx
-        } elseif (eregi('lynx', $this->user_agent)) {
+        } elseif (preg_match('/lynx/i', $this->user_agent)) {
             $this->navegador = 'Lynx';
             $this->versao_navegador = $this->entre('Lynx/', ' ');
 
         // W3M
-        } elseif (eregi('w3m', $this->user_agent)) {
+        } elseif (preg_match('/w3m/i', $this->user_agent)) {
             $this->navegador = 'W3M';
             $this->versao_navegador = $this->entre('w3m/');
 
         // Navegadores Diversos
-        } elseif (eregi('amaya', $this->user_agent)) {
+        } elseif (preg_match('/amaya/i', $this->user_agent)) {
             $this->navegador = 'amaya';
 
-        } elseif (eregi('aol', $this->user_agent)) {
+        } elseif (preg_match('/aol/i', $this->user_agent)) {
             $this->navegador = 'AOL';
 
-        } elseif (eregi('aweb', $this->user_agent)) {
+        } elseif (preg_match('/aweb/i', $this->user_agent)) {
             $this->navegador = 'aweb';
 
-        } elseif (eregi('beonex', $this->user_agent)) {
+        } elseif (preg_match('/beonex/i', $this->user_agent)) {
             $this->navegador = 'Beonex';
 
-        } elseif (eregi('camino', $this->user_agent)) {
+        } elseif (preg_match('/camino/i', $this->user_agent)) {
             $this->navegador = 'Camino';
 
-        } elseif (eregi('cyberdog', $this->user_agent)) {
+        } elseif (preg_match('/cyberdog/i', $this->user_agent)) {
             $this->navegador = 'Cyberdog';
 
-        } elseif (eregi('dillo', $this->user_agent)) {
+        } elseif (preg_match('/dillo/i', $this->user_agent)) {
             $this->navegador = 'Dillo';
 
-        } elseif (eregi('doris', $this->user_agent)) {
+        } elseif (preg_match('/doris/i', $this->user_agent)) {
             $this->navegador = 'Doris';
 
-        } elseif (eregi('emacs', $this->user_agent)) {
+        } elseif (preg_match('/emacs/i', $this->user_agent)) {
             $this->navegador = 'Emacs';
 
-        } elseif (eregi('firebird', $this->user_agent)) {
+        } elseif (preg_match('/firebird/i', $this->user_agent)) {
             $this->navegador = 'Firebird';
 
-        } elseif (eregi('frontpage', $this->user_agent)) {
+        } elseif (preg_match('/frontpage/i', $this->user_agent)) {
             $this->navegador = 'FrontPage';
 
-        } elseif (eregi('chimera', $this->user_agent)) {
+        } elseif (preg_match('/chimera/i', $this->user_agent)) {
             $this->navegador = 'Chimera';
 
-        } elseif (eregi('icab', $this->user_agent)) {
+        } elseif (preg_match('/icab/i', $this->user_agent)) {
             $this->navegador = 'iCab';
 
-        } elseif (eregi('liberate', $this->user_agent)) {
+        } elseif (preg_match('/liberate/i', $this->user_agent)) {
             $this->navegador = 'Liberate';
 
-        } elseif (eregi('netcaptor', $this->user_agent)) {
+        } elseif (preg_match('/netcaptor/i', $this->user_agent)) {
             $this->navegador = 'Netcaptor';
 
-        } elseif (eregi('netpliance', $this->user_agent)) {
+        } elseif (preg_match('/netpliance/i', $this->user_agent)) {
             $this->navegador = 'Netpliance';
 
-        } elseif (eregi('offbyone', $this->user_agent)) {
+        } elseif (preg_match('/offbyone/i', $this->user_agent)) {
             $this->navegador = 'OffByOne';
 
-        } elseif (eregi('omniweb', $this->user_agent)) {
+        } elseif (preg_match('/omniweb/i', $this->user_agent)) {
             $this->navegador = 'OmniWeb';
 
-        } elseif (eregi('oracle', $this->user_agent)) {
+        } elseif (preg_match('/oracle/i', $this->user_agent)) {
             $this->navegador = 'Oracle';
 
-        } elseif (eregi('phoenix', $this->user_agent)) {
+        } elseif (preg_match('/phoenix/i', $this->user_agent)) {
             $this->navegador = 'Phoenix';
 
-        } elseif (eregi('planetweb', $this->user_agent)) {
+        } elseif (preg_match('/planetweb/i', $this->user_agent)) {
             $this->navegador = 'PlanetWeb';
 
-        } elseif (eregi('powertv', $this->user_agent)) {
+        } elseif (preg_match('/powertv/i', $this->user_agent)) {
             $this->navegador = 'PowerTV';
 
-        } elseif (eregi('prodigy', $this->user_agent)) {
+        } elseif (preg_match('/prodigy/i', $this->user_agent)) {
             $this->navegador = 'Prodigy';
 
-        } elseif (eregi('voyager', $this->user_agent)) {
+        } elseif (preg_match('/voyager/i', $this->user_agent)) {
             $this->navegador = 'Voyager';
 
-        } elseif (eregi('quicktime', $this->user_agent)) {
+        } elseif (preg_match('/quicktime/i', $this->user_agent)) {
             $this->navegador = 'QuickTime';
 
-        } elseif (eregi('sextatnt', $this->user_agent)) {
+        } elseif (preg_match('/sextatnt/i', $this->user_agent)) {
             $this->navegador = 'Tango';
 
-        } elseif (eregi('elinks', $this->user_agent)) {
+        } elseif (preg_match('/elinks/i', $this->user_agent)) {
             $this->navegador = 'ELinks';
 
-        } elseif (eregi('webexplorer', $this->user_agent)) {
+        } elseif (preg_match('/webexplorer/i', $this->user_agent)) {
             $this->navegador = 'WebExplorer';
 
-        } elseif (eregi('webtv', $this->user_agent)) {
+        } elseif (preg_match('/webtv/i', $this->user_agent)) {
             $this->navegador = 'webtv';
 
-        } elseif (eregi('yandex', $this->user_agent)) {
+        } elseif (preg_match('/yandex/i', $this->user_agent)) {
             $this->navegador = 'Yandex';
 
-        } elseif (eregi('mspie', $this->user_agent)) {
+        } elseif (preg_match('/mspie/i', $this->user_agent)) {
             $this->navegador = 'Pocket Internet Explorer';
         }
     }
@@ -298,7 +320,7 @@ final class user_agent {
     private function consultar_so() {
 
         // Windows
-        if (eregi('win', $this->user_agent)) {
+        if (preg_match('/win/i', $this->user_agent)) {
             $this->so = 'Windows';
             $versoes = array(
                              'Windows CE'     => 'CE',
@@ -324,7 +346,7 @@ final class user_agent {
             $this->versao_so = $this->versao($versoes);
 
         // Linux
-        } elseif (eregi('linux', $this->user_agent)) {
+        } elseif (preg_match('/linux/i', $this->user_agent)) {
             $this->so = 'Linux';
 
             $versoes = array('i686' => 'i686',
@@ -335,7 +357,7 @@ final class user_agent {
             $this->versao_so = $this->versao($versoes);
 
         // FreeBSD
-        } elseif (eregi('freebsd', $this->user_agent)) {
+        } elseif (preg_match('/freebsd/i', $this->user_agent)) {
             $this->so = 'FreeBSD';
 
             $versoes = array('i686' => 'i686',
@@ -346,7 +368,7 @@ final class user_agent {
             $this->versao_so = $this->versao($versoes);
 
         // NetBSD
-        } elseif (eregi('netbsd', $this->user_agent)) {
+        } elseif (preg_match('/netbsd/i', $this->user_agent)) {
             $this->so = 'NetBSD';
 
             $versoes = array('i686' => 'i686',
@@ -357,35 +379,35 @@ final class user_agent {
             $this->versao_so = $this->versao($versoes);
 
         // MAC
-        } elseif (eregi('mac', $this->user_agent)) {
+        } elseif (preg_match('/mac/i', $this->user_agent)) {
             $this->so = 'MacIntoch';
 
         // Outros SOs
-        } elseif (eregi('sunos', $this->user_agent)) {
+        } elseif (preg_match('/sunos/i', $this->user_agent)) {
             $this->so = 'SunOS';
-        } elseif (eregi('hp-ux', $this->user_agent)) {
+        } elseif (preg_match('/hp-ux/i', $this->user_agent)) {
             $this->so = 'HP-UX';
-        } elseif (eregi('irix', $this->user_agent)) {
+        } elseif (preg_match('/irix/i', $this->user_agent)) {
             $this->so = 'Irix';
-        } elseif (eregi('os/2', $this->user_agent)) {
+        } elseif (preg_match('/os\/2/i', $this->user_agent)) {
             $this->so = 'OS/2';
-        } elseif (eregi('amiga', $this->user_agent)) {
+        } elseif (preg_match('/amiga/i', $this->user_agent)) {
             $this->so = 'Amiga';
-        } elseif (eregi('qnx', $this->user_agent)) {
+        } elseif (preg_match('/qnx/i', $this->user_agent)) {
             $this->so = 'QNX';
-        } elseif (eregi('dreamcast', $this->user_agent)) {
+        } elseif (preg_match('/dreamcast/i', $this->user_agent)) {
             $this->so = 'Sega Dreamcast';
-        } elseif (eregi('palm', $this->user_agent)) {
+        } elseif (preg_match('/palm/i', $this->user_agent)) {
             $this->so = 'Palm';
-        } elseif (eregi('powertv', $this->user_agent)) {
+        } elseif (preg_match('/powertv/i', $this->user_agent)) {
             $this->so = 'PowerTV';
-        } elseif (eregi('prodigy', $this->user_agent)) {
+        } elseif (preg_match('/prodigy/i', $this->user_agent)) {
             $this->so = 'Prodigy';
-        } elseif (eregi('symbian', $this->user_agent)) {
+        } elseif (preg_match('/symbian/i', $this->user_agent)) {
             $this->so = 'Symbian';
-        } elseif (eregi('unix', $this->user_agent)) {
+        } elseif (preg_match('/unix/i', $this->user_agent)) {
             $this->so = 'Unix';
-        } elseif (eregi('webtv', $this->user_agent)) {
+        } elseif (preg_match('/webtv/i', $this->user_agent)) {
             $this->so = 'WebTV';
         }
     }
@@ -398,7 +420,7 @@ final class user_agent {
     // Array[String => String] $vetor: vetor associativo com chave e versao
     //
         foreach ($vetor as $chave => $versao) {
-            if (eregi($chave, $this->user_agent)) {
+            if (preg_match('/'.$chave.'/i', $this->user_agent)) {
                 return $versao;
             }
         }

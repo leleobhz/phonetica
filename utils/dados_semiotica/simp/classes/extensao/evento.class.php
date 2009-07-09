@@ -5,9 +5,9 @@
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.2.0.2
+// Versao: 1.2.0.3
 // Data: 09/08/2007
-// Modificado: 04/05/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -21,14 +21,14 @@ final class evento extends evento_base {
     //
         // Se e' admin ou o criador do evento ou o evento e' publico a todos
         if ($usuario->possui_grupo(COD_ADMIN) ||
-            $usuario->cod_usuario = $this->__get('cod_usuario') ||
-            $this->__get('visibilidade') == EVENTO_TODOS_GRUPOS) {
+            $usuario->cod_usuario = $this->get_atributo('cod_usuario') ||
+            $this->get_atributo('visibilidade') == EVENTO_TODOS_GRUPOS) {
             return true;
         }
 
         // Se esta' em um grupo que pode ver o evento
         $vt_grupos = array_merge(array(EVENTO_TODOS_GRUPOS), array_keys($usuario->grupos));
-        return in_array($this->__get('visibilidade'), $vt_grupos);
+        return in_array($this->get_atributo('visibilidade'), $vt_grupos);
     }
 
 
@@ -41,7 +41,7 @@ final class evento extends evento_base {
     //
         // Se e' admin ou o criador do evento ou o evento e' publico a todos
         if ($usuario->possui_grupo(COD_ADMIN) ||
-            $usuario->cod_usuario = $this->__get('cod_usuario')) {
+            $usuario->cod_usuario == $this->get_atributo('cod_usuario')) {
             return true;
         }
         return false;

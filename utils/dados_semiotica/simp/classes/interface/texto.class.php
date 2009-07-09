@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.17
+// Versao: 1.0.0.19
 // Data: 17/09/2007
-// Modificado: 02/03/2009
+// Modificado: 22/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -16,6 +16,10 @@
 define('TEXTO_CHARSET', $CFG->charset);
 define('TEXTO_UTF8',    $CFG->utf8);
 define('TEXTO_WWWIMGS', $CFG->wwwimgs);
+
+// Tipos de Enumeracao
+define('TEXTO_ENUMERACAO_LETRA_MAIUSCULA', 1);
+define('TEXTO_ENUMERACAO_LETRA_MINUSCULA', 2);
 
 final class texto {
 
@@ -403,13 +407,13 @@ final class texto {
     // String $valor: valor com uma unidade
     //
         $i = intval(trim($valor));
-        if (eregi('T', $valor)) {
+        if (strpos($valor, 'T') !== false) {
             return $i * pow(2, 40);
-        } elseif (eregi('G', $valor)) {
+        } elseif (strpos($valor, 'G') !== false) {
             return $i * pow(2, 30);
-        } elseif (eregi('M', $valor)) {
+        } elseif (strpos($valor, 'M') !== false) {
             return $i * pow(2, 20);
-        } elseif (eregi('K', $valor)) {
+        } elseif (strpos($valor, 'K') !== false) {
             return $i * pow(2, 10);
         }
         return $i;
@@ -417,11 +421,38 @@ final class texto {
 
 
     //
-    //    Converte um numero de uma base decimal para uma base especial (que utiliza os digitos especificados)
+    //     Gera uma numeracao
+    //
+    public static function enumeracao($numero, $tipo = TEXTO_ENUMERACAO_LETRA_MAIUSCULA) {
+    // Int $numero: numero a ser codificado
+    // Int $tipo: tipo de enumeracao
+    //
+        switch ($tipo) {
+        case TEXTO_ENUMERACAO_LETRA_MAIUSCULA:
+            $enum = 'A';
+            while ($numero > 0) {
+                $enum++;
+                $numero--;
+            }
+            break;
+        case TEXTO_ENUMERACAO_LETRA_MINUSCULA:
+            $enum = 'a';
+            while ($numero > 0) {
+                $enum++;
+                $numero--;
+            }
+            break;
+        }
+        return $enum;
+    }
+
+
+    //
+    //     Converte um numero de uma base decimal para uma base especial (que utiliza os digitos especificados)
     //
     public static function base_encode($numero, $digitos) {
     // Int $numero: numero positivo na base decimal
-    // String $digitos: conjunto de digitos usados na base especial (ex. binario usa '01')
+    // String || Array[Char] $digitos: conjunto de digitos usados na base especial (ex. binario usa '01')
     //
         if ($numero < 0) {
             trigger_error('Nao pode valores negativos', E_USER_WARNING);
@@ -430,7 +461,11 @@ final class texto {
             trigger_error('Valor muito elevado', E_USER_WARNING);
             return false;
         }
-        $len = strlen($digitos);
+        if (is_array($digitos)) {
+            $len = count($digitos);
+        } else {
+            $len = strlen($digitos);
+        }
         $retorno = '';
         do {
             $divisao = floor($numero / $len);
@@ -448,13 +483,21 @@ final class texto {
     //
     public static function base_decode($numero, $digitos) {
     // String $numero: numero em uma base especial
-    // String $digitos: digitos usados na base especial
+    // String || Array[Char] $digitos: digitos usados na base especial
     //
-        $len = strlen($digitos);
+        if (is_array($digitos)) {
+            $len = count($digitos);
+        } else {
+            $len = strlen($digitos);
+        }
         $retorno = 0;
         $multiplicador = 1;
         for ($i = strlen($numero) - 1; $i >= 0; $i--) {
-            $digito = strpos($digitos, $numero[$i]);
+            if (is_array($digitos)) {
+                $digito = $digitos[array_search($numero[$i], $digitos)];
+            } else {
+                $digito = strpos($digitos, $numero[$i]);
+            }
             $retorno += $digito * $multiplicador;
             $multiplicador *= $len;
         }

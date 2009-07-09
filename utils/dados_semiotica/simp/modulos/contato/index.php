@@ -52,6 +52,9 @@ $pagina->rodape();
 exit(0);
 
 
+/// Funcoes
+
+
 //
 //     Faz a logica de envio de mensagens
 //

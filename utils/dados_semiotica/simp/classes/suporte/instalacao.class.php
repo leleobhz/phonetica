@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.31
+// Versao: 1.1.0.35
 // Data: 05/09/2007
-// Modificado: 05/06/2009
+// Modificado: 06/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -160,7 +160,6 @@ final class instalacao {
             'libxml' => 6,
             'mailparse' => 2,
             'mcrypt' => 1,
-            'mhash' => 3,
             'mysql' => 4,
             'oci8' => 4,
             'pcre' => 6,
@@ -569,7 +568,7 @@ AJUDA;
         $bd->validar_usuario($dados->usuario, $erros);
 
         // Permissoes do arquivo config.php
-        if (!is_writeable('config.php')) {
+        if (!is_writeable($dados->dirroot.'/config.php')) {
             $erros[] = 'Arquivo "config.php" n&atilde;o tem permiss&atilde;o de escrita para o usu&aacute;rio do sistema';
         }
 
@@ -604,6 +603,12 @@ AJUDA;
             $bd = new objeto_dao($dados->sgbd, $dados->servidor, $dados->porta, '[root]', $dados->senharoot, $dados->base);
             if (!$bd->conectar()) {
                 $erros[] = 'Erro ao entrar na base de dados criada como administrador';
+                return false;
+            }
+
+            // Checar versao do SGBD
+            if (!$bd->versao_valida()) {
+                $erros[] = 'O SGBD n&atilde;o tem a vers&atilde;o m&iacute;nima exigida (instalada: '.$bd->get_versao().' / exigida: '.$bd->get_versao_exigida().')';
                 return false;
             }
         }
@@ -889,16 +894,16 @@ require_once(\$dirroot.'var.php'); // Nao retirar esta linha!!!
 ARQ;
 
         // Abrindo o arquivo para escrita
-        if (!is_writable('config.php')) {
+        if (!is_writable($dados->dirroot.'/config.php')) {
             $erros[] = 'Arquivo de configura&ccedil;&otilde;es n&atilde;o tem permiss&atilde;o de escrita (config.php)';
             return false;
         }
-        $r = file_put_contents('config.php', $buf, LOCK_EX);
+        $r = file_put_contents($dados->dirroot.'/config.php', $buf, LOCK_EX);
 
         if ($r) {
             $avisos[] = 'Arquivo de configura&ccedil;&otilde;es salvo com sucesso';
-            if (extension_loaded('posix') && fileowner('config.php') == posix_getuid()) {
-                chmod('config.php', 0755);
+            if (extension_loaded('posix') && fileowner($dados->dirroot.'/config.php') == posix_getuid()) {
+                @chmod($dados->dirroot.'/config.php', 0755);
             }
         } else {
             $erros[] = 'Erro ao gerar arquivo de configura&ccedil;&otilde;es';
@@ -991,11 +996,19 @@ ARQ;
         foreach ($funcoes as $dados) {
             $funcao = $dados->funcao;
             $classe = $dados->classe;
-            $resultado_funcao = $funcao($erros);
+
+            // Instalar classe
+            $erros_classe = array();
+            $resultado_funcao = $funcao($erros_classe);
+
+            // Remover instancias para economizar memoria
+            objeto::remover_instancias($classe);
+
             if ($resultado_funcao) {
                 $avisos[] = "({$i}) Instala&ccedil;&atilde;o da classe \"{$classe}\" realizada com sucesso";
             } else {
-                $erros[] = "({$i}) Erro ao instalar a classe \"{$classe}\"";
+                $erros[] = "({$i}) Erro ao instalar a classe \"{$classe}\":";
+                $erros[] = $erros_classe;
                 $r = false;
                 break;
             }

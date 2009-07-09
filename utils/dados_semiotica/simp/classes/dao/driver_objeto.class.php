@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.22
+// Versao: 1.0.0.23
 // Data: 17/04/2008
-// Modificado: 06/05/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -344,6 +344,59 @@ abstract class driver_objeto {
             return false;
         }
         return $retorno;
+    }
+
+
+    //
+    //     Retorna o ultimo erro no SGBD
+    //
+    public function get_ultimo_erro(&$str_erro = '', &$cod_erro = '0') {
+    // String $str_erro: erro ocorrido
+    // Int $cod_erro: codigo do erro ocorrido
+    //
+        return $this->driver_base->get_ultimo_erro($str_erro, $cod_erro);
+    }
+
+
+    //
+    //     Libera a memoria do resultado
+    //
+    public function liberar_resultado(&$resultado) {
+    // Resource $resultado: resultado a ser apagado
+    //
+        return $this->driver_base->liberar_resultado($resultado);
+    }
+
+
+    //
+    //     Converte um registro para objeto
+    //
+    public function fetch_object(&$resultado) {
+    // Resource $resultado: resultado de uma consulta
+    //
+        return $this->driver_base->fetch_object($resultado);
+    }
+
+
+    //
+    //     Valida um nome de usuario
+    //
+    public function validar_usuario($usuario, &$erros) {
+    // String $usuario: nome do usuario a ser validado
+    // Array[String] $erros: vetor de possiveis erros encontrados
+    //
+        return $this->driver_base->validar_usuario($usuario, $erros);
+    }
+
+
+    //
+    //     Valida uma base
+    //
+    public function validar_base($base, &$erros) {
+    // String $base: nome da base a ser validada
+    // Array[String] $erros: vetor de possiveis erros encontrados
+    //
+        return $this->driver_base->validar_base($base, $erros);
     }
 
 

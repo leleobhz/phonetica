@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// Versao: 1.0.0.8
 // Data: 22/01/2008
-// Modificado: 13/11/2008
+// Modificado: 08/07/2009
 // License: LICENSE.TXT
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 //
@@ -23,6 +23,7 @@ $buffer = '/* Arquivo Compactado */'.
           '{'.
           "var wwwroot='{$CFG->wwwroot}';".
           "var dominio='{$CFG->dominio}';".
+          "var dominio_cookies=".($CFG->dominio_cookies ? "'".$CFG->dominio_cookies."'" : 'false').";".
           "var localhost={$localhost};".
           "var path='{$CFG->path}';".
           "var navegador='".strtolower($CFG->agent->navegador)."';".

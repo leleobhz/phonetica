@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.11
 // Data: 10/09/2007
-// Modificado: 16/03/2009
+// Modificado: 30/06/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -68,6 +68,7 @@ abstract class arquivo_base extends objeto_formulario {
         $atributo->set_tipo('string', false);
         $atributo->set_intervalo(1, 128);
         $atributo->set_validacao('TEXTO_LINHA', false, false);
+        $atributo->set_ajuda(false, 'Cadastro de Usu&aacute;rios');
         $this->adicionar_atributo($atributo);
         unset($atributo);
 
@@ -89,10 +90,10 @@ abstract class arquivo_base extends objeto_formulario {
         if (!$this->existe()) {
             return false;
         }
-        if ($this->__get('modulo')) {
-            return ARQUIVO_WWW_MODULOS.$this->__get('modulo').'/'.$this->__get('arquivo');
+        if ($this->get_atributo('modulo')) {
+            return ARQUIVO_WWW_MODULOS.$this->get_atributo('modulo').'/'.$this->get_atributo('arquivo');
         } else {
-            return ARQUIVO_WWW_ROOT.$this->__get('arquivo');
+            return ARQUIVO_WWW_ROOT.$this->get_atributo('arquivo');
         }
     }
 
@@ -101,9 +102,9 @@ abstract class arquivo_base extends objeto_formulario {
     //     Retorna o nome completo do arquivo
     //
     public function get_nome_completo() {
-        $a = $this->__get('arquivo');
-        $m = $this->__get('modulo');
-        return "{$m}/{$a}";
+        $a = $this->get_atributo('arquivo');
+        $m = $this->get_atributo('modulo');
+        return $m.'/'.$a;
     }
 
 }//class

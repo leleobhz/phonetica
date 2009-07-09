@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// Versao: 1.0.0.1
 // Data: 13/08/2008
-// Modificado: 10/02/2009
+// Modificado: 03/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -542,20 +542,20 @@ echo '<p>HEX(KD) = <pre>'.$hex_kd.'</pre></p>';
         // Usar extensao MHASH
         if (extension_loaded('mhash')) {
             if (!$chave) {
-                $mhash = mhash(MHASH_MD5, $str);
+                $hmac = mhash(MHASH_MD5, $str);
             } else {
-                $mhash = mhash(MHASH_MD5, $str, $chave);
+                $hmac = mhash(MHASH_MD5, $str, $chave);
             }
-            return $mhash;
+            return $hmac;
 
         // Usar extensao HASH
         } elseif (extension_loaded('hash') && in_array('md5', hash_algos())) {
             if (!$chave) {
-                $hash = hash('md5', $str, true);
+                $hmac = hash('md5', $str, true);
             } else {
-                $hash = hash_hmac('md5', $str, $chave, true);
+                $hmac = hash_hmac('md5', $str, $chave, true);
             }
-            return $hash;
+            return $hmac;
         }
 
         // Nao usar extensao
