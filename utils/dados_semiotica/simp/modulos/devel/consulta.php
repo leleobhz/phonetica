@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 16/05/2008
-// Modificado: 05/05/2009
+// Modificado: 09/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -810,14 +810,34 @@ function imprimir_resultado(&$dados, &$sessao) {
         $inicio = false;
     }
 
+    $ordem = array();
+    foreach ($sessao['ordem'] as $campo => $tipo_ordem) {
+        $ordem[] = "'{$campo}' => ".($tipo_ordem ? 'true' : 'false');
+    }
+
     // Exibir a SQL usada
     $dao = new objeto_dao();
     $dao->set_exibicao_usuario(true);
     $sql = $dao->sql_select($obj, $atributos, $condicoes, $ordem, $index, $limite, $inicio);
-    echo '<div class="dados"><code>'.nl2br(texto::codificar($sql)).'</code></div>';
+    echo '<div class="dados">';
+    echo '<p><strong>SQL:</strong></p>';
+    echo '<code>'.nl2br(texto::codificar($sql)).'</code>';
+    echo '</div>';
 
     // Exibir o comando SQL do SIMP
-    echo '<div class="dados"><code>'.$condicoes.'</code></div>';
+    echo '<div class="dados">';
+    echo '<p><strong>Simp</strong></p>';
+    echo '<p><strong>Campos:</strong></p>';
+    echo '<code>'."array('".implode("', '", $sessao['campos'])."')".'</code>';
+    echo '<p><strong>Condi&ccedil;&otilde;es:</strong></p>';
+    echo '<code>'.$condicoes.'</code>';
+    echo '<p><strong>Campos de Ordena&ccedil;&atilde;o:</strong></p>';
+    echo '<code>';
+    echo 'array(';
+    echo count($ordem) ? '<br />'.implode(',<br />', $ordem).'<br />' : '';
+    echo ')';
+    echo '</code>';
+    echo '</div>';
 
     // Consultar efetivamente
     $tempo = microtime(true);

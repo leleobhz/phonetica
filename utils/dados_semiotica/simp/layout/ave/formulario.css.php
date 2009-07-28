@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// Versao: 1.0.0.6
 // Data: 11/03/2008
-// Modificado: 03/06/2009
+// Modificado: 24/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -185,6 +185,9 @@ $tema = basename(dirname(__FILE__));
 
 .formulario input.file,
 .formulario input.texto,
+.formulario input.ddd,
+.formulario input.numero,
+.formulario input.ramal,
 .formulario input.busca,
 .formulario select,
 .formulario textarea {
@@ -203,6 +206,9 @@ $tema = basename(dirname(__FILE__));
 
 .formulario input.file:focus,
 .formulario input.texto:focus,
+.formulario input.ddd:focus,
+.formulario input.numero:focus,
+.formulario input.ramal:focus,
 .formulario input.busca:focus,
 .formulario select:focus,
 .formulario textarea:focus {
@@ -212,6 +218,9 @@ $tema = basename(dirname(__FILE__));
 }
 
 .formulario input.texto,
+.formulario input.ddd,
+.formulario input.numero,
+.formulario input.ramal,
 .formulario input.busca,
 .formulario textarea {
   padding: 1px 3px 1px 3px;
@@ -223,12 +232,18 @@ $tema = basename(dirname(__FILE__));
 }
 
 .formulario input.texto,
+.formulario input.ddd,
+.formulario input.numero,
+.formulario input.ramal,
 .formulario input.busca {
   background-image: url(<?php echo $CFG->wwwlayout.$tema ?>/imgs/input.png);
   background-repeat: repeat-y;
 }
 
 .formulario input.texto:focus,
+.formulario input.ddd:focus,
+.formulario input.numero:focus,
+.formulario input.ramal:focus,
 .formulario input.busca:focus {
   background-image: url(<?php echo $CFG->wwwlayout.$tema ?>/imgs/input_focus.png);
   background-repeat: repeat-y;
@@ -332,31 +347,6 @@ table.tabela {
   margin-bottom: 20px;
   margin-left: auto;
   margin-right: auto;
-}
-
-/* CAMPOS DE DATA E HORA */
-.data_hora,
-.data {
-  clear: both;
-  display: block;
-}
-
-.data_hora .hora,
-.data_hora .minuto,
-.data_hora .segundo {
-  width: 4em;
-}
-
-.data .dia {
-  width: 3.5em;
-}
-
-.data .mes {
-  width: 7.5em;
-}
-
-.data .ano {
-  width: 4.5em;
 }
 
 .formulario hr {

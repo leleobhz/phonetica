@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.44
+// Versao: 1.0.0.49
 // Data: 09/08/2007
-// Modificado: 29/06/2009
+// Modificado: 24/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -40,6 +40,36 @@ final class validacao {
 
 
     //
+    //     Valida se um atributo esta vazio ou nao
+    //
+    public function valor_vazio(&$atributo, $valor) {
+        switch ($atributo->tipo) {
+        case 'data':
+            $data = objeto::parse_data($valor);
+            if ($data['dia'] == 0 && $data['mes'] == 0 && $data['ano'] == 0) {
+                return true;
+            }
+            break;
+        case 'string':
+        case 'int':
+        case 'float':
+        case 'char':
+        case 'binario':
+            if ($valor === '' || $valor === null || $valor === false) {
+                return true;
+            }
+            break;
+        case 'bool':
+            if ($valor === '' || $valor === null) {
+                return true;
+            }
+            break;
+        }
+        return false;
+    }
+
+
+    //
     //     Valida um atributo
     //
     public function validar_atributo(&$atributo, $valor, &$erros) {
@@ -52,20 +82,25 @@ final class validacao {
         // Retorno da funcao
         $valido = true;
 
-        // Validar se e' vazio ou nao
-        if (!$atributo->pode_vazio) {
-            if ($valor === '' || is_null($valor)) {
-                $vazio = ($atributo->tipo == 'string') ? 'vazio' : 'nulo';
-                $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o pode ser '.$vazio;
-                return false;
+        // Se pode vazio
+        if ($atributo->pode_vazio) {
+
+            // Se o valor e' vazio: esta' valido
+            if ($this->valor_vazio($atributo, $valor)) {
+                return true;
             }
 
-        // Se pode vazio e esta' vazio, esta' OK
-        } elseif ($valor === '' || is_null($valor)) {
-            return true;
+        // Se nao pode vazio
+        } else {
+
+            // Se esta vazio: nao e' valido
+            if ($this->valor_vazio($atributo, $valor)) {
+                $erros[] = 'Campo "'.$atributo->descricao.'" &eacute; obrigat&oacute;rio, mas n&atilde;o foi preenchido';
+                return false;
+            }
         }
 
-        // Validar o campo
+        // Validar o campo com uma validacao geral
         $tipo_validacao = $atributo->validacao;
         if ($tipo_validacao) {
             if (!$this->validar_campo($tipo_validacao, $valor, $erro_campo)) {
@@ -116,19 +151,20 @@ final class validacao {
             break;
         case 'data':
             $data = objeto::parse_data($valor, false);
-            if ($atributo->pode_vazio && $data['dia'] == 0 && $data['mes'] == 0 && $data['ano'] == 0) {
-                $valido = true;
-            } elseif (!checkdate($data['mes'], $data['dia'], $data['ano'])) {
-                $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o &eacute; uma data v&aacute;lida ('.$data['dia'].'/'.$data['mes'].'/'.$data['ano'].')';
+            if (!checkdate($data['mes'], $data['dia'], $data['ano'])) {
                 $valido = false;
+                $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o &eacute; uma data v&aacute;lida ('.$data['dia'].'/'.$data['mes'].'/'.$data['ano'].')';
             } else {
                 if ($data['hora'] < 0 || $data['hora'] > 23) {
+                    $valido = false;
                     $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o possui a hora v&aacute;lida: '.$data['hora'];
                 }
                 if ($data['minuto'] < 0 || $data['minuto'] > 59) {
+                    $valido = false;
                     $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o possui o minuto v&aacute;lido: '.$data['hora'];
                 }
                 if ($data['segundo'] < 0 || $data['segundo'] > 59) {
+                    $valido = false;
                     $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o possui o segundo v&aacute;lido: '.$data['hora'];
                 }
             }
@@ -145,48 +181,59 @@ final class validacao {
         case 'int':
         case 'float':
             if (is_numeric($atributo->minimo) && ($valor < $atributo->minimo)) {
+                $valido = false;
                 if ($atributo->minimo >= 0 && $valor < 0) {
                     $erros[] = "Campo \"{$atributo->descricao}\" n&atilde;o pode ser negativo (valor m&iacute;nimo: {$atributo->minimo})";
                 } else {
                     $erros[] = "Campo \"{$atributo->descricao}\" n&atilde;o tem o valor m&iacute;nimo ({$atributo->minimo})";
                 }
-                $valido = false;
             }
             if (is_numeric($atributo->maximo) && ($valor > $atributo->maximo)) {
+                $valido = false;
                 if ($atributo->maximo <= 0 && $valor > 0) {
                     $erros[] = "Campo \"{$atributo->descricao}\" n&atilde;o pode ser positivo (valor m&aacute;ximo: {$atributo->maximo})";
                 } else {
                     $erros[] = "Campo \"{$atributo->descricao}\" ultrapassa o valor m&aacute;ximo ({$atributo->maximo})";
                 }
-                $valido = false;
             }
             break;
         case 'string';
             $valor_decode = utf8_decode($valor);
             if (is_numeric($atributo->minimo) && ($atributo->minimo > 0) && (!isset($valor_decode[$atributo->minimo - 1]))) {
-                $erros[] = "Campo \"{$atributo->descricao}\" n&atilde;o tem o tamanho m&iacute;nimo de caracteres (m&iacute;nimo: {$atributo->minimo})";
                 $valido = false;
+                $erros[] = "Campo \"{$atributo->descricao}\" n&atilde;o tem o tamanho m&iacute;nimo de caracteres (m&iacute;nimo: {$atributo->minimo})";
             }
             if (is_numeric($atributo->maximo) && (isset($valor_decode[$atributo->maximo]))) {
-                $erros[] = "Campo \"{$atributo->descricao}\" ultrapassa o tamanho m&aacute;ximo de caracteres (m&aacute;ximo: {$atributo->maximo})";
                 $valido = false;
+                $erros[] = "Campo \"{$atributo->descricao}\" ultrapassa o tamanho m&aacute;ximo de caracteres (m&aacute;ximo: {$atributo->maximo})";
             }
             break;
         case 'data':
             if ($atributo->minimo && objeto::comparar_datas($valor, $atributo->minimo) < 0) {
+                $valido = false;
                 $minimo = objeto::parse_data($atributo->minimo);
                 $erros[] = "Campo \"{$atributo->descricao}\" &eacute; anterior &agrave; data ".sprintf('%02d/%02d/%04d', $minimo['dia'], $minimo['mes'], $minimo['ano']);
-                $valido = false;
             }
             if ($atributo->maximo && objeto::comparar_datas($valor, $atributo->maximo) > 0) {
+                $valido = false;
                 $maximo = objeto::parse_data($atributo->maximo);
                 $erros[] = "Campo \"{$atributo->descricao}\" &eacute; posterior &agrave; data ".sprintf('%02d/%02d/%04d', $maximo['dia'], $maximo['mes'], $maximo['ano']);
-                $valido = false;
             }
             break;
         }
 
         return $valido;
+    }
+
+
+    //
+    //     Retorna um vetor com os nomes dos tipos de validacao
+    //
+    static public function get_tipos() {
+        return array('ARQUIVO', 'BD', 'CEP', 'CNPJ', 'CPF', 'DN', 'DOMINIO', 'EMAIL', 'FONE', 'HOST',
+                     'IP', 'LETRAS', 'LOGIN', 'MODULO', 'NOME', 'NOME_ARQUIVO', 'NOME_INCOMPLETO',
+                     'NUMERICO', 'NUMERICO_PONTO', 'PLACA_VEICULO', 'RG', 'SENHA', 'SITE', 'TEXTO',
+                     'TEXTO_LINHA');
     }
 
 
@@ -225,6 +272,12 @@ final class validacao {
             $definicao->instrucoes = 'Preencha o CEP com o formato XXXXX-XXX.';
             $definicao->exemplo = '37200-000';
             break;
+        case 'CNPJ':
+            $definicao->padrao = '/^[0-9]{14}$/'.$u;
+            $definicao->permite = $numeros;
+            $definicao->instrucoes = 'Preencha o CNPJ apenas com n&uacute;meros, inclusive o digito verificador';
+            $definicao->exemplo = '12345678901234';
+            break;
         case 'CPF':
             $definicao->padrao = '/^[0-9]{11}$/'.$u;
             $definicao->permite = $numeros;
@@ -250,9 +303,9 @@ final class validacao {
             $definicao->exemplo = 'exemplo@dominio.com.br';
             break;
         case 'FONE':
-            $definicao->padrao = '/^(\+[0-9]{2,4}\040)?\([0-9]{2}\) [0-9]{4}-[0-9]{4}$/'.$u;
+            $definicao->padrao = '/^(\+([0-9]+)[\040])?\(([0-9]+)\)[\040]([0-9]{4}\-[0-9]{4})([\040]([0-9]+))?$/'.$u;
             $definicao->permite = $numeros.'()-+ ';
-            $definicao->instrucoes = 'Preencha com um telefone no formato (XX) XXXX-XXXX ou ent&atilde;o +XX (XX) XXXX-XXXX';
+            $definicao->instrucoes = 'Preencha com um telefone no formato (XX) XXXX-XXXX e, quando permitido, incluir o c&oacute;digo do pa&iacute;s e/ou o ramal';
             $definicao->exemplo = '(35) 9876-5432';
             break;
         case 'HOST': // completo
@@ -315,6 +368,12 @@ final class validacao {
             $definicao->instrucoes = 'Preencha com n&uacute;meros, podendo usar ponto';
             $definicao->exemplo = '12.83.629';
             break;
+        case 'PLACA_VEICULO':
+            $definicao->padrao = '/^[A-Z]{3}\-[0-9]{4}$/'.$u;
+            $definicao->permite = $letras_maiusculas.$numeros.'-';
+            $definicao->instrucoes = 'Preencha a placa do ve&iacute;culo com tr&ecirc;s letras mai&uacute;sculas seguidas por um h&iacute;fen e terminada com quatro d&iacute;gitos num&eacute;ricos';
+            $definicao->exemplo = 'ABC-9876';
+            break;
         case 'RG':
             $definicao->padrao = '/^[A-z0-9-\.'.$espaco.']+$/'.$u;
             $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.$str_espaco.'-.';
@@ -374,6 +433,7 @@ final class validacao {
     //     * NOME_INCOMPLETO: o nome incompleto da pessoa deve ser valido (aceita ponto final para abreviacoes)
     //     * NUMERICO: so aceita numeros
     //     * NUMERICO_PONTO: aceita numeros e ponto
+    //     * PLACA_VEICULO: aceita placas no formato: tres letras maiusculas, um hifen e quatro numeros
     //     * RG: so aceita letras, numeros e -
     //     * SENHA: so letras, numeros, acentos, simbolos e espaco
     //     * SITE: o site deve ser valido (iniciando em http://)
@@ -409,8 +469,29 @@ final class validacao {
         $definicao = self::get_definicao_tipo($tipo);
 
         // Se validou
-        if (preg_match($definicao->padrao, $valor)) {
+        $validou = preg_match($definicao->padrao, $valor);
+        if ($validou) {
             return true;
+
+        // Se ocorreu um erro de expressao regular
+        } elseif ($validou === false) {
+            switch (preg_last_error()) {
+            case PREG_INTERNAL_ERROR:
+                trigger_error('Erro na expressao "'.$definicao->padrao.'" (PREG_INTERNAL_ERROR)', E_USER_NOTICE);
+                break;
+            case PREG_BACKTRACK_LIMIT_ERROR:
+                trigger_error('Erro na expressao "'.$definicao->padrao.'" (PREG_BACKTRACK_LIMIT_ERROR)', E_USER_NOTICE);
+                break;
+            case PREG_RECURSION_LIMIT_ERROR:
+                trigger_error('Erro na expressao "'.$definicao->padrao.'" (PREG_RECURSION_LIMIT_ERROR)', E_USER_NOTICE);
+                break;
+            case PREG_BAD_UTF8_ERROR:
+                trigger_error('Erro na expressao "'.$definicao->padrao.'" (PREG_BAD_UTF8_ERROR)', E_USER_NOTICE);
+                break;
+            case PREG_BAD_UTF8_OFFSET_ERROR:
+                trigger_error('Erro na expressao "'.$definicao->padrao.'" (PREG_BAD_UTF8_OFFSET_ERROR)', E_USER_NOTICE);
+                break;
+            }
         }
 
         // Checando os caracteres que nao podiam ser usados

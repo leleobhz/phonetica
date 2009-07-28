@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 14/10/2008
-// Modificado: 01/06/2009
+// Modificado: 28/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -74,9 +74,12 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
         $vt_campos = array();
         $vt_constraint = array();
         foreach ($objeto->get_atributos() as $def_atributo) {
-            $sql_campo   = $this->delimitar_campo($def_atributo->nome);
-            $sql_tipo    = $this->gerar_sql_tipo($def_atributo);
-            $descricao   = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            $sql_campo = $this->delimitar_campo($def_atributo->nome);
+            $sql_tipo  = $this->gerar_sql_tipo($def_atributo);
+            $descricao = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            if (strpos($descricao, '&') !== false) {
+                trigger_error('Erro de entities no atributo "'.$def_atributo->nome.'" da classe "'.$objeto->get_classe().'"', E_USER_ERROR);
+            }
             $sql_comment = " COMMENT '{$descricao}'";
 
             // Checar se e' unico

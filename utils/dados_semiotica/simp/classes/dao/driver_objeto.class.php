@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.23
+// Versao: 1.0.0.24
 // Data: 17/04/2008
-// Modificado: 03/07/2009
+// Modificado: 09/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -694,7 +694,7 @@ abstract class driver_objeto {
     //
     //     SELECT: gera uma SQL de uma consulta SELECT
     //
-    public function sql_select($objeto, &$atributos, &$condicoes, &$ordem, $index = null, $limite = null, $inicio = null, &$estrutura_consulta = array()) {
+    public function sql_select($objeto, $atributos, $condicoes, $ordem, $index = null, $limite = null, $inicio = null, &$estrutura_consulta = array()) {
     // Object $objeto: instancia de uma entidade derivada da classe objeto
     // Array[String] $atributos: vetor de atributos desejados
     // condicao_sql $condicoes: condicoes da consulta
@@ -1096,7 +1096,7 @@ abstract class driver_objeto {
     //
     //     Monta as condicoes na sintaxe do SGBD
     //
-    protected function gerar_sql_condicao($objeto, &$dados, $usar_apelido = true) {
+    protected function gerar_sql_condicao($objeto, $dados, $usar_apelido = true) {
     // Object $objeto: instancia de uma entidade derivada da classe objeto
     // consulta $dados: dados estrutrados da consulta
     // Bool $usar_apelido: usar apelidos das tabelas
@@ -1273,7 +1273,7 @@ abstract class driver_objeto {
     //
     //     Gera uma lista de campos em SQL
     //
-    protected function gerar_sql_campos(&$dados) {
+    protected function gerar_sql_campos($dados) {
     // consulta $dados: dados estrutrados da consulta
     //
         $vt_sql_campos = array();
@@ -1377,7 +1377,7 @@ abstract class driver_objeto {
     //
     //      Gera uma lista de campos de ordenacao em SQL
     //
-    protected function gerar_sql_ordem(&$dados, $global = false) {
+    protected function gerar_sql_ordem($dados, $global = false) {
     // consulta $dados: dados estrutrados da consulta
     // Bool $global: gerar a ordem global (numerico)
     //

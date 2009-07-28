@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.51
+// Versao: 1.3.1.2
 // Data: 06/08/2007
-// Modificado: 02/07/2009
+// Modificado: 28/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -126,6 +126,7 @@ abstract class objeto implements Iterator {
     //public function exibir_atributo($nome_atributo)
     //public function exibir_atributo_implicito($nome_atributo)
     //public function pode_exibir(&$usuario, &$motivo = '')
+    //public function get_definicao_atributo_validacao($nome_atributo)
     //protected function converter_componente($campo, $valor, $valores)
 
 
@@ -1028,14 +1029,34 @@ $obj = objeto::usuario('login', 'admin');
         // Se usou a notacao objeto:atributo
         $pos = strpos($nome_atributo, ':');
         if ($pos !== false) {
-            $nome_obj = substr($nome_atributo, 0, $pos);
+            $nome_filho = substr($nome_atributo, 0, $pos);
             $resto = substr($nome_atributo, $pos + 1);
-            if ($this->possui_rel_uu($nome_obj)) {
-                $flag_bd = $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd;
-                $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
-                $this->get_objeto_rel_uu($nome_obj)->__set($resto, $valor);
-                $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $flag_bd;
-                return true;
+
+            // Se esta definindo um valor para um objeto pai
+            if (substr($nome_filho, 0, 1) == '^') {
+                $nome_pai = substr($nome_filho, 1);
+                $pos = strpos($nome_pai, '.');
+                if ($pos !== false) {
+                    $atributo_pai = substr($nome_pai, $pos + 1);
+                    $nome_pai = substr($nome_pai, 0, $pos);
+                } else {
+                    $atributo_pai = false;
+                }
+                $flag_bd = $this->get_pai($nome_pai, $atributo_pai)->instancia->flag_bd;
+                $this->get_pai($nome_pai, $atributo_pai)->instancia->flag_bd = $this->instancia->flag_bd;
+                $r = $this->get_pai($nome_pai, $atributo_pai)->__set($resto, $valor);
+                $this->get_pai($nome_pai, $atributo_pai)->instancia->flag_bd = $flag_bd;
+                return $r;
+
+            // Se esta definindo um valor para um objeto filho
+            } elseif ($this->possui_rel_uu($nome_filho)) {
+                $flag_bd = $this->get_objeto_rel_uu($nome_filho)->instancia->flag_bd;
+                $this->get_objeto_rel_uu($nome_filho)->instancia->flag_bd = $this->instancia->flag_bd;
+                $r = $this->get_objeto_rel_uu($nome_filho)->__set($resto, $valor);
+                $this->get_objeto_rel_uu($nome_filho)->instancia->flag_bd = $flag_bd;
+                return $r;
+
+            // Se nao existe pai nem filho com o nome especificado
             } else {
                 trigger_error('A classe "'.$this->get_classe().'" nao possui o objeto "'.$nome_obj.'"', E_USER_WARNING);
                 return false;
@@ -1059,11 +1080,6 @@ $obj = objeto::usuario('login', 'admin');
         // Se nao possui o atributo simples: armazena em um vetor de valores auxiliares
         if (!$this->possui_atributo($nome_atributo)) {
             return $this->set_auxiliar($nome_atributo, $valor);
-        }
-
-        // Se nao validou: abortar
-        if (!$this->validar_atributo($nome_atributo, $valor)) {
-            return false;
         }
 
         // Definir valor do atributo simples
@@ -1271,10 +1287,20 @@ $obj = objeto::usuario('login', 'admin');
         }
 
         if ($this->possui_atributo($nome_atributo)) {
-            return $this->definicao->atributos[$nome_atributo];
+            return clone($this->definicao->atributos[$nome_atributo]);
         }
         trigger_error('A classe "'.$this->get_classe().'" nao possui o atributo "'.$nome_atributo.'"', E_USER_WARNING);
         return null;
+    }
+
+
+    //
+    //     Retorna a definicao de um atributo simples da classe para validacao
+    //
+    public function get_definicao_atributo_validacao($nome_atributo) {
+    // String $nome_atributo: nome do atributo desejado
+    //
+        return $this->get_definicao_atributo($nome_atributo);
     }
 
 
@@ -2169,10 +2195,29 @@ $obj = objeto::usuario('login', 'admin');
         $pos = strpos($parametros[$posicao], ':');
         $resto = substr($parametros[$posicao], $pos + 1);
         $nome_filho = substr($parametros[$posicao], 0, $pos);
+
+        // Se esta buscando um objeto pai
+        if (substr($nome_filho, 0, 1) == '^') {
+            $nome_pai = substr($nome_filho, 1);
+            $pos = strpos($nome_pai, '.');
+            if ($pos !== false) {
+                $atributo_pai = substr($nome_pai, $pos + 1);
+                $nome_pai = substr($nome_pai, 0, $pos);
+            } else {
+                $atributo_pai = false;
+            }
+            $callback = array($this->get_pai($nome_pai, $atributo_pai), $metodo);
+            $parametros[$posicao] = $resto;
+            return call_user_func_array($callback, $parametros);
+        }
+
+        // Se esta buscando um objeto filho
         if ($this->possui_rel_uu($nome_filho)) {
             $callback = array($this->get_objeto_rel_uu($nome_filho), $metodo);
             $parametros[$posicao] = $resto;
             return call_user_func_array($callback, $parametros);
+
+        // Se esta buscando um vetor filho
         } elseif ($this->possui_rel_un($nome_filho)) {
             $def = $this->get_definicao_rel_un($nome_filho);
             $obj = self::get_objeto($def->classe);
@@ -2678,6 +2723,12 @@ $obj = objeto::usuario('login', 'admin');
             $args = func_get_args();
             return $this->recursao_atributo(__FUNCTION__, $args);
         }
+
+        // Se nao validou: abortar
+        if (!$this->validar_atributo($nome_atributo, $valor)) {
+            return false;
+        }
+
         if ($filtrar) {
             $valor = $this->filtrar_valor($nome_atributo, $valor);
         }
@@ -3006,7 +3057,7 @@ $obj = objeto::usuario('login', 'admin');
         }
 
         // Recuperar a definicao do atributo correspondente
-        $def = $this->get_definicao_atributo($nome_atributo);
+        $def = $this->get_definicao_atributo_validacao($nome_atributo);
 
         // Se precisa passar por um filtro especifico
         if ($filtro = $def->filtro) {
@@ -3307,13 +3358,17 @@ $obj = objeto::usuario('login', 'admin');
     // Array[String => Bool] || String $ordem: campo usado para ordenacao
     // Array[String => Bool] || String $ordem_agrupamento: campo usado para ordenacao do objeto de agrupamento
     //
+
+//TODO: permitir que o objeto do agrupamento nao seja um objeto imediato
+// Por exemplo: em docente, ser possivel agrupar por departamento:campus
+
         if (!$this->possui_rel_uu($objeto_agrupamento)) {
             trigger_error('Parametro invalido para $objeto_agrupamento (esperado um objeto da classe)', E_USER_WARNING);
             return false;
         }
 
-        $obj    = $this->get_objeto_rel_uu($objeto_agrupamento);
-        $chave  = $obj->get_chave();
+        $obj      = $this->get_objeto_rel_uu($objeto_agrupamento);
+        $chave_pk = $obj->get_chave();
         if (!$campo_agrupamento) {
             $campo_agrupamento = $obj->get_campo_nome();
         }
@@ -3321,7 +3376,7 @@ $obj = objeto::usuario('login', 'admin');
             trigger_error('A classe "'.$obj->get_classe().'" nao possui o atributo "'.$campo_agrupamento.'"', E_USER_WARNING);
             return false;
         }
-        $grupos = $obj->consultar_varios($condicoes_agrupamento, array($chave, $campo_agrupamento), $ordem_agrupamento);
+        $grupos = $obj->consultar_varios($condicoes_agrupamento, array($chave_pk, $campo_agrupamento), $ordem_agrupamento);
         unset($condicoes_agrupamento, $ordem_agrupamento);
 
         $vetor = array();
@@ -3330,23 +3385,24 @@ $obj = objeto::usuario('login', 'admin');
         $def = $this->get_definicao_rel_uu($objeto_agrupamento);
         if (!$def->forte) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($chave, '=', 0, false);
+                $condicao_extra = condicao_sql::montar($chave_pk, '=', 0, false);
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($chave, '=', 0, false);
+                $condicoes_agrupamento = condicao_sql::montar($chave_pk, '=', 0, false);
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = '[Sem '.$obj->get_entidade().']';
             $vetor[$index] = $subvetor ? $subvetor : array();
         }
+        $chave_fk = $this->get_nome_chave_rel_uu($objeto_agrupamento);
 
         // Percorrer os valores de cada grupo
         foreach ($grupos as $grupo) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($chave, '=', $grupo->$chave, false);
+                $condicao_extra = condicao_sql::montar($chave_fk, '=', $grupo->$chave_pk, false);
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($chave, '=', $grupo->$chave, false);
+                $condicoes_agrupamento = condicao_sql::montar($chave_fk, '=', $grupo->$chave_pk, false);
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = (string)$grupo->__get($campo_agrupamento);
@@ -4023,7 +4079,7 @@ $obj = objeto::usuario('login', 'admin');
         }
 
         // Recuperar a definicao do atributo especificado
-        $atributo = $this->get_definicao_atributo($nome_atributo);
+        $atributo = $this->get_definicao_atributo_validacao($nome_atributo);
 
         // Filtra-lo antes
         if ($filtro = $atributo->filtro) {

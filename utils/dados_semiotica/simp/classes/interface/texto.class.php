@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.19
+// Versao: 1.0.0.20
 // Data: 17/09/2007
-// Modificado: 22/06/2009
+// Modificado: 20/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -118,12 +118,19 @@ final class texto {
     //
     //     Retorna uma substring de uma string codificada em UTF-8 ou ISO-8859-1
     //
-    static public function substr($str, $de, $tam) {
+    static public function substr($str, $de, $tam = false) {
     // String $str: string original
     // Int $de: posicao de inicio
-    // Int $tam: tamanho da substring
+    // Int $tam: tamanho da substring ou false para obter os caracteres ate' o final da string
     //
         if (TEXTO_UTF8) {
+            $len = self::strlen($str);
+            if ($de < 0) {
+                $de = $len + $de;
+            }
+            if ($tam === false) {
+                $tam = $len - $de;
+            }
             return preg_replace('#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$de.'}'.
                                 '((?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$tam.'}).*#s',
                                 '$1', $str);

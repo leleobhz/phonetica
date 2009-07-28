@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.28
+// Versao: 1.1.2.0
 // Data: 06/08/2007
-// Modificado: 19/06/2009
+// Modificado: 24/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -314,7 +314,7 @@ class formulario {
         }
 
         // Retornar
-        return "<form{$action}{$class}{$id}{$method}{$enctype}{$onsubmit}>\n";
+        return "<form{$action}{$class}{$id}{$method}{$enctype}{$onsubmit}>";
     }
 
 
@@ -322,7 +322,7 @@ class formulario {
     //     Encerra um formulario
     //
     public function fechar_formulario() {
-        return "<p class=\"fim\">&nbsp;</p>\n".
+        return '<p class="fim">&nbsp;</p>'.
                "</form>\n";
     }
 
@@ -334,7 +334,7 @@ class formulario {
     // String $titulo: imprime o titulo do formulario
     // Bool $return: retornar ou adicionar ao formulario
     //
-        $r = "  <h3>{$titulo}</h3>\n";
+        $r = "<h3>{$titulo}</h3>";
         if ($return) { return $r; }
         $this->campos[] = $r;
     }
@@ -352,8 +352,8 @@ class formulario {
         $class = $class ? " class=\"{$class}\"" : '';
         $id = $this->montar_id($id);
         $id = $id ? " id=\"{$id}\"" : '';
-        $r = "<fieldset{$class}{$id}>\n".
-             "  <legend>{$titulo}</legend>\n";
+        $r = "<fieldset{$class}{$id}>".
+             "<legend>{$titulo}</legend>";
         if ($return) { return $r; }
         $this->campos[] = $r;
     }
@@ -365,7 +365,7 @@ class formulario {
     public function fim_bloco($return = false) {
     // Bool $return: retornar ou adicionar ao formulario
     //
-        $r = "</fieldset>\n";
+        $r = '</fieldset>';
         if ($return) { return $r; }
         $this->campos[] = $r;
     }
@@ -399,16 +399,16 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>";
+            $r .= '<div>';
         }
         $r .= "<textarea name=\"{$name_completo}\" id=\"{$id_completo}\" cols=\"{$cols}\" rows=\"{$rows}\"{$disabled}{$class}>".
               $cdata.$valor.$fcdata.
               "</textarea>";
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -439,38 +439,38 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
         if (is_array($vetor) && count($vetor)) {
-            $r .= "  <select id=\"{$id_completo}\" name=\"{$name_completo}\"{$disabled}{$class}>\n";
+            $r .= "<select id=\"{$id_completo}\" name=\"{$name_completo}\"{$disabled}{$class}>";
             foreach ($vetor as $cod => $valor) {
 
                 // Select com grupos
                 if (is_array($valor)) {
-                    $r .= "    <optgroup label=\"".texto::codificar($cod)."\">\n";
+                    $r .= "<optgroup label=\"".texto::codificar($cod)."\">";
                     if (count($valor)) {
                         foreach ($valor as $cod2 => $valor2) {
                             $selected = ($select !== false && (strcmp($cod2, $select) == 0)) ? ' selected="selected"' : '';
                             $cod2 = texto::codificar($cod2);
                             $valor2 = texto::codificar($valor2);
-                            $r .= "    <option value=\"{$cod2}\"{$selected}>{$valor2}</option>\n";
+                            $r .= "<option value=\"{$cod2}\"{$selected}>{$valor2}</option>";
                         }
                     } else {
-                        $r .= "    <option disabled=\"disabled\">[nenhum item]</option>\n";
+                        $r .= '<option disabled="disabled">[nenhum item]</option>';
                     }
-                    $r .= "    </optgroup>\n";
+                    $r .= '</optgroup>';
 
                 // Select sem grupos
                 } else {
                     $selected = ($select !== false && (strcmp($cod, $select) == 0)) ? ' selected="selected"' : '';
                     $cod = texto::codificar($cod);
                     $valor = texto::codificar($valor);
-                    $r .= "    <option value=\"{$cod}\"{$selected}>{$valor}</option>\n";
+                    $r .= "<option value=\"{$cod}\"{$selected}>{$valor}</option>";
                 }
             }
-            $r .= "  </select>\n";
+            $r .= '</select>';
 
         // Nenhum item disponivel para selecao
         } else {
@@ -481,8 +481,8 @@ class formulario {
             }
         }
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -517,8 +517,8 @@ class formulario {
         $r = '';
         if ($label) {
             $icone_ajuda = self::montar_ajuda($ajuda);
-            $r .= "<fieldset class=\"escolha\">\n";
-            $r .= "  <legend>{$label}{$icone_ajuda}</legend>\n";
+            $r .= '<fieldset class="escolha">';
+            $r .= "<legend>{$label}{$icone_ajuda}</legend>";
         }
         $i = 0;
         foreach ($vetor as $cod => $valor) {
@@ -536,7 +536,7 @@ class formulario {
             $i++;
         }
         if ($label) {
-            $r .= "</fieldset>\n";
+            $r .= '</fieldset>';
         }
 
         // Armazenar Campo
@@ -566,7 +566,7 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo_bool\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo_bool\">";
             $r .= "<label for=\"{$id_completo}\">";
         }
 
@@ -593,8 +593,8 @@ class formulario {
             } else {
                 $texto_ajuda = '';
             }
-            $r .= ' '.$label.$texto_ajuda."</label>\n".
-                  "</div>\n";
+            $r .= " {$label}{$texto_ajuda}</label>".
+                  '</div>';
         }
 
         if ($return) {
@@ -646,15 +646,15 @@ class formulario {
         $r = '';
         if ($label) {
             $icone_ajuda = self::montar_ajuda($ajuda);
-            $r .= "<fieldset class=\"escolha\" id=\"{$id_fieldset}\">\n";
-            $r .= "  <legend>{$label}{$icone_ajuda}</legend>\n";
+            $r .= "<fieldset class=\"escolha\" id=\"{$id_fieldset}\">";
+            $r .= "<legend>{$label}{$icone_ajuda}</legend>";
         }
 
         $i = 0;
         $encerrar = false;
-        $r .= "<div class=\"colunas\">\n";
+        $r .= '<div class="colunas">';
         for ($coluna = 0; $coluna < $colunas && !$encerrar; $coluna++) {
-            $r .= "<div class=\"coluna\">\n";
+            $r .= '<div class="coluna">';
             if ($quantidade) {
                 for ($j = 0; $j < $quantidade && !$encerrar; $j++, $i++) {
                     if (!isset($chaves[$i])) {
@@ -682,10 +682,10 @@ class formulario {
             } else {
                 $r .= "Nenhum item para sele&ccedil;&atilde;o";
             }
-            $r .= "</div>\n";
+            $r .= '</div>';
         }
-        $r .= "<br class=\"clear\" />\n".
-              "</div>\n";
+        $r .= '<br class="clear" />'.
+              '</div>';
 
         // Imprimir botao de marcar/desmarcar todos
         if ($marcador) {
@@ -693,7 +693,7 @@ class formulario {
         }
 
         if ($label) {
-            $r .= "</fieldset>\n";
+            $r .= '</fieldset>';
         }
 
         // Armazenar Campo
@@ -711,9 +711,9 @@ class formulario {
     //
         if ($this->ajax) {
             $nome = texto::codificar($nome);
-            $r = "<input type=\"button\" value=\"{$nome}\" onclick=\"return marcar_checkbox('{$id_fieldset}');\" class=\"botao\" />\n".
-                 "<noscript><p>Seu Navegador n&atilde;o d&aacute; suporte &agrave; JavaScript ou o mesmo encontra-se desabilitado. ".
-                 "Este recurso exige a utiliza&ccedil;&atilde;o de JavaScript.</p></noscript>\n";
+            $r = "<input type=\"button\" value=\"{$nome}\" onclick=\"return marcar_checkbox('{$id_fieldset}');\" class=\"botao\" />".
+                 '<noscript><p>Seu Navegador n&atilde;o d&aacute; suporte &agrave; JavaScript ou o mesmo encontra-se desabilitado. '.
+                 'Este recurso exige a utiliza&ccedil;&atilde;o de JavaScript.</p></noscript>';
             return $r;
         }
     }
@@ -765,9 +765,9 @@ class formulario {
         // Gerar campo
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
 
         // Mascara
@@ -787,8 +787,8 @@ class formulario {
         $r .= "<input type=\"text\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"{$valor}\" ".
               "size=\"{$size}\" maxlength=\"{$maxlength}\"{$class}{$disabled}{$eventos} />";
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -820,16 +820,16 @@ class formulario {
         // Gerar campo
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
 
         $r .= "<input type=\"password\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"\" ".
               "size=\"{$size}\" maxlength=\"{$maxlength}\"{$class}{$disabled} />";
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -871,17 +871,17 @@ class formulario {
         // Gerar campo
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
 
         $disabled = $disable ? ' disabled="disabled"' : '';
         $r .= $this->campo_hidden('MAX_FILE_SIZE', $limite, 1);
-        $r .= "<input type=\"file\" name=\"{$name_completo}\" id=\"{$id_completo}\"{$class}{$disabled} />\n";
+        $r .= "<input type=\"file\" name=\"{$name_completo}\" id=\"{$id_completo}\"{$class}{$disabled} />";
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -910,15 +910,15 @@ class formulario {
         // Gerar campo
         $i = '';
         if ($label) {
-            $i .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $i .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $i .= $this->label($id, $label, true, '', $ajuda);
-            $i .= "  <div>\n";
+            $i .= '<div>';
         }
 
         $i .= "<input type=\"image\" name=\"{$name}\" id=\"{$id_completo}\" ismap=\"ismap\" src=\"{$src}\" {$size}{$class} />";
         if ($label) {
-            $i .= "  </div>\n".
-                  "</div>\n";
+            $i .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -948,15 +948,15 @@ class formulario {
         // Gerar campos
         $r = '';
         if ($label) {
-            $r .= "<div class=\"block\">\n";
+            $r .= '<div class="block">';
         }
-        $r .= "  <input type=\"submit\" name=\"{$name}\" id=\"{$id_completo}\" value=\"{$valor}\" title=\"{$valor}\" class=\"botao\"{$disabled} />\n";
+        $r .= "<input type=\"submit\" name=\"{$name}\" id=\"{$id_completo}\" value=\"{$valor}\" title=\"{$valor}\" class=\"botao\"{$disabled} />";
         if ($reset) {
-            $r .= "  <input type=\"reset\" value=\"Restaurar\" class=\"botao\" title=\"Restaurar formul&aacute;rio para os valores padr&atilde;o\" />\n";
+            $r .= " <input type=\"reset\" value=\"Restaurar\" class=\"botao\" title=\"Restaurar formul&aacute;rio para os valores padr&atilde;o\" />";
         }
         if ($label) {
             $icone_ajuda = self::montar_ajuda($ajuda);
-            $r .= $icone_ajuda."</div>\n";
+            $r .= $icone_ajuda.'</div>';
         }
 
         // Armazenar Campos
@@ -981,10 +981,10 @@ class formulario {
             $icone_ajuda = self::montar_ajuda($ajuda);
 
             $l = is_numeric($limite) ? ', '.abs($limite) : '';
-            $r = "<div class=\"block\">\n".
-                 "  <input alt=\"{$elemento}\" type=\"hidden\" value=\"Adicionar {$nome}\" onclick=\"return clonar({$elemento}{$l});\" class=\"botao_clonar\" />\n".
+            $r = '<div class="block">'.
+                 "<input alt=\"{$elemento}\" type=\"hidden\" value=\"Adicionar {$nome}\" onclick=\"return clonar({$elemento}{$l});\" class=\"botao_clonar\" />".
                  $icone_ajuda.
-                 "</div>\n";
+                 '</div>';
         }
 
         // Armazenar Campo
@@ -1016,9 +1016,9 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div class=\"campo\">\n";
+            $r .= '<div class="campo">';
             $r .= $this->label($id_hora, $label, true, '', $ajuda);
-            $r .= "  <div class=\"data_hora\">\n";
+            $r .= '<div class="data_hora">';
         }
         $r .= $this->campo_select($id_hora, $id_hora, $vt_horas,  $hora, 0, 0, 1, 'hora');
         if ($minuto !== false) {
@@ -1031,8 +1031,8 @@ class formulario {
         }
 
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Adicionar Campo
@@ -1067,20 +1067,20 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div class=\"campo\">\n";
+            $r .= '<div class="campo">';
             $r .= $this->label($id_dia, $label, true, '', $ajuda);
-            $r .= "  <div class=\"data\">\n";
+            $r .= '<div class="data">';
         }
 
         $r .= $this->campo_select($id_dia, $id_dia, $vt_dias,  $dia, 0, 0, 1, 'dia');
-        $r .= "<span>/</span>\n";
+        $r .= "<span>/</span>";
         $r .= $this->campo_select($id_mes, $id_mes, $vt_meses, $mes, 0, 0, 1, 'mes');
-        $r .= "<span>/</span>\n";
+        $r .= "<span>/</span>";
         $r .= $this->campo_select($id_ano, $id_ano, $vt_anos,  $ano, 0, 0, 1, 'ano');
 
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Adicionar Campo
@@ -1123,6 +1123,147 @@ class formulario {
         $ano     = $obj->possui_auxiliar($id_ano)     ? $obj->get_auxiliar($id_ano)     : $ano_p;
 
         return mktime((int)$hora, (int)$minuto, (int)$segundo, (int)$mes, (int)$dia, (int)$ano);
+    }
+
+
+    //
+    //     Campo de telefone
+    //
+    public function campo_telefone($prefixo, $ddd, $numero, $label = '', $disable = false, $return = false, $ajuda = false) {
+    // String $prefixo: prefixo usado no nome dos campos
+    // String $ddd: codigo do DDD
+    // String $numero do telefone
+    // String $label: nome do label
+    // Bool $disable: indica se o campo esta desativado
+    // Bool $return: retornar ou adicionar no formulario
+    // String || Array[String => String] $ajuda: texto da ajuda do campo ou vetor com posicoes "link" e (opcionalmente) "texto"
+    //
+        if ($prefixo) { $prefixo .= '_'; }
+        $id_ddd    = $prefixo.'ddd';
+        $id_numero = $prefixo.'numero';
+
+        $r = '';
+        if ($label) {
+            $r .= '<div class="campo">';
+            $r .= $this->label($id_ddd, $label, true, '', $ajuda);
+            $r .= '<div class="telefone">';
+        }
+
+        $vt_codigos = listas::get_codigos_telefone();
+
+        $r .= '(';
+        $r .= $this->campo_select($id_ddd, $id_ddd, $vt_codigos, $ddd, false, $disable, true, 'ddd');
+        $r .= '<span>) </span>';
+        $r .= $this->campo_text($id_numero, $id_numero, $numero, 8, 8, false, $disable, true, 'numero');
+
+        if ($label) {
+            $r .= '</div>'.
+                  '</div>';
+        }
+
+        // Adicionar Campo
+        if ($return) { return $r; }
+        $this->campos[] = $r;
+    }
+
+
+    //
+    //     Campo de telefone comercial (com ramal)
+    //
+    public function campo_telefone_comercial($prefixo, $ddd, $numero, $ramal, $label = '', $disable = false, $return = false, $ajuda = false) {
+    // String $prefixo: prefixo usado no nome dos campos
+    // String $ddd: codigo do DDD
+    // String $numero do telefone
+    // String $ramal: ramal do telefone
+    // String $label: nome do label
+    // Bool $disable: indica se o campo esta desativado
+    // Bool $return: retornar ou adicionar no formulario
+    // String || Array[String => String] $ajuda: texto da ajuda do campo ou vetor com posicoes "link" e (opcionalmente) "texto"
+    //
+        if ($prefixo) { $prefixo .= '_'; }
+        $id_ddd    = $prefixo.'ddd';
+        $id_numero = $prefixo.'numero';
+        $id_ramal  = $prefixo.'ramal';
+
+        $r = '';
+        if ($label) {
+            $r .= '<div class="campo">';
+            $r .= $this->label($id_ddd, $label, true, '', $ajuda);
+            $r .= '<div class="telefone">';
+        }
+
+        $vt_codigos = listas::get_codigos_telefone();
+
+        $r .= '(';
+        $r .= $this->campo_select($id_ddd, $id_ddd, $vt_codigos, false, $disable, true, 'ddd');
+        $r .= '<span>) </span>';
+        $r .= $this->campo_text($id_numero, $id_numero, $numero, 8, 8, false, $disable, true, 'numero');
+        $r .= ' <span>ramal:</span>';
+        $r .= $this->campo_text($id_ramal, $id_ramal, $ramal, 4, 4, false, $disable, true, 'ramal');
+
+        if ($label) {
+            $r .= '</div>'.
+                  '</div>';
+        }
+
+        // Adicionar Campo
+        if ($return) { return $r; }
+        $this->campos[] = $r;
+    }
+
+
+    //
+    //     Quebra um telefone em partes
+    //
+    public static function parse_telefone($telefone) {
+    // String $telefone: valor do telefone a ser quebrado
+    //
+        $retorno = array('pais'   => '',
+                         'ddd'    => '',
+                         'numero' => '',
+                         'ramal'  => '');
+        if (preg_match('/^(?i:\+([^\040]+)[\040])?\(([^\)]+)\)[\040]([^\040]+)(?i:[\040](.+))?$/', $telefone, $match)) {
+            $retorno['pais']   = $match[1];
+            $retorno['ddd']    = $match[2];
+            $retorno['numero'] = str_replace('-', '', $match[3]);
+            $retorno['ramal']  = $match[4];
+        }
+        return $retorno;
+    }
+
+
+    //
+    //     Junta as componentes de um telefone
+    //
+    public static function juntar_telefone($prefixo, $dados) {
+    // String $prefixo: prefixo usado nos telefones
+    // Object $dados: dados submetidos
+    //
+        if ($prefixo) {
+            $prefixo .= '_';
+        }
+        $id_pais   = $prefixo.'pais';
+        $id_ddd    = $prefixo.'ddd';
+        $id_numero = $prefixo.'numero';
+        $id_ramal  = $prefixo.'ramal';
+
+        $pais   = isset($dados->$id_pais)   ? $dados->$id_pais   : false;
+        $ddd    = isset($dados->$id_ddd)    ? $dados->$id_ddd    : false;
+        $numero = isset($dados->$id_numero) ? $dados->$id_numero : false;
+        $ramal  = isset($dados->$id_ramal)  ? $dados->$id_ramal  : false;
+
+        $retorno = '';
+        if ($pais === false) {
+            $retorno .= '+55 '; // Codigo do Brasil
+        } else {
+            $retorno .= '+'.$pais.' ';
+        }
+        $retorno .= '('.$ddd.') ';
+        $retorno .= substr($numero, 0, 4).'-'.substr($numero, 4);
+        if ($ramal) {
+            $retorno .= ' '.$ramal;
+        }
+        return $retorno;
     }
 
 
@@ -1206,9 +1347,9 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
         $r .= "<input type=\"text\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"{$valor}\" ".
               "maxlength=\"{$maxlength}\" size=\"{$size}\"{$class}{$eventos} />";
@@ -1220,8 +1361,8 @@ class formulario {
             $r .= " <a class=\"relacionamento\" href=\"{$link}\" title=\"Buscar Valor\">Buscar</a>";
         }
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -1271,9 +1412,9 @@ class formulario {
 
         $r = '';
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
         $r .= "<input type=\"text\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"{$valor}\" ".
               "maxlength=\"{$maxlength}\" size=\"{$size}\"{$class}{$eventos} />";
@@ -1285,8 +1426,8 @@ class formulario {
             $r .= " <a class=\"hierarquia\" href=\"{$link}\" title=\"Buscar Valor\">Buscar</a>";
         }
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -1329,17 +1470,17 @@ class formulario {
             $eventos = '';
         }
         if ($label) {
-            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
-            $r .= "  <div>\n";
+            $r .= '<div>';
         }
         $r .= "<input type=\"text\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"{$valor}\" ".
               "maxlength=\"{$maxlength}\" size=\"{$size}\"{$class}{$eventos} />".
               "<div></div>";
 
         if ($label) {
-            $r .= "  </div>\n".
-                  "</div>\n";
+            $r .= '</div>'.
+                  '</div>';
         }
 
         // Armazenar Campo
@@ -1378,24 +1519,24 @@ class formulario {
 
             $src = FORMULARIO_WWWROOT."webservice/captcha.jpg.php?c=".$md5;
 
-            $r .= "<div id=\"area_{$id}\" class=\"campo\">\n";
+            $r .= "<div id=\"area_{$id}\" class=\"campo\">";
             $r .= $this->label($id, 'Escreva');
-            $r .= "  <div class=\"captcha_imagem\">\n";
-            $r .= "  <img id=\"img_captcha\" src=\"{$src}\" alt=\"Captcha\" title=\"Escreva o que est&aacute; escrito na imagem\" width=\"{$w}\" height=\"{$h}\" />\n";
-            $r .= "  <input id=\"{$id}\" name=\"{$id}\" type=\"text\" maxlength=\"".CAPTCHA_TAMANHO."\" size=\"".CAPTCHA_TAMANHO."\" class=\"texto\" />";
-            $r .= "  </div>\n";
-            $r .= "</div>\n";
+            $r .= '<div class="captcha_imagem">';
+            $r .= "<img id=\"img_captcha\" src=\"{$src}\" alt=\"Captcha\" title=\"Escreva o que est&aacute; escrito na imagem\" width=\"{$w}\" height=\"{$h}\" />";
+            $r .= "<input id=\"{$id}\" name=\"{$id}\" type=\"text\" maxlength=\"".CAPTCHA_TAMANHO."\" size=\"".CAPTCHA_TAMANHO."\" class=\"texto\" />";
+            $r .= '</div>';
+            $r .= '</div>';
 
 
         // Se e' um navegador modo texto
         } else {
             $captcha = captcha::gerar_texto();
 
-            $r  = "<p>Pergunta: {$captcha->pergunta}</p>\n";
-            $r .= "<div id=\"area_{$id}\" class=\"captcha_texto campo\">\n";
+            $r  = "<p>Pergunta: {$captcha->pergunta}</p>";
+            $r .= "<div id=\"area_{$id}\" class=\"captcha_texto campo\">";
             $r .= $this->label($id, 'Resposta');
-            $r .= "  <div><input id=\"{$id}\" name=\"{$id}\" type=\"text\" maxlength=\"20\" class=\"texto\" /></div>\n";
-            $r .= "</div>\n";
+            $r .= "<div><input id=\"{$id}\" name=\"{$id}\" type=\"text\" maxlength=\"20\" class=\"texto\" /></div>";
+            $r .= '</div>';
         }
 
         // Armazenar Campo
@@ -1412,9 +1553,9 @@ class formulario {
     // Bool $return: retornar ou adicionar ao formulario
     //
         if ($this->inline) {
-            $r = "<span class=\"comentario\">{$texto}</span>\n";
+            $r = "<span class=\"comentario\">{$texto}</span>";
         } else {
-            $r = "<div class=\"block\"><span class=\"comentario\">{$texto}</span></div>\n";
+            $r = "<div class=\"block\"><span class=\"comentario\">{$texto}</span></div>";
         }
 
         // Armazenar Campo
@@ -1443,9 +1584,9 @@ class formulario {
     // Bool $return: retornar ou adicionar ao formulario
     //
         if ($this->inline) {
-            $r = "<span>{$texto}</span>\n";
+            $r = "<span>{$texto}</span>";
         } else {
-            $r = "<div class=\"block\">{$texto}</div>\n";
+            $r = "<div class=\"block\">{$texto}</div>";
         }
 
         // Armazenar Campo
@@ -1468,7 +1609,7 @@ class formulario {
         $id = $this->montar_id($id);
         $icone_ajuda = self::montar_ajuda($ajuda);
         $dois_pontos = ($dois_pontos && FORMULARIO_IE) ? ':' : '';
-        return "  <label id=\"label_{$id}\" for=\"{$id}\"{$class}>{$nome}{$icone_ajuda}{$dois_pontos}</label>\n";
+        return "<label id=\"label_{$id}\" for=\"{$id}\"{$class}>{$nome}{$icone_ajuda}{$dois_pontos}</label>";
     }
 
 

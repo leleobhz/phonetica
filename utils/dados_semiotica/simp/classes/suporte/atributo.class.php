@@ -5,15 +5,14 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.2.7
+// Versao: 1.0.2.10
 // Data: 06/08/2007
-// Modificado: 25/06/2009
+// Modificado: 23/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 // Constantes
-define('ATRIBUTO_DEBUG', 0);
 define('ATRIBUTO_DATA_RELATIVA', 1);
 define('ATRIBUTO_DATA_ABSOLUTA', 2);
 
@@ -66,6 +65,7 @@ final class atributo {
     //
     public function get_definicao_xml() {
         $caracteristicas = array('nome',
+                                 'descricao',
                                  'label',
                                  'ajuda',
                                  'exemplo',
@@ -109,18 +109,24 @@ final class atributo {
         }
         switch ($this->__get('tipo')) {
         case 'string':
-            if ($this->__get('validacao') == 'NUMERICO') {
+            switch ($this->__get('validacao')) {
+            case 'CPF':
+            case 'CNPJ':
+            case 'NUMERICO':
                 $mascara = 'digitos';
-            } elseif ($this->__get('validacao') == 'LETRAS') {
+                break;
+            case 'LETRAS':
                 $mascara = 'letras';
-            } else {
+                break;
+            default:
                 $mascara = '';
+                break;
             }
             return $mascara;
         case 'int':
         case 'float':
             $mascara = $this->__get('tipo');
-            if ($this->__get('minimo') > 0 && $this->__get('maximo') > 0) {
+            if ($this->__get('minimo') >= 0 && $this->__get('maximo') >= 0) {
                 $mascara = 'u'.$mascara;
             }
             return $mascara;
@@ -155,8 +161,10 @@ final class atributo {
         // Campos enum
         case 'tipo':
             $tipos = array('int', 'float', 'string', 'char', 'bool', 'binario', 'data');
-            $valor = strtolower($valor);
-            if (!in_array($valor, $tipos)) { return false; }
+            if (!in_array($valor, $tipos)) {
+                trigger_error('Tipo de atributo desconhecido: '.$valor, E_USER_WARNING);
+                return false;
+            }
             break;
 
         case 'chave':
@@ -171,23 +179,29 @@ final class atributo {
             $tipos = array('text', 'textarea', 'select', 'bool', 'relacionamento',
                            'radio', 'hidden', 'password', 'file', 'submit',
                            'data', 'hora', 'data_hora', false);
-            $valor = strtolower($valor);
-            if (!in_array($valor, $tipos)) { return false; }
+            if (!in_array($valor, $tipos)) {
+                trigger_error('Tipo de campo de formulario desconhecido: '.$valor, E_USER_WARNING);
+                return false;
+            }
             break;
 
         case 'validacao':
-            $tipos = array('ARQUIVO', 'CNPJ', 'CPF', 'EMAIL', 'IP', 'BD', 'CEP', 'DN', 'DOMINIO',
-                           'FONE', 'HOST', 'LETRAS', 'LOGIN', 'MODULO', 'NOME', 'NOME_ARQUIVO',
-                           'NOME_INCOMPLETO', 'NUMERICO', 'RG', 'SENHA', 'SITE', 'TEXTO',
-                           'TEXTO_LINHA');
-            $valor = strtoupper($valor);
-            if (!in_array($valor, $tipos)) { return false; }
+            if (is_string($valor)) {
+                $tipos = validacao::get_tipos();
+                if (!in_array($valor, $tipos)) {
+                    trigger_error('Tipo de validacao desconhecido: '.$valor, E_USER_WARNING);
+                    return false;
+                }
+            }
             break;
 
         case 'tipo_data_inicio':
         case 'tipo_data_fim':
             $tipos = array(ATRIBUTO_DATA_RELATIVA, ATRIBUTO_DATA_ABSOLUTA);
-            if (!in_array($valor, $tipos)) { return false; }
+            if (!in_array($valor, $tipos)) {
+                trigger_error('Tipo de data desconhecido: '.$valor, E_USER_WARNING);
+                return false;
+            }
             break;
 
         // Campos numericos ou false
@@ -196,7 +210,9 @@ final class atributo {
             if ($this->__get('tipo') == 'data') {
                 $valor = (string)$valor;
             } else {
-                $valor = is_numeric($valor) ? $valor : false;
+                if (!is_numeric($valor)) {
+                    $valor = false;
+                }
             }
             break;
 
@@ -225,6 +241,12 @@ final class atributo {
             break;
 
         // Campos especiais
+        case 'filtro':
+        case 'validacao_especifica':
+            if ($valor !== false) {
+                $valor = (string)$valor;
+            }
+            break;
         case 'ajuda':
             if (!is_string($valor) && !is_array($valor)) {
                 trigger_error('A ajuda do atributo so pode ser string ou array', E_USER_WARNING);
@@ -237,6 +259,14 @@ final class atributo {
                 $valor = false;
             }
             break;
+
+        // Valores sem tipo definido
+        case 'padrao':
+            break;
+
+        default:
+            trigger_error('Caracteristica do atributo desconhecida: '.$caracteristica, E_USER_WARNING);
+            return false;
         }
 
         // Guardar valor apenas se ele for diferente do padrao

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.35
+// Versao: 1.0.0.37
 // Data: 22/08/2007
-// Modificado: 30/06/2009
+// Modificado: 14/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -137,13 +137,17 @@ final class usuario extends usuario_base {
     public function get_info_campo($campo) {
     // String $campo: campo desejado
     //
-        switch ($campo) {
-        case 'confirmacao':
-            $atributo = $this->get_definicao_atributo('senha');
-            $atributo->nome = $campo;
-            $atributo->descricao = 'Conforma&ccedil;&atilde;o';
-            $atributo->ajuda = 'Preencha a confirma&ccedil;&atilde;o com o mesmo valor da senha';
-            return $atributo;
+        switch ($this->id_form) { 
+        default:
+            switch ($campo) {
+            case 'confirmacao':
+                $atributo = $this->get_definicao_atributo('senha');
+                $atributo->nome = $campo;
+                $atributo->descricao = 'Confirma&ccedil;&atilde;o';
+                $atributo->ajuda = 'Preencha a confirma&ccedil;&atilde;o com o mesmo valor da senha';
+                return $atributo;
+            }
+            break;
         }
         return parent::get_info_campo($campo);
     }
@@ -162,13 +166,35 @@ final class usuario extends usuario_base {
     //
     //     Retorna a senha criptografada
     //
-    public function codificar($senha) {
+    public function codificar($senha, $senha_codificada = false) {
     // String $senha: senha nao codificada
+    // String $senha_codificada: senha codificada (para conferencia de senhas com sal)
     //
         $senha = utf8_decode($senha);
+
+        // Metodo MD5
         return md5($senha);
+
+        // Metodo SHA-1
         //return sha1($senha);
+
+        // Metodo Crypt com sal fixo
         //return crypt($senha, 'SP');
+
+        // Metodo Crypt com sal aleatorio
+        //if ($senha_codificada !== false) {
+        //    return crypt($senha, $senha_codificada);
+        //} else {
+        //    return crypt($senha);
+        //}
+
+        // Metodos HMAC
+        //$algoritmo = 'md5';
+        //$sal = 'exemplo';
+        //if (!in_array($algoritmo, hash_algos())) {
+        //    trigger_error('Metodo de criptografia nao suportado: "'.$algoritmo.'"', E_USER_ERROR);
+        //}
+        //return hash_hmac('md5', $senha, $sal, false);
     }
 
 
@@ -182,7 +208,7 @@ final class usuario extends usuario_base {
     //
         // Autenticacao tradicional ou e' o admin
         if (USUARIO_TIPO_AUTENTICACAO == 'simp' || $this->get_valor_chave() == 1) {
-            if (strcmp($this->codificar($senha), $this->get_atributo('senha')) != 0) {
+            if (strcmp($this->codificar($senha, $this->get_atributo('senha')), $this->get_atributo('senha')) != 0) {
                 $erros[] = 'Senha inv&aacute;lida';
                 return false;
             }

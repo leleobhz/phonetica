@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 04/06/2007
-// Modificado: 24/06/2009
+// Modificado: 14/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -42,9 +42,10 @@ final class user_agent {
     public function __get($chave) {
     // String $chave: chave desejada
     //
-        if (isset($this->$chave)) {
-            return $this->$chave;
+        if (!property_exists($this, $chave)) {
+            return null;
         }
+        return $this->$chave;
     }
 
 

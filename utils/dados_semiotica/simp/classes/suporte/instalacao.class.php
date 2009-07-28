@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.35
+// Versao: 1.1.0.36
 // Data: 05/09/2007
-// Modificado: 06/07/2009
+// Modificado: 14/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -186,7 +186,7 @@ final class instalacao {
             'xmlreader' => 6,
             'xmlwriter' => 6,
             'xslt' => 1,
-            'zip' => 2,
+            'zip' => 3,
             'zlib' => 3
         );
 

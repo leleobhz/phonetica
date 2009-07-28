@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.27
+// Versao: 1.3.0.29
 // Data: 27/08/2007
-// Modificado: 06/07/2009
+// Modificado: 16/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -723,6 +723,29 @@ abstract class objeto_formulario extends objeto {
             }
         }
         return $r;
+    }
+
+
+    //
+    //     Obtem informacoes sobre um campo do formulario
+    //
+    public function get_info_campo($campo) {
+    // String $campo: campo desejado
+    //
+        if ($this->possui_atributo($campo)) {
+            return $this->get_definicao_atributo($campo);
+        }
+        return false;
+    }
+
+
+    //
+    //     Retorna a definicao de um atributo simples da classe para validacao
+    //
+    public function get_definicao_atributo_validacao($nome_atributo) {
+    // String $nome_atributo: nome do atributo desejado
+    //
+        return $this->get_info_campo($nome_atributo);
     }
 
 
@@ -1755,7 +1778,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Tenta inserir um campo no formulario
     //
-    protected function inserir_campo_formulario(&$form, $campo, &$valores, $id_form) {
+    final protected function inserir_campo_formulario(&$form, $campo, &$valores, $id_form) {
     // Object $form: formulario que vai adicionar o campo
     // String $campo: nome do atributo desejado
     // Object $valores: valores a serem preenchidos automaticamente
@@ -1820,19 +1843,6 @@ abstract class objeto_formulario extends objeto {
             }
         }
         return true;
-    }
-
-
-    //
-    //     Obtem informacoes sobre um campo do formulario
-    //
-    public function get_info_campo($campo) {
-    // String $campo: campo desejado
-    //
-        if ($this->possui_atributo($campo)) {
-            return $this->get_definicao_atributo($campo);
-        }
-        return false;
     }
 
 }//class

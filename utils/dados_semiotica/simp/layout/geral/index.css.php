@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.11
 // Data: 11/03/2008
-// Modificado: 19/02/2009
+// Modificado: 24/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -457,10 +457,8 @@ ul.hierarquia li .valor img.bt_expandir {
   border: 1px inset #FFFFFF;
   color: #000000;
   font-size: 14px;
-  height: 20px;
   line-height: 20px;
   margin: 2px;
-  overflow: hidden;
   padding: 2px;
 }
 
@@ -698,6 +696,45 @@ form a.ajuda a img {
 .form_paginacao input[type='submit'] {
   border: 1px solid #CCCCCC;
   cursor: pointer;
+}
+
+/* CAMPOS DE DATA E HORA */
+.data_hora,
+.data {
+  clear: both;
+  display: block;
+}
+
+.data_hora .hora,
+.data_hora .minuto,
+.data_hora .segundo {
+  width: 4em;
+}
+
+.data .dia {
+  width: 3.5em;
+}
+
+.data .mes {
+  width: 7.5em;
+}
+
+.data .ano {
+  width: 4.5em;
+}
+
+/* CAMPOS DE TELEFONE */
+.formulario .telefone input.ddd {
+  width: 2em;
+}
+.formulario .telefone select.ddd {
+  width: 4em;
+}
+.formulario .telefone input.numero {
+  width: 8em;
+}
+.formulario .telefone input.ramal {
+  width: 4em;
 }
 
 /* Graficos */

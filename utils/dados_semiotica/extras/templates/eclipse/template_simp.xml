@@ -4,7 +4,7 @@
 }//class</template><template autoinsert="true" context="php" deleted="false" description="SIMP/interface" enabled="true" name="interface">interface ${interface} {
     ${codigo}
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/function" enabled="true" name="function">//
-//     ${descricao}
+//     ${descricao_funcao}
 //
 function ${funcao}() {
     ${codigo}
@@ -40,13 +40,20 @@ function ${procedimento}() {
 case ${primeiro_caso}:
     ${operacoes}
     break;
+default:
+    ${operacoes}
+    break;
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/__get" enabled="true" name="__get">//
 //     Obtem um atributo da classe
 //
 public function __get($$atributo) {
 // String $$atributo: nome do atributo a ser obtido
 //
-    ${operacoes}
+    switch ($$atributo) {
+    case '${atributo}':
+        ${codigo}
+        break;
+    }
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/__set" enabled="true" name="__set">//
 //     Define o valor de um atributo da classe
 //
@@ -63,7 +70,24 @@ public function __set($$atributo, $$valor) {
 //     Define a forma como um objeto sera exibido
 //
 public function __toString() {
-    ${operacoes}
+    return ${operacoes}
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/definir_entidade" enabled="true" name="definir_entidade">//
+//     Cria a definicao de entidade
+//
+protected function definir_entidade() {
+    $$this-&gt;criar_entidade(
+        /* Nome Entidade   */ '${singular}',
+        /* Entidade Plural */ '${plural}',
+        /* Genero          */ '${genero}',
+        /* Classe          */ '${classe}',
+        /* Tabela          */ '${tabela}',
+        /* Desc. Tabela    */ 'Tabela de ${descricao_tabela}');
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/definir_atributos" enabled="true" name="definir_atributos">//
+//     Cria os atributos da classe
+//
+protected function definir_atributos() {
+
+    ${atributos}
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/get_campo_nome" enabled="true" name="get_campo_nome">//
 //     Retorna o NOME DO ATRIBUTO (simples, implicito ou relacionamento 1:1) usado para identificar o objeto
 //
@@ -181,6 +205,19 @@ public function campo_formulario(&amp;$$form, $$campo, $$valor) {
         return true;
     }
     return parent::campo_formulario($$form, $$campo, $$valor);
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/get_info_campo" enabled="true" name="get_info_campo">//
+//     Obtem informacoes sobre um campo do formulario
+//
+public function get_info_campo($$campo) {
+// String $$campo: campo desejado
+//
+    switch ($$campo) {
+    case '${campo}':
+        $$atributo = new atributo(${parametros});
+        $$atributo-&gt;set_${metodo}();
+        return $$atributo;
+    }
+    return parent::get_info_campo($$campo);
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/pode_ser_manipulado" enabled="true" name="pode_ser_manipulado">//
 //     Indica se o registro pode ser manipulado pelo usuario
 //
@@ -209,14 +246,28 @@ public function pode_acessar_formulario(&amp;$$usuario, &amp;$$motivo = '') {
         break;
     }
     return $$r;
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/converter_componente" enabled="true" name="converter_componente">// 
+//     Converte as componentes de um atributo no respectivo valor do atributo final
+//
+protected function converter_componente($$campo, $$valor, $$valores) {
+// String $$campo: nome do campo
+// Mixed $$valor: valor do campo
+// Object $$valores: valores a serem convertidos
+//
+    switch ($$campo) {
+    case '${campo}':
+        ${codigo};
+        return ${codigo};
+    }
+    return parent::converter_componente($$campo, $$valor, $$valores);
 }</template><template autoinsert="true" context="php" deleted="false" description="SIMP/get_vetor" enabled="true" name="get_vetor">//
 //     Obtem a lista de ${itens}
 //
 final public function get_vetor_${nome_vetor}() {
-    return array( =&gt; '',
-                  =&gt; '',
-                  =&gt; '');
-}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/nav" enabled="true" name="nav">$nav[] = '${modulo}#${arquivo}';</template><template autoinsert="true" context="php" deleted="false" description="SIMP/header" enabled="true" name="header">setlocale(LC_TIME, 'C');
+    return array(${chave} =&gt; ${valor},
+                 ${chave} =&gt; ${valor},
+                 ${chave} =&gt; ${valor});
+}</template><template autoinsert="true" context="php" deleted="false" description="SIMP/nav" enabled="true" name="nav">$nav[] = '${modulo}#${arquivo}';</template><template autoinsert="true" context="php" deleted="false" description="SIMP/navv" enabled="true" name="navv">$dados_pagina-&gt;nav[] = '${modulo}#${arquivo}';</template><template autoinsert="true" context="php" deleted="false" description="SIMP/header" enabled="true" name="header">setlocale(LC_TIME, 'C');
 header("X-Framework: SIMP/".VERSAO_SIMP);
 header("Content-Type: ${content_type}");
 header("Content-Disposition: inline; filename=${filename}");

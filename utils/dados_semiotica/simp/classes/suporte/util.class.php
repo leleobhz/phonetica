@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.25
+// Versao: 1.0.1.26
 // Data: 22/08/2007
-// Modificado: 22/06/2009
+// Modificado: 27/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -722,6 +722,7 @@ final class util {
     // Mixed $var: variavel a ser convertida
     // Bool $tipo: codigo do tipo de exibicao
     //
+        global $CFG;
         switch (self::get_tipo($var)) {
         case 'int':
             switch ($tipo) {
@@ -762,7 +763,7 @@ final class util {
             case UTIL_EXIBIR_TEXTO:
                 return $var;
             case UTIL_EXIBIR_PHP:
-                return "'".$var."'";
+                return "'".htmlentities($var, ENT_QUOTES, $CFG->charset)."'";
             }
             break;
         case 'bool':

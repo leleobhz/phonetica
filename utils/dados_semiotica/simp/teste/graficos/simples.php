@@ -8,9 +8,9 @@ $g = new grafico('Gráfico de Barras Múltiplas');
 $g->formato = TIPO_HTML;
 $g->largura = 350;
 $g->altura  = 250;
-$g->pos_legenda = DIREITA;
-$g->tipo_cor    = COR_NORMAL;
-$g->tipo        = GRAFICO_BARRA;
+$g->pos_legenda  = DIREITA;
+$g->tipo_cor     = COR_NORMAL;
+$g->tipo_grafico = GRAFICO_BARRA;
 
 $g->legenda = array('Rubens', 'Iúna', 'Teste', 'Outro');
 $g->escala = array('Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio');

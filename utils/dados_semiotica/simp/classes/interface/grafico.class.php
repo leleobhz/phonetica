@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.21
+// Versao: 1.0.0.22
 // Data: 20/06/2007
-// Modificado: 04/03/2009
+// Modificado: 14/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -117,10 +117,10 @@ class grafico {
     public function __get($campo) {
     // String $campo: nome do campo
     //
-        if (isset($this->$campo)) {
-            return $this->$campo;
+        if (!property_exists($this, $campo)) {
+            return null;
         }
-        return null;
+        return $this->$campo;
     }
 
 
@@ -131,55 +131,56 @@ class grafico {
     // String $campo: nome do campo
     // Mixed $valor: valor a ser atribuido
     //
-        if (isset($this->$campo)) {
-            switch ($campo) {
+        if (!property_exists($this, $campo)) {
+            trigger_error('Nao existe o atributo "'.$campo.'"', E_USER_NOTICE);
+        }
+        switch ($campo) {
 
-            // STRING
-            case 'titulo':
-            case 'nome_arquivo':
-                $this->$campo = (string)$valor;
-                break;
+        // STRING
+        case 'titulo':
+        case 'nome_arquivo':
+            $this->$campo = (string)$valor;
+            break;
 
-            // FLOAT
-            case 'valor_topo':
-                $this->$campo = (float)$valor;
-                break;
+        // FLOAT
+        case 'valor_topo':
+            $this->$campo = (float)$valor;
+            break;
 
-            // INTEGER
-            case 'tipo_grafico':
-            case 'altura':
-            case 'largura':
-            case 'pos_legenda':
-            case 'tipo_cor':
-            case 'borda':
-            case 'ponto':
-            case 'qualidade':
-            case 'formato':
-                $this->$campo = (int)$valor;
-                break;
-            case 'angulo': // entre 30 e 90
-                $this->$campo = max(min((int)$valor, 90), 30);
-                break;
+        // INTEGER
+        case 'tipo_grafico':
+        case 'altura':
+        case 'largura':
+        case 'pos_legenda':
+        case 'tipo_cor':
+        case 'borda':
+        case 'ponto':
+        case 'qualidade':
+        case 'formato':
+            $this->$campo = (int)$valor;
+            break;
+        case 'angulo': // entre 30 e 90
+            $this->$campo = max(min((int)$valor, 90), 30);
+            break;
 
-            // ARRAY
-            case 'valores':
-            case 'legenda':
-            case 'escala':
-            case 'cores':
-            case 'linhas':
-            case 'legenda_linhas':
-                $this->$campo = (array)$valor;
-                break;
+        // ARRAY
+        case 'valores':
+        case 'legenda':
+        case 'escala':
+        case 'cores':
+        case 'linhas':
+        case 'legenda_linhas':
+            $this->$campo = (array)$valor;
+            break;
 
-            // BOOLEAN
-            case 'salvar':
-                $this->$campo = (bool)$valor;
-                break;
+        // BOOLEAN
+        case 'salvar':
+            $this->$campo = (bool)$valor;
+            break;
 
-            // OUTROS
-            default:
-                $this->$campo = $valor;
-            }
+        // OUTROS
+        default:
+            $this->$campo = $valor;
         }
     }
 

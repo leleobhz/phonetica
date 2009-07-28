@@ -4,9 +4,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.29
+// Versao: 1.0.0.30
 // Data: 20/12/2007
-// Modificado: 25/06/2009
+// Modificado: 17/07/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -139,6 +139,11 @@ function class_janela() {
 
                 that.titulo.appendChild(div_texto);
                 that.titulo.appendChild(div_botoes);
+
+                // Incluir div com clear both
+                var div_clear = document.createElement("div");
+                div_clear.style.clear = "both";
+                that.titulo.appendChild(div_clear);
             }//that.titulo
         }//that.caixa
         that.caixa.appendChild(that.titulo);

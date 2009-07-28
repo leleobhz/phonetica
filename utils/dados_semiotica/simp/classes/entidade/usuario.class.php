@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.14
+// Versao: 1.0.0.15
 // Data: 03/03/2007
-// Modificado: 30/06/2009
+// Modificado: 13/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -105,7 +105,7 @@ abstract class usuario_base extends objeto_formulario {
             /* campo ordem     */ 'grupo:nome');
 
         // CAMPO IMPLICITO: visivel
-        $this->adicionar_atributo_implicito('visivel', 'Visivel', 'get_visivel', array('cancelado'));
+        $this->adicionar_atributo_implicito('visivel', 'Vis&iacute;vel', 'get_visivel', array('cancelado'));
     }
 
 
@@ -142,8 +142,9 @@ abstract class usuario_base extends objeto_formulario {
     //
     //     Codifica uma senha para ser armazenada no BD
     //
-    abstract public function codificar($senha);
+    abstract public function codificar($senha, $senha_codificada = false);
     // String $senha: senha a ser codificada
+    // String $senha_codificada: senha codificada (para conferencia de senhas com sal)
     //
 
 

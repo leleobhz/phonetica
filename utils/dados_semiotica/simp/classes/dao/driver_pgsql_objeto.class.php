@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// Versao: 1.0.0.14
 // Data: 01/08/2008
-// Modificado: 05/06/2009
+// Modificado: 28/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -121,8 +121,8 @@ final class driver_pgsql_objeto extends driver_objeto {
         $vt_campos = array();
         $vt_constraint = array();
         foreach ($objeto->get_atributos() as $def_atributo) {
-            $sql_campo   = $this->delimitar_campo($def_atributo->nome);
-            $sql_tipo    = $this->gerar_sql_tipo($def_atributo);
+            $sql_campo = $this->delimitar_campo($def_atributo->nome);
+            $sql_tipo  = $this->gerar_sql_tipo($def_atributo);
 
             // Checar se e' unico
             if ($def_atributo->unico) {
@@ -156,6 +156,9 @@ final class driver_pgsql_objeto extends driver_objeto {
 
             // Comentario do atributo
             $sql_descricao_atributo = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            if (strpos($sql_descricao_atributo, '&') !== false) {
+                trigger_error('Erro de entities no atributo "'.$def_atributo->nome.'" da classe "'.$objeto->get_classe().'"', E_USER_ERROR);
+            }
             $extras[] = "COMMENT ON COLUMN {$sql_tabela}.{$sql_campo} IS '{$sql_descricao_atributo}'";
         }
 

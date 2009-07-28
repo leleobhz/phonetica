@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.14
+// Versao: 1.1.1.15
 // Data: 01/02/2008
-// Modificado: 01/07/2009
+// Modificado: 28/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -1717,7 +1717,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = $entidade->get_entidade(1).' de "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = $entidade->get_entidade(1);
@@ -1727,7 +1727,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = 'Cadastrar '.$entidade->get_entidade().' de "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = 'Cadastrar '.$entidade->get_entidade();
@@ -1737,7 +1737,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = 'Alterar '.$entidade->get_entidade().' de "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = 'Alterar '.$entidade->get_entidade();
@@ -1747,7 +1747,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = 'Excluir '.$entidade->get_entidade().' de "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = 'Excluir '.$entidade->get_entidade();
@@ -1757,7 +1757,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = 'Exibir '.$entidade->get_entidade().' de "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = 'Exibir '.$entidade->get_entidade();
@@ -1768,7 +1768,7 @@ final class modulo {
                 if (isset($dados_pagina->submodulo)) {
                     $obj_pai = $entidade->get_objeto_rel_uu($dados_pagina->submodulo);
                     $classe_pai = $obj_pai->get_classe();
-                    $obj_pai->consultar('', self::get_chave_session($classe_pai));
+                    $obj_pai->consultar('', self::get_chave_session($classe_pai), array($obj_pai->get_campo_nome()));
                     $titulo = 'Importar '.$entidade->get_entidade(1).' para "'.$obj_pai->get_nome().'"';
                 } else {
                     $titulo = 'Importar '.$entidade->get_entidade(1);

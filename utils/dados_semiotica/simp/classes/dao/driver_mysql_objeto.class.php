@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.10
 // Data: 17/04/2008
-// Modificado: 01/06/2009
+// Modificado: 28/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -66,6 +66,9 @@ final class driver_mysql_objeto extends driver_objeto {
             $sql_campo   = $this->delimitar_campo($def_atributo->nome);
             $sql_tipo    = $this->gerar_sql_tipo($def_atributo);
             $descricao   = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            if (strpos($descricao, '&') !== false) {
+                trigger_error('Erro de entities no atributo "'.$def_atributo->nome.'" da classe "'.$objeto->get_classe().'"', E_USER_ERROR);
+            }
             $sql_comment = " COMMENT '{$descricao}'";
 
             // Checar se e' unico
