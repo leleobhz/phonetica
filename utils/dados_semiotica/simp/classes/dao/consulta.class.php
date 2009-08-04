@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.1
+// Versao: 1.0.0.2
 // Data: 02/06/2008
-// Modificado: 31/07/2008
+// Modificado: 29/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -126,7 +126,7 @@ final class consulta {
     public function __get($atributo) {
     // String $atributo: nome do atributo desejado
     //
-        if (isset($this->$atributo)) {
+        if (property_exists($this, $atributo)) {
             return $this->$atributo;
         }
         trigger_error("O atributo {$atributo} nao existe na classe consulta", E_USER_WARNING);
@@ -380,13 +380,20 @@ final class consulta {
         // Para cada parte do caminho, incluir a juncao entre as entidades
         $caminho_relativo = '';
         $obj1 = &$obj;
+
+        // Na ocorrencia de um LEFT JOIN, todas as juncoes decorrentes do atributo devem ser do tipo LEFT JOIN tambem
+        $usou_left_join = false;
+
         foreach ($caminho as $filho) {
             unset($obj2);
 
             // Juncao entre objetos
             if ($obj1->possui_rel_uu($filho)) {
                 $obj2 = $obj1->__get($filho);
-                $this->adicionar_join_objeto($obj1, $obj2, $filho, $caminho_relativo);
+                $tipo_juncao = $this->adicionar_join_objeto($obj1, $obj2, $filho, $caminho_relativo, $usou_left_join ? 'LEFT' : false);
+                if ($tipo_juncao == 'LEFT') {
+                    $usou_left_join = true;
+                }
                 unset($obj1);
                 $obj1 = &$obj2;
 
@@ -396,7 +403,10 @@ final class consulta {
                     $dados = $obj1->get_definicao_rel_un($filho);
                     $classe = $dados->classe;
                     $obj2 = new $classe();
-                    $this->adicionar_join_vetor($obj1, $obj2, $filho, $caminho_relativo);
+                    $tipo_juncao = $this->adicionar_join_vetor($obj1, $obj2, $filho, $caminho_relativo, $usou_left_join ? 'LEFT' : false);
+                    if ($tipo_juncao == 'LEFT') {
+                        $usou_left_join = true;
+                    }
                     unset($obj1);
                     $obj1 = &$obj2;
                 } else {
@@ -433,12 +443,14 @@ final class consulta {
 
     //
     //     Preenche os campos, tabelas e juncoes necessarias para montar uma juncao entre os objetos
+    //     Retorna o tipo de juncao inserido (INNER ou LEFT)
     //
-    private function adicionar_join_objeto(&$obj1, &$obj2, $nome_obj2, $caminho_relativo) {
+    private function adicionar_join_objeto(&$obj1, &$obj2, $nome_obj2, $caminho_relativo, $tipo_join = false) {
     // Object $obj1: primeiro objeto derivado da classe objeto
     // Object $obj2: segundo objeto derivado da classe objeto (objeto do primeiro)
     // String $nome_obj2: nome do segundo objeto no primeiro objeto
     // String $caminho_relativo: caminho do objeto raiz ate o primeiro objeto
+    // String $tipo_join: forca o tipo de juncao a ser usado
     //
         // Obter dados dos objetos
         $tabela1      = $obj1->get_tabela();
@@ -483,20 +495,25 @@ final class consulta {
         $condicao->entre_atributos = true;
 
         // Incluir juncao
-        $def = $obj1->get_definicao_rel_uu($nome_obj2);
-        $tipo_join = $def->forte ? 'INNER' : 'LEFT';
+        if (!$tipo_join) {
+            $def = $obj1->get_definicao_rel_uu($nome_obj2);
+            $tipo_join = $def->forte ? 'INNER' : 'LEFT';
+        }
         $this->adicionar_juncao($apelido_tabela1, $apelido_tabela2, $condicao, $tipo_join);
+        return $tipo_join;
     }
 
 
     //
     //     Preenche os campos, tabelas e juncoes necessarias para montar uma juncao entre um objeto e um vetor
+    //     Retorna o tipo de juncao inserido (INNER ou LEFT)
     //
-    private function adicionar_join_vetor(&$obj1, &$obj2, $nome_obj2, $caminho_relativo) {
+    private function adicionar_join_vetor(&$obj1, &$obj2, $nome_obj2, $caminho_relativo, $tipo_join = false) {
     // Object $obj1: primeiro objeto derivado da classe objeto
     // Object $obj2: segundo objeto derivado da classe objeto (vetor do primeiro)
     // String $nome_obj2: nome do segundo objeto no primeiro objeto
     // String $caminho_relativo: caminho do objeto raiz ate o primeiro objeto
+    // String $tipo_join: forca o tipo de juncao a ser usado
     //
         $def = $obj1->get_definicao_rel_un($nome_obj2);
 
@@ -543,8 +560,11 @@ final class consulta {
         $condicao->entre_atributos = true;
 
         // Incluir juncao
-        $tipo_join = 'LEFT';
+        if (!$tipo_join) {
+            $tipo_join = 'LEFT';
+        }
         $this->adicionar_juncao($apelido_tabela1, $apelido_tabela2, $condicao, $tipo_join);
+        return $tipo_join;
     }
 
 

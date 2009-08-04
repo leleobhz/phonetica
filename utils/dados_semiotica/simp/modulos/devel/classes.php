@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.0
+// Versao: 1.0.1.1
 // Data: 12/09/2007
-// Modificado: 29/06/2009
+// Modificado: 30/07/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -44,13 +44,16 @@ exit(0);
 function logica_listar_classes($dados) {
 // Object $dados: dados submetidos
 //
-    imprimir_formulario($dados);
     if ($dados) {
         $_SESSION['devel']['form_classes'] = serialize($dados);
+        imprimir_formulario($dados);
         listar_classes($dados);
     } elseif (isset($_SESSION['devel']['form_classes'])) {
         $dados = unserialize($_SESSION['devel']['form_classes']);
+        imprimir_formulario($dados);
         listar_classes($dados);
+    } else {
+        imprimir_formulario($dados);
     }
 }
 

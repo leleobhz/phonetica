@@ -91,7 +91,7 @@ div.erro {
 #centro,
 #rodape {
   background-color: #F5F8FF;
-  border: 1px solid #000000;;
+  border: 1px solid #000000;
   clear: both;
   display: block;
   margin-bottom: 0.4em;

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.0
+// Versao: 1.0.1.1
 // Data: 17/04/2008
-// Modificado: 06/07/2009
+// Modificado: 29/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -829,7 +829,7 @@ final class condicao_sql {
     //
     //     Estrutura os tokens hierarquicamente
     //
-    public static function estruturar_tokens($tokens, $posicao, $total) {
+    protected static function estruturar_tokens($tokens, $posicao, $total) {
     // Array[token_sql] $tokens: vetor de tokens
     // Int $posicao: posicao do vetor de tokens
     // Int $total: tamanho do vetor de tokens
@@ -868,7 +868,7 @@ final class condicao_sql {
     //
     //     Cria a condicao a partir de um vetor estruturado de tokens
     //
-    public static function criar_condicao_token($tokens) {
+    protected static function criar_condicao_token($tokens) {
     // Array[token_sql || Type] $tokens: vetor de tokens
     //
         $count = count($tokens);

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.1.2
+// Versao: 1.3.1.7
 // Data: 06/08/2007
-// Modificado: 28/07/2009
+// Modificado: 03/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -852,6 +852,32 @@ $obj = objeto::usuario('login', 'admin');
 
 
     //
+    //     Verifica se um objeto possui a classe especificada como pai
+    //
+    public function possui_pai($classe_pai, $atributo) {
+    // String $classe_pai: nome da classe pai
+    // String || Bool $atributo: nome do atributo do pai que aponta para um objeto da classe corrente (false para usar o nome da chave primaria da classe corrente)
+    //
+        // Criar instancia do objeto pai
+        $classe_pai = (string)$classe_pai;
+        try {
+            simp_autoload($classe_pai);
+            $pai = new $classe_pai();
+        } catch (Exception $e) {
+            trigger_error('A classe "'.$classe_pai.'" nao existe ou possui erros', E_USER_ERROR);
+            return false;
+        }
+
+        // Checar se foi informado o nome do atributo filho
+        if (!$atributo) {
+            $atributo = $this->get_chave();
+        }
+
+        return $pai->possui_atributo($atributo);
+    }
+
+
+    //
     //     Retorna o valor de um atributo simples da instancia (checar se foi consultado antes de usar para evitar NOTICE)
     //
     private function get_valor($nome_atributo) {
@@ -1503,13 +1529,19 @@ $obj = objeto::usuario('login', 'admin');
 
                 // Se e' um objeto filho
                 if ($this->possui_rel_uu($campo)) {
+
+                    // Se o objeto filho e' a mesma instancia do objeto pai, guardar o valor de flag_bd
+                    $flag_bd_instancia = $this->instancia->flag_bd;
+
                     $nome_obj = $campo;
                     $flag_bd = $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd;
                     $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $this->instancia->flag_bd;
                     $r_obj = $this->get_objeto_rel_uu($nome_obj)->set_valores($valor, $campos, $sobrescrever);
                     $this->get_objeto_rel_uu($nome_obj)->instancia->flag_bd = $flag_bd;
-
                     $r = $r && $r_obj;
+
+                    // Restaurar o valor de flag_bd do objeto pai
+                    $this->instancia->flag_bd = $flag_bd_instancia;
 
                     // Se tem erros no objeto filho: informar os erros para o objeto pai
                     if (!$r_obj) {
@@ -2517,7 +2549,12 @@ $obj = objeto::usuario('login', 'admin');
 
                     // Se pediu pelas chaves dos objetos
                     if ($flag & OBJETO_ADICIONAR_CHAVES) {
-                        $vt_campos[] = $this->get_nome_chave_rel_uu($nome_obj);
+                        $pos = strrpos($nome_obj, ':');
+                        if ($pos) {
+                            $vt_campos[] = substr($nome_obj, 0, $pos).':'.$this->get_nome_chave_rel_uu($nome_obj);
+                        } else {
+                            $vt_campos[] = $this->get_nome_chave_rel_uu($nome_obj);
+                        }
                         $vt_campos[] = $nome_obj.':'.$this->get_objeto_rel_uu($nome_obj)->get_chave();
                     }
                 } elseif ($this->possui_rel_un($campo)) {
@@ -3238,13 +3275,13 @@ $obj = objeto::usuario('login', 'admin');
         if (is_bool($registros)) {
             switch ($this->get_genero()) {
             case 'M':
-                $this->erros[] = 'Erro ao consultar os '.$this->get_entidade(1);;
+                $this->erros[] = 'Erro ao consultar os '.$this->get_entidade(true);
                 break;
             case 'F':
-                $this->erros[] = 'Erro ao consultar as '.$this->get_entidade(1);;
+                $this->erros[] = 'Erro ao consultar as '.$this->get_entidade(true);
                 break;
             case 'I':
-                $this->erros[] = 'Erro ao consultar '.$this->get_entidade(1);;
+                $this->erros[] = 'Erro ao consultar '.$this->get_entidade(true);
                 break;
             }
             return false;
@@ -4340,7 +4377,7 @@ $obj = objeto::usuario('login', 'admin');
 
         $s .= $this->pre_imprimir_dados($campos);
 
-        // Imprimir todos os camps
+        // Imprimir todos os campos
         if ($campos === true) {
             $this->consultar_campos(true);
             $campos = array();
@@ -4348,23 +4385,23 @@ $obj = objeto::usuario('login', 'admin');
             // Imprimir os atributos simples da classe
             foreach ($this->get_atributos() as $atributo) {
                 if ($chaves || $atributo->chave == false) {
-                    $s .= $this->imprimir_atributo($atributo->nome, 1);
+                    $s .= $this->imprimir_atributo($atributo->nome, true);
                 }
             }
 
             // Imprimir os atributos implicitos da classe
             foreach ($this->get_implicitos() as $nome => $dados) {
-                $s .= $this->imprimir_atributo($nome, 1);
+                $s .= $this->imprimir_atributo($nome, true);
             }
 
             // Imprimir os atributos dos relacionamentos 1:1
             foreach ($this->get_objetos_rel_uu() as $nome_obj => $obj) {
-                $s .= $this->imprimir_atributo($nome_obj, 1);
+                $s .= $this->imprimir_atributo($nome_obj, true);
             }
 
             // Imprimir os atributos dos relacionamentos 1:N
             foreach ($this->get_vetores_rel_un() as $nome_vet => $vet) {
-                $s .= $this->imprimir_vetor_rel_un($nome_vet, 1, 0);
+                $s .= $this->imprimir_vetor_rel_un($nome_vet, true, false);
             }
 
         // Imprimir campos selecionados
@@ -4406,11 +4443,28 @@ $obj = objeto::usuario('login', 'admin');
                 $dados_link_base = parse_url($link_base);
                 unset($dados_link_base['fragment']);
                 $link_base = link::montar_url($dados_link_base);
+                $count_links_regioes = 0;
                 foreach ($regioes as $regiao => $id_regiao) {
                     $link_regiao = $link_base.'#'.$id_regiao;
                     $links_regioes[] = '<a href="'.$link_regiao.'">'.$regiao.'</a>';
+                    $count_links_regioes++;
                 }
-                $s .= '<p><strong>&Iacute;ndice:</strong> '.implode(' <span>|</span> ', $links_regioes).'</p>';
+                $s .= '<p><strong>&Iacute;ndice:</strong></p>';
+                $s .= '<table class="indice">';
+                $s .= '<tbody>';
+                for ($i = 0; $i < $count_links_regioes; $i += 3) {
+                    $s .= '<tr>';
+                    for ($j = 0; $j < 3; $j++) {
+                        if (isset($links_regioes[$i + $j])) {
+                            $s .= '<td>'.$links_regioes[$i + $j].'</td>';
+                        } else {
+                            $s .= '<td></td>';
+                        }
+                    }
+                    $s .= '</tr>';
+                }
+                $s .= '</tbody>';
+                $s .= '</table>';
             }
 
             // Imprimir os atributos da classe
@@ -4469,7 +4523,7 @@ $obj = objeto::usuario('login', 'admin');
 
         // Imprimir atributos e chaves
         if ($chaves) {
-            $s .= $this->imprimir_atributo($campo, 1);
+            $s .= $this->imprimir_atributo($campo, true);
 
         // Imprimir apenas atributos
         } else {
@@ -4489,18 +4543,22 @@ $obj = objeto::usuario('login', 'admin');
                 case 'OFK':
                 case 'FK':
                     $nome_obj = $this->get_nome_objeto_rel_uu($campo);
-                    $s .= $this->imprimir_objeto_rel_uu($nome_obj, 1, 1);
+                    $s .= $this->imprimir_objeto_rel_uu($nome_obj, true, true);
                     break;
 
                 // Imprimir atributo simples
                 default:
-                    $s .= $this->imprimir_atributo($campo, 1);
+                    $s .= $this->imprimir_atributo($campo, true);
                     break;
                 }
 
+            // Imprimir nome do objeto 1:1
+            } elseif ($this->possui_rel_uu($campo)) {
+                $s .= $this->imprimir_objeto_rel_uu($campo, true);
+
             // Imprimir vetor
             } elseif ($this->possui_rel_un($campo)) {
-                $s .= $this->imprimir_vetor_rel_un($campo, 1);
+                $s .= $this->imprimir_vetor_rel_un($campo, true);
             }
         }
         return $s;
@@ -4572,11 +4630,11 @@ $obj = objeto::usuario('login', 'admin');
         } elseif ($this->possui_rel_uu($nome_atributo)) {
             $descricao_alternativa_obj = $descricao_alternativa ? $descricao_alternativa
                                                                 : $this->get_entidade_rel_uu($nome_atributo);
-            $a = $this->imprimir_objeto_rel_uu($nome_atributo, 1, 1, $descricao_alternativa_obj);
+            $a = $this->imprimir_objeto_rel_uu($nome_atributo, true, true, $descricao_alternativa_obj);
 
         // Caso seja um relacionamento 1:N
         } elseif ($this->possui_rel_un($nome_atributo)) {
-            $a = $this->imprimir_vetor_rel_un($nome_atributo, 1, 1);
+            $a = $this->imprimir_vetor_rel_un($nome_atributo, true, true);
         }
 
         if ($return) {
@@ -5448,9 +5506,9 @@ $obj = objeto::usuario('login', 'admin');
         $chave_fk = $chave_fk ? (string)$chave_fk : false;
         if (!$ordem) {
             if ($impressao) {
-                $ordem = array($impressao => 1);
+                $ordem = array($impressao => true);
             } else {
-                $ordem = array($chave_fk => 1);
+                $ordem = array($chave_fk => true);
             }
         }
 
@@ -6000,7 +6058,7 @@ $obj = objeto::usuario('login', 'admin');
         $visiveis = array();
         foreach ($this->instancia->vetores[$nome_vetor] as $elemento) {
             if (!isset($elemento->visivel) || $elemento->visivel) {
-                $valor = $elemento->imprimir_atributo($impressao, 1, $imprimir_descricao);
+                $valor = $elemento->imprimir_atributo($impressao, true, $imprimir_descricao);
                 $visiveis[] = "<li>{$valor}</li>\n";
             }
         }

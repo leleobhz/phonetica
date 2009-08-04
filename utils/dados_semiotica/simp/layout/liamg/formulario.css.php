@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 06/05/2008
-// Modificado: 03/06/2009
+// Modificado: 31/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -183,6 +183,13 @@ table.tabela td {
   text-align: center;
   padding: .1em .5em;
   vertical-align: middle;
+}
+
+table.indice tbody td {
+  border: 1px solid #DDDDDD;
+  font-size: .8em;
+  padding: .1em .6em;
+  width: 33%;
 }
 
 table.tabela tbody th,

@@ -183,7 +183,7 @@ function class_seletor(link) {
     // Atributos gerais
     this.link    = link;
     this.url     = link.getAttribute("href");
-    this.input   = link.parentNode.getElementsByTagName("input").item(0);;
+    this.input   = link.parentNode.getElementsByTagName("input").item(0);
     this.seletor = null;
     // seletor.janela
     // seletor.itens
@@ -606,7 +606,7 @@ function class_hierarquia(link) {
     this.link    = link;
     this.url     = link.getAttribute("href");
     this.ws      = wwwroot + "webservice/hierarquia.xml.php";
-    this.input   = link.parentNode.getElementsByTagName("input").item(0);;
+    this.input   = link.parentNode.getElementsByTagName("input").item(0);
     this.seletor = null;
     // seletor.janela
     // seletor.itens

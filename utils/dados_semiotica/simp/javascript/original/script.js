@@ -4,9 +4,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.3
+// Versao: 1.0.1.5
 // Data: 12/06/2007
-// Modificado: 25/06/2009
+// Modificado: 29/07/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -71,7 +71,7 @@ window.onkeydown = checar_tecla;
     var limite_tamanho = 250;
 
     // Lista de checkbox marcados ou desmarcados
-    checkbox_marcados  = new Array();
+    var checkbox_marcados  = new Array();
 
     // Lista de instancias de classes
     class_tremer.instancias = new Array();
@@ -191,11 +191,11 @@ function class_ajax() {
         if (flag_erro != undefined) { that.flag_erro = flag_erro; }
 
         try {
-            var url = that.url + (that.url.indexOf("?") >= 0 ? "&" : "?") + "xml=1";
+            var url_requisicao = that.url + (that.url.indexOf("?") >= 0 ? "&" : "?") + "xml=1";
             if (that.usuario && that.senha) {
-                that.xmlhttp.open(metodo.toUpperCase(), url, assincrona, that.usuario, that.senha);
+                that.xmlhttp.open(metodo.toUpperCase(), url_requisicao, assincrona, that.usuario, that.senha);
             } else {
-                that.xmlhttp.open(metodo.toUpperCase(), url, assincrona);
+                that.xmlhttp.open(metodo.toUpperCase(), url_requisicao, assincrona);
             }
             that.xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             that.xmlhttp.onreadystatechange = this.processar;
@@ -925,7 +925,7 @@ function definir_atributos() {
         for (var j = 0; j < metas.length; j++) {
             var meta = metas.item(j);
             var campo = document.getElementById(meta.getAttribute("name"));
-            if (campo) {
+            if (campo != null) {
                 atualizar_info_campo(form, campo, meta.getAttribute("content"));
             }
         }
@@ -1063,7 +1063,13 @@ function atualizar_info_campo(form, campo, id_campo) {
     var labels = form.getElementsByTagName("label");
     var label = false;
     for (var i = 0; i < labels.length; i++) {
-        if (labels.item(i).getAttribute("for") == campo.id) {
+        var id_for = "";
+        try {
+           id_for = labels.item(i).hasAttribute("for") ? labels.item(i).getAttribute("for") : "";
+        } catch (e) {
+           id_for = labels.item(i).getAttribute("htmlFor");
+        }
+        if (id_for == campo.id) {
             label = labels.item(i);
         }
     }
@@ -1075,7 +1081,6 @@ function atualizar_info_campo(form, campo, id_campo) {
         if (ultima_boia) {
             ultima_boia.style.visibility = "hidden";
         }
-
         var boia = this.label.parentNode.getElementsByTagName("img");
         if (boia && boia.length > 0) {
             boia = boia.item(0);
@@ -1102,7 +1107,7 @@ function atualizar_info_campo(form, campo, id_campo) {
                 }
                 this.janela.abrir(document.getElementsByTagName("body").item(0));
             };
-            if (label.getElementsByTagName("input").length) {
+            if (label.getElementsByTagName("input").length > 0) {
                 label.parentNode.appendChild(boia);
             } else {
                 label.parentNode.insertBefore(boia, label);
@@ -1110,6 +1115,7 @@ function atualizar_info_campo(form, campo, id_campo) {
         }
         ultima_boia = boia;
     };
+    return true;
 }
 
 
@@ -1143,7 +1149,7 @@ function atualizar_info_atributo(janela, campo, id_campo) {
         janela.set_titulo("Ajuda do campo " + descricao);
 
         // Checar de acordo com o tipo de campo
-        switch (campo.nodeName) {
+        switch (campo.nodeName.toLowerCase()) {
         case "select":
             that.inserir_valor(obj, "Instrução", "Escolha um elemento da lista");
             return;

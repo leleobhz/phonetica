@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// Versao: 1.0.0.11
 // Data: 17/04/2008
-// Modificado: 28/07/2009
+// Modificado: 29/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -82,7 +82,7 @@ final class driver_mysql_objeto extends driver_objeto {
             }
 
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = $def_atributo->nulo ? ' NULL' : ' NOT NULL';
+                $sql_nulo = ' NOT NULL';
                 if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
                     $def_atributo_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
                     if ($def_atributo_rel->forte) {

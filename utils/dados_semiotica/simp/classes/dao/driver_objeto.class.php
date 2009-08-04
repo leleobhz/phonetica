@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.24
+// Versao: 1.0.0.25
 // Data: 17/04/2008
-// Modificado: 09/07/2009
+// Modificado: 29/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -977,19 +977,22 @@ abstract class driver_objeto {
                 //$vt_constraint[$def_atributo->nome] = "  INDEX ({$sql_campo})";
             }
 
+            // Se nao e' a chave primaria
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = $def_atributo->nulo ? ' NULL' : ' NOT NULL';
+                $sql_nulo = ' NOT NULL';
                 if (!$objeto->possui_rel_uu($def_atributo->nome, false)) {
                     $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                 } else {
                     $sql_default = '';
                 }
                 $vt_campos[] = "  {$sql_campo} {$sql_tipo}{$sql_nulo}{$sql_default}";
+
+            // Se e' chave primaria: forcar que seja auto-incrementavel
             } else {
+                $sql_identity = ' GENERATED ALWAYS AS IDENTITY';
+                $vt_campos[] = "  {$sql_campo} {$sql_tipo} {$sql_identity}";
+
                 $sql_constraint = 'pk_'.md5($objeto->get_tabela().':'.$def_atributo->nome);
-                $sql_nulo    = ' NOT NULL';
-                $sql_default = '';
-                $vt_campos[] = "  {$sql_campo} {$sql_tipo}{$sql_nulo}{$sql_default}";
                 $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} PRIMARY KEY ({$sql_campo})";
             }
         }
@@ -1063,7 +1066,7 @@ abstract class driver_objeto {
         case DRIVER_OBJETO_ADICIONAR_ATRIBUTO:
             $def_atributo = $objeto->get_definicao_atributo($atributo);
             $sql_tipo     = $this->gerar_sql_tipo($def_atributo);
-            $sql_nulo     = $def_atributo->nulo ? ' NULL' : ' NOT NULL';
+            $sql_nulo     = ' NOT NULL';
             $sql_default  = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
             $sql_operacao = 'ADD COLUMN '.$this->delimitar_campo($atributo).' '.$sql_tipo.$sql_nulo.$sql_default;
             break;

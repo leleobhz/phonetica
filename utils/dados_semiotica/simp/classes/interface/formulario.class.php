@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.2.0
+// Versao: 1.1.2.1
 // Data: 06/08/2007
-// Modificado: 24/07/2009
+// Modificado: 30/07/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -475,9 +475,9 @@ class formulario {
         // Nenhum item disponivel para selecao
         } else {
             if ($label) {
-                $r .= $this->campo_aviso('Nenhum(a) '.$label.' dispon&iacute;vel para sele&ccedil;&atilde;o', 1);;
+                $r .= $this->campo_aviso('Nenhum(a) '.$label.' dispon&iacute;vel para sele&ccedil;&atilde;o', true);
             } else {
-                $r .= $this->campo_aviso('Nenhum &iacute;tem dispon&iacute;vel para sele&ccedil;&atilde;o', 1);;
+                $r .= $this->campo_aviso('Nenhum &iacute;tem dispon&iacute;vel para sele&ccedil;&atilde;o', true);
             }
         }
         if ($label) {
@@ -1132,7 +1132,7 @@ class formulario {
     public function campo_telefone($prefixo, $ddd, $numero, $label = '', $disable = false, $return = false, $ajuda = false) {
     // String $prefixo: prefixo usado no nome dos campos
     // String $ddd: codigo do DDD
-    // String $numero do telefone
+    // String $numero: numero do telefone
     // String $label: nome do label
     // Bool $disable: indica se o campo esta desativado
     // Bool $return: retornar ou adicionar no formulario
@@ -1173,7 +1173,7 @@ class formulario {
     public function campo_telefone_comercial($prefixo, $ddd, $numero, $ramal, $label = '', $disable = false, $return = false, $ajuda = false) {
     // String $prefixo: prefixo usado no nome dos campos
     // String $ddd: codigo do DDD
-    // String $numero do telefone
+    // String $numero: numero do telefone
     // String $ramal: ramal do telefone
     // String $label: nome do label
     // Bool $disable: indica se o campo esta desativado
@@ -1251,6 +1251,10 @@ class formulario {
         $ddd    = isset($dados->$id_ddd)    ? $dados->$id_ddd    : false;
         $numero = isset($dados->$id_numero) ? $dados->$id_numero : false;
         $ramal  = isset($dados->$id_ramal)  ? $dados->$id_ramal  : false;
+
+        if (empty($numero)) {
+            return '';
+        }
 
         $retorno = '';
         if ($pais === false) {

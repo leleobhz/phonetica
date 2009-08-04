@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.22
+// Versao: 1.0.0.24
 // Data: 20/06/2007
-// Modificado: 14/07/2009
+// Modificado: 03/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -927,16 +927,19 @@ class grafico {
         // Desenhar a Pizza!
         $inicio_angulo = 0;
         $max = count($this->valores);
+        $soma_parcial = 0.0;
         $textos = array();
         for ($i = 0; $i < $max; $i++) {
+            $soma_parcial += (double)$this->valores[$i];
             $angulo = ceil($this->valores[$i] * 360 / $soma);
-            $porcentagem = round($this->valores[$i] * 100 / $soma, 2).'%';
+            $porcentagem = round($this->valores[$i] * 100 / $soma, 2);
+            $texto_porcentagem = $porcentagem.'%';
             $fim_angulo = $inicio_angulo + $angulo;
 
             // Imprimir Arco
             if (!$mapa) {
                 if ($angulo) {
-                    imagefilledarc($img, $CX, $CY, (2 * $RX), (2 * $RY), $inicio_angulo, $fim_angulo, $this->cores[$i], IMG_ARC_EDGED);
+                    imagefilledarc($img, $CX, $CY, (2 * $RX), (2 * $RY), $inicio_angulo, $fim_angulo, $this->cores[$i], IMG_ARC_PIE);
                 } else {
                     imageline($img, $CX, $CY, $CX + $RX * cos(deg2rad($inicio_angulo)), $CY + $RY * sin(deg2rad($inicio_angulo)), $this->cores[$i]);
                 }
@@ -944,23 +947,28 @@ class grafico {
 
             // Calcular porcentagem e posicao onde ela fica no grafico
             $meio_angulo = (int)(($inicio_angulo + $fim_angulo) / PRECISAO);
-            $x = $CX + ($RX * 0.55 * cos(deg2rad($meio_angulo)));
-            $y = $CY + ($RY * 0.55 * sin(deg2rad($meio_angulo)));
+            if ($i % 2 || $porcentagem > 20) {
+                 $distancia = 0.5;
+            } else {
+                 $distancia = 0.7;
+            }
+            $x = $CX + ($RX * $distancia * cos(deg2rad($meio_angulo)));
+            $y = $CY + ($RY * $distancia * sin(deg2rad($meio_angulo)));
 
-            $largura = $this->largura_texto($porcentagem);
+            $largura = $this->largura_texto($texto_porcentagem);
             $x -= $largura / 2;
             $y += ALTURA_TEXTO / 2;
 
             // Texto com sombra
             $obj = new stdClass();
-            $obj->texto = $porcentagem;
+            $obj->texto = $texto_porcentagem;
             $obj->x = $x;
             $obj->y = $y;
-            $obj->title = $this->legenda[$i].': '.$this->valores[$i].' ('.$porcentagem.')';
+            $obj->title = $this->legenda[$i].': '.$this->valores[$i].' ('.$texto_porcentagem.')';
             $textos[] = $obj;
 
             // Reiniciar angulo
-            $inicio_angulo = $fim_angulo;
+            $inicio_angulo = (double)$soma_parcial * 360.0 / (double)$soma;
         }
 
         // Imprimir porcentagens

@@ -723,6 +723,13 @@ form a.ajuda a img {
   width: 4.5em;
 }
 
+/* CAMPOS DE DATA */
+.formulario .data span {
+  font-size: 1.3em;
+  margin: 0 .2em;
+  vertical-align: middle;
+}
+
 /* CAMPOS DE TELEFONE */
 .formulario .telefone input.ddd {
   width: 2em;

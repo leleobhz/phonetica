@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// Versao: 1.0.0.9
 // Data: 19/02/2008
-// Modificado: 24/07/2009
+// Modificado: 31/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -340,6 +340,19 @@ if ($CFG->agent->ie) {
 table.tabela tr:hover {
   background-color: #CCDDD5;
   cursor: default;
+}
+
+table.indice tbody td {
+  background-color: #DDDDDD;
+  border: 1px outset #DDDDDD;
+  font-size: 0.8em;
+  padding: .1em .5em;
+  width: 33%;
+}
+
+table.indice tbody td:hover {
+  background-color: #EEEEEE;
+  border: 1px outset #EEEEEE;
 }
 
 /* CAMPOS CAPTCHA */

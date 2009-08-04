@@ -7,7 +7,7 @@
 // E-mail: rubens@tecnolivre.ufla.br
 // Versao: 1.0.0.0
 // Data: 09/09/2008
-// Modificado: 04/06/2009
+// Modificado: 29/07/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -116,7 +116,7 @@ final class driver_oci8_objeto extends driver_objeto {
             }
 
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = $def_atributo->nulo ? ' NULL' : ' NOT NULL';
+                $sql_nulo = ' NOT NULL';
                 if (!$objeto->possui_rel_uu($def_atributo->nome, false)) {
                     $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                 } else {
