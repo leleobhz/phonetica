@@ -117,7 +117,7 @@ final class captcha {
     //
     static private function riscar_linha(&$img, $curvas = 50) {
     // Resource $img: imagem a ser utilizada
-    // Int $vezes: numero de vezes que a linha ganhara curva
+    // Int $curvas: numero de vezes que a linha ganhara curva
     //
         // Rabiscar com linhas da cor do texto
         $x1 = mt_rand(0, CAPTCHA_LARGURA / 5);

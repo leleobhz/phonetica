@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.14
+// Versao: 1.0.0.15
 // Data: 31/07/2007
-// Modificado: 24/06/2009
+// Modificado: 27/08/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -109,8 +109,9 @@ function imprimir_funcoes($dados) {
             echo '<h2>Fun&ccedil;&otilde;es com problemas de documenta&ccedil;&atilde;o</h2>';
             echo '<ul>';
             foreach ($estatisticas->funcoes_invalidas as $arq => $funcoes) {
+                $dados_arquivo = parser_simp::get_cabecalho_arquivo($arq);
                 echo '<li>';
-                echo '<strong>'.$arq.'</strong>';
+                echo '<strong>'.$arq.'</strong> ('.$dados_arquivo->autor.')';
                 echo '<ul>';
                 foreach ($funcoes as $funcao => $erro) {
                     echo '<li><em>'.$funcao.':</em> '.texto::codificar($erro).'</li>';
