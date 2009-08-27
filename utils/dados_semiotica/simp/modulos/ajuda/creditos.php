@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// Versao: 1.0.0.7
 // Data: 04/06/2007
-// Modificado: 16/03/2009
+// Modificado: 20/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -82,7 +82,7 @@ function imprimir_creditos() {
 <p>Vers&atilde;o: {$versao_simp}</p>
 <p>Autores:</p>
 <ul>
-  <li><em>Rubens Takiguti Ribeiro</em> - <span>Projeto inicial e design</span></li>
+  <li><em>Rubens <span xml:lang="jp" title="&#28381;&#21475;">Takiguti</span> Ribeiro</em> - <span>Projeto inicial e design</span></li>
   <li><em>Rodrigo Pereira Moreira</em> - <span>Colabora&ccedil;&atilde;o</span></li>
 </ul>
 </div>

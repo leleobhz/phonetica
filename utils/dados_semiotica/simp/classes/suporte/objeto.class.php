@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.1.7
+// Versao: 1.3.2.3
 // Data: 06/08/2007
-// Modificado: 03/08/2009
+// Modificado: 27/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -22,6 +22,7 @@ define('OBJETO_CACHE_DEFINICOES',    'cache_def');           // Indice no vetor 
 define('OBJETO_FORMATO_DATA',        '%d/%m/%Y');            // Formato padrao de data
 define('OBJETO_FORMATO_HORA',        '%H:%M:%S');            // Formato padrao de hora
 define('OBJETO_FORMATO_DATA_HORA',   '%d/%m/%Y - %H:%M:%S'); // Formato padrao de data/hora
+define('OBJETO_FLAG_COLETA_PADRAO',  true);                  // Valor padrao da flag de coleta de instancias vazias
 
 // Flags usadas no metodo get_campos_reais
 define('OBJETO_REMOVER_CONSULTADOS', 1);     // 001 Indica que deve remover os elementos consultados no metodo get_campos_reais
@@ -82,6 +83,8 @@ abstract class objeto implements Iterator {
     // $flag_mudanca;    // Array[Int => Bool]: Indica os atributos simples modificados (indexado pela posicao do atributo no vetor $this->instancia->valores)
     // $flag_unicidade;  // Bool: Flag que indica se deve ser feita a validacao de unicidade
     // $flag_bd;         // Bool: Flag que indica se os dados vem do BD ou nao
+    // $referencias;     // Int: Quantidade de referencias para a instancia
+    // $orfa;            // Bool: Indica se a instancia foi inserida no vetor de instancias ou nao
 
     // Erros e Avisos Internos
     protected $erros;               // Array[String]: Erros a serem exibidos para o usuario final
@@ -96,6 +99,7 @@ abstract class objeto implements Iterator {
     static protected $em_transacao; // Bool: Flag que indica se uma transacao esta em andamento
     static protected $flag_log;     // Bool: Flag que indica se os logs devem ser gerados ou nao
     static protected $modo;         // Int: Flag que define o modo com que a persistencia dos dados da memoria e do BD serao sincronizados
+    static protected $flag_coleta;  // Bool: Flag que indica se o coletor de lixo sera' chamado automaticamente ou nao
 
 
 /// @ METODOS EXIGIDOS PELAS CLASSES FILHAS
@@ -156,7 +160,7 @@ abstract class objeto implements Iterator {
         }
 
         // Definir uma nova instancia da classe ($this->instancia)
-        $this->definir_instancia($classe);
+        $this->instancia = $this->criar_instancia();
 
         // Flags da instancia corrente
         $this->zerar_flags();
@@ -413,35 +417,33 @@ abstract class objeto implements Iterator {
 
 
     //
-    //     Define uma nova instancia para a classe (se ja existe: aponta para a existente, senao: cria uma nova)
+    //     Define uma nova instancia para a classe
+    //     (a instancia da chave precisa existir no vetor de instancias)
     //
     private function definir_instancia($classe, $chave = false) {
     // String $classe: nome da classe
     // Mixed $chave: chave primaria da instancia
     //
+        // Se esta' tentando apontar para a mesma instancia
+        if ($this->instancia === self::$instancias[$classe][$chave]) {
+            return;
+        }
+
+        // Guardar o valor de flag_bd da instancia corrente
         if (isset($this->instancia->flag_bd)) {
             $flag_bd = $this->instancia->flag_bd;
         } else {
             $flag_bd = false;
         }
 
-        // Se a chave foi informada e ja' existe a instancia
-        if ($chave && self::possui_instancia($classe, $chave)) {
+        // Coletar a instancia atual
+        $this->coletar_instancia();
 
-            // Apontar a instancia para a que ja' existe
-            $this->instancia = &self::$instancias[$classe][$chave];
+        // Apontar a instancia para a que ja' existe
+        $this->instancia = &self::$instancias[$classe][$chave];
+        $this->instancia->referencias += 1;
 
-        // Se e' a primeira instancia da classe: cria'-la
-        } else {
-
-            // Remover a referencia da instancia atual (hack)
-            $null = null;
-            $this->instancia = &$null;
-            unset($null);
-
-            // Receber os dados do objeto vazio
-            $this->instancia = $this->criar_instancia();
-        }
+        // Restaurar o valor de flag_bd da instancia
         $this->instancia->flag_bd = $flag_bd;
     }
 
@@ -453,8 +455,7 @@ abstract class objeto implements Iterator {
     // String $classe: nome da classe
     // Mixed $chave: valor da chave primaria
     //
-        return self::possui_definicao_classe($classe) &&
-               isset(self::$instancias[$classe][$chave]);
+        return isset(self::$instancias[$classe][$chave]);
     }
 
 
@@ -488,6 +489,8 @@ abstract class objeto implements Iterator {
         $obj->flag_mudanca   = array_fill(0, count($this->get_atributos()), false);
         $obj->flag_unicidade = true;
         $obj->flag_bd        = false;
+        $obj->referencias    = 1;
+        $obj->orfa           = true;
 
         return $obj;
     }
@@ -497,6 +500,9 @@ abstract class objeto implements Iterator {
     //     Limpa os atributos simples e relacionamentos da instancia corrente
     //
     private function limpar_instancia() {
+
+        // Coletar a instancia atual
+        $this->coletar_instancia();
 
         // Remover a referencia da instancia
         $null = null;
@@ -509,7 +515,30 @@ abstract class objeto implements Iterator {
 
 
     //
-    //     Desaloca as instancias da lista de instancias
+    //     Coleta as instancias orfas da memoria, liberando espaco.
+    //     Observacao: caso a flag self::$flag_coleta esteja habilitada,
+    //     esta coleta e' feita automaticamente.
+    //
+    final public static function coletar_lixo() {
+        $quantidade = 0;
+        foreach (self::$instancias as $classe => $instancias) {
+            foreach ($instancias as $codigo => $instancia) {
+                if ($instancia->referencias == 0) {
+                    self::remover_instancia($classe, $codigo);
+                    ++$quantidade;
+                }
+            }
+        }
+        return $quantidade;
+    }
+
+
+    //
+    //     Desaloca as instancias da lista de instancias.
+    //     Cuidado: se um objeto do PHP esta' referenciando uma
+    //     instancia do Simp e ela e' apagada, o objeto nao
+    //     funcionara' adequadamente.
+    //     Prefira utilizar o metodo coletar_lixo.
     //
     final public static function remover_instancias($classe) {
     // String $classe: nome da classe da instancia
@@ -524,12 +553,20 @@ abstract class objeto implements Iterator {
 
     //
     //     Desaloca uma instancia da lista de instancias
+    //     Cuidado: se um objeto do PHP esta' referenciando uma
+    //     instancia do Simp e ela e' apagada, o objeto nao
+    //     funcionara' adequadamente.
+    //     Prefira utilizar o metodo coletar_lixo.
     //
     final public static function remover_instancia($classe, $codigo) {
     // String $classe: nome da classe da instancia
     // Int $codigo: codigo unico da instancia
     //
         if (isset(self::$instancias[$classe][$codigo])) {
+            $referencias = self::$instancias[$classe][$codigo]->referencias;
+            if ($referencias > 0) {
+                trigger_error('Apagando instancia que possui '.$referencias.' referencias (classe '.$classe.' / codigo '.$codigo.')', E_USER_NOTICE);
+            }
             unset(self::$instancias[$classe][$codigo]);
             return true;
         }
@@ -705,6 +742,7 @@ XML;
             self::$em_transacao = false;
             self::$flag_log     = true;
             self::$modo         = OBJETO_MODO_CONGELAR;
+            self::$flag_coleta  = OBJETO_FLAG_COLETA_PADRAO;
             $iniciou = true;
         } else {
             trigger_error('O metodo iniciar so precisa ser chamado uma vez', E_USER_NOTICE);
@@ -741,11 +779,20 @@ XML;
     //     Destrutor padrao
     //
     final public function __destruct() {
+        $this->coletar_instancia();
 
         // Remover referencias
         $null = null;
         $this->instancia = &$null;
         $this->definicao = &$null;
+    }
+
+
+    //
+    //     Operacoes ao se clonar um objeto
+    //
+    final public function __clone() {
+        $this->instancia->referencias += 1;
     }
 
 
@@ -761,17 +808,16 @@ XML;
     }
 
 
-/*
+/* *****************************
 //TODO Liberar o metodo quando o PHP 5.3.0 estiver mais popular
-
-Este metodo serve para simplificar chamadas ao metodo get_objeto:
-$obj = objeto::get_objeto('usuario');
-
-Transformando em uma forma mais simples:
-$obj = objeto::usuario();
-
-Ou criando uma entidade ja existente
-$obj = objeto::usuario('login', 'admin');
+// Este metodo serve para simplificar chamadas ao metodo get_objeto:
+// $obj = objeto::get_objeto('usuario');
+//
+// Transformando em uma forma mais simples:
+// $obj = objeto::usuario();
+//
+// Ou criando uma entidade ja existente
+// $obj = objeto::usuario('login', 'admin');
 
 
     //
@@ -791,7 +837,7 @@ $obj = objeto::usuario('login', 'admin');
         }
         return $obj;
     }
-*/
+*************************** */
 
 
     //
@@ -854,7 +900,7 @@ $obj = objeto::usuario('login', 'admin');
     //
     //     Verifica se um objeto possui a classe especificada como pai
     //
-    public function possui_pai($classe_pai, $atributo) {
+    final public function possui_pai($classe_pai, $atributo) {
     // String $classe_pai: nome da classe pai
     // String || Bool $atributo: nome do atributo do pai que aponta para um objeto da classe corrente (false para usar o nome da chave primaria da classe corrente)
     //
@@ -1002,6 +1048,44 @@ $obj = objeto::usuario('login', 'admin');
 
 
     //
+    //     Coleta uma instancia caso ela nao esteja referenciada
+    //
+    private function coletar_instancia() {
+
+        // Se existem referencias para a instancia
+        if ($this->instancia->referencias > 0) {
+
+            // Decrementar quantidade de referencias
+            $this->instancia->referencias -= 1;
+
+            // Se a instancia nao e' orfa (esta' no vetor de instancias)
+            if (!$this->instancia->orfa) {
+
+                // Se nao existem referencias e a flag de coleta esta' habilitada: remover instancia
+                if (self::$flag_coleta && ($this->instancia->referencias == 0) && $this->existe()) {
+                    self::remover_instancia($this->get_classe(), $this->get_valor_chave());
+                }
+
+            // Se e' uma instancia orfa
+            } else {
+                $null = null;
+                $this->instancia = &$null;
+            }
+        }
+    }
+
+
+    //
+    //     Define o modo de coleta de instancias orfas da memoria
+    //
+    final static public function set_flag_coleta_lixo($coletar_automatico = true) {
+    // Bool $coletar_automatico: flag indicando se a coleta de instancias orfas deve ser automatica ou nao
+    //
+        self::$flag_coleta = (bool)$coletar_automatico;
+    }
+
+
+    //
     //     Obtem o modo de persistencia
     //
     final static public function get_modo_persistencia() {
@@ -1135,7 +1219,6 @@ $obj = objeto::usuario('login', 'admin');
             // Se esta' limpando um atributo qualquer
             } else {
                 $this->desalocar_valor($nome_atributo);
-                $this->set_flag_mudanca($nome_atributo, false);
             }
         } elseif ($this->possui_auxiliar($nome_atributo)) {
             unset($this->auxiliares[$nome_atributo]);
@@ -1517,6 +1600,7 @@ $obj = objeto::usuario('login', 'admin');
         $r = true;
 
         // Desabilitar validacao de unicidade temporariamente
+        $flag_unicidade = $this->instancia->flag_unicidade;
         $this->instancia->flag_unicidade = false;
 
         // Checar o tipo do parametro passado
@@ -1664,10 +1748,10 @@ $obj = objeto::usuario('login', 'admin');
         }
 
         // Voltar a validacao de unicidade
-        $this->instancia->flag_unicidade = true;
+        $this->instancia->flag_unicidade = $flag_unicidade;
 
-        // Se os dados nao estao vindos do BD
-        if (!$this->instancia->flag_bd) {
+        // Se os dados nao estao vindos do BD e a flag de unicidade esta' ativa
+        if (!$this->instancia->flag_bd && $this->instancia->flag_unicidade) {
             $r = $r && $this->validar_unicidade();
         }
 
@@ -1748,32 +1832,39 @@ $obj = objeto::usuario('login', 'admin');
             trigger_error('O valor da chave nao pode ser nulo', E_USER_WARNING);
             return false;
         }
+        $r = true;
 
         // Se ja existe uma instancia com a chave especificada
         if (self::possui_instancia($this->get_classe(), $valor_chave)) {
 
-            // Realizar merge dos dados da entidade
+            // Recuperar os valores atuais da instancia
             $valores = $this->instancia->valores;
-            $this->definir_instancia($this->get_classe(), $valor_chave);
             $campos = array_keys((array)$valores);
+
+            // Apontar a instancia para aquela existente na base de instancias
+            $this->definir_instancia($this->get_classe(), $valor_chave);
+
+            // Realizar merge dos dados da instancia antiga com a instancia da base de instancias
             $this->consultar_campos($campos);
             foreach ($valores as $nome_atributo => $valor) {
                 $valor_flag = $this->get_valor_flag_mudanca($nome_atributo, $valor);
-                $this->set_valor($nome_atributo, $valor);
+                $r = $r && $this->set_valor($nome_atributo, $valor);
                 $this->set_flag_mudanca($nome_atributo, $valor_flag);
             }
 
         // Se nao possui uma instancia com a chave especificada
         } else {
 
+            // Definir o valor da chave
+            $this->set_valor($this->get_chave(), $valor_chave);
+
             // Criar a primeira instancia
             self::$instancias[$this->get_classe()][$valor_chave] = clone($this->instancia);
             $this->instancia = &self::$instancias[$this->get_classe()][$valor_chave];
-
-            // Definir o valor da chave
-            $this->set_valor($this->get_chave(), $valor_chave);
+            $this->instancia->referencias = 1;
+            $this->instancia->orfa = false;
         }
-        return true;
+        return $r;
     }
 
 
@@ -2274,11 +2365,6 @@ $obj = objeto::usuario('login', 'admin');
     // Mixed $valor: valor da busca
     // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
     //
-        $r = true;
-
-        // Checar se o objeto ja' existe
-        $existe = $this->existe();
-
         // Checar se a chave de busca existe
         if (empty($chave)) {
             $chave = $this->get_chave();
@@ -2288,25 +2374,65 @@ $obj = objeto::usuario('login', 'admin');
         }
 
         // Chechar se o dado ja' esta' na lista de instancias (self::$instancias)
-        $this->consultar_cache($chave, $valor);
+        $this->consultar_lista_instancias($chave, $valor);
 
+        // Montar a condicao de consulta
+        $condicoes = condicao_sql::montar($chave, '=', $valor, false);
+
+        // Montar flag
         $flag = OBJETO_ADICIONAR_CHAVES;
 
+        // Se esta' consultando o mesmo objeto, remover os campos consultados
         if (self::get_modo_persistencia() == OBJETO_MODO_CONGELAR &&
             $this->get_flag_consulta($chave) &&
             $this->get_atributo($chave) == $valor) {
             $flag |= OBJETO_REMOVER_CONSULTADOS;
         }
+
+        return $this->consultar_dao($condicoes, $campos, $flag);
+    }
+
+
+    //
+    //     Consulta os dados de um objeto no BD sob varias condicoes
+    //
+    final public function consultar_condicoes($condicoes, $campos = false) {
+    // condicao_sql $condicoes: condicoes de busca
+    // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
+    //
+        // Chechar se o dado ja' esta' na lista de instancias (self::$entidades)
+        //TODO: ver uma forma de fazer isso para otimizar
+        //$this->consultar_lista_instancias_condicoes($condicoes);
+
+        // Montar flag
+        $flag = OBJETO_ADICIONAR_CHAVES;
+
+        return $this->consultar_dao($condicoes, $campos, $flag);
+    }
+
+
+    //
+    //     Consulta dados na camada DAO
+    //
+    private function consultar_dao($condicoes, $campos, $flag) {
+    // condicao_sql $condicoes: condicoes de busca
+    // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
+    // Int $flag: flag de consulta
+    //
+        $r = true;
+        $chave = $this->get_chave();
+
+        // Campos a serem consultados
         $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores, $flag);
 
         // Se nao possui atributos a serem consultados, mas o objeto nao existe: consultar a chave primaria
         if (!count($vt_campos) && !$this->existe()) {
-            $vt_campos[] = $this->get_chave();
+            $vt_campos[] = $chave;
         }
 
         // Se possui atributos simples a serem consultados
         if (count($vt_campos)) {
-            $retorno = self::$dao->select($this, $vt_campos, condicao_sql::montar($chave, '=', $valor, false), null, null, 1);
+            $retorno = self::$dao->select($this, $vt_campos, $condicoes, null, null, 1);
 
             // Se nao consultou devido um erro de BD
             if (is_bool($retorno)) {
@@ -2323,16 +2449,30 @@ $obj = objeto::usuario('login', 'admin');
                 }
                 return false;
 
-            // Se nao encontrou elemento com a chave especificada
-            } elseif (!count($retorno)) {
+            // Se consultou, mas o resultado e' um conjunto vazio
+            } elseif (count($retorno) == 0) {
+
+                // Se o objeto ja' existe: apagar
+                if ($this->existe()) {
+                    $this->limpar_objeto();
+                }
+
                 return false;
             }
             $obj = array_pop($retorno);
             unset($retorno);
 
-            // Se o objeto ja' existe: nao precisa setar novamente a chave
+            // Se o objeto ja' existe
             if ($this->existe()) {
-                unset($obj->{$this->get_chave()});
+
+                // Se esta consultando o mesmo objeto: nao precisa setar novamente a chave
+                if ($this->get_valor_chave() == $obj->$chave) {
+                    unset($obj->$chave);
+
+                // Se e' outro objeto: limpar este objeto antes
+                } else {
+                    $this->limpar_objeto();
+                }
             }
 
             // Desabilitar validacao para definir dados vindos do BD
@@ -2351,63 +2491,10 @@ $obj = objeto::usuario('login', 'admin');
             }
         }
 
-        return $r;
-    }
-
-
-    //
-    //     Consulta os dados de um objeto no BD sob varias condicoes
-    //
-    final public function consultar_condicoes($condicoes, $campos = false) {
-    // condicao_sql $condicoes: condicoes de busca
-    // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
-    //
-        $r = true;
-
-        // Chechar se o dado ja' esta' na memoria cache (self::$entidades)
-        //TODO: ver uma forma de fazer isso para otimizar
-        //$this->consultar_cache_condicoes($condicoes);
-
-        // Campos a serem consultados
-        $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores);
-
-        // Se nao possui atributos a serem consultados
-        if (!count($vt_campos)) {
-            trigger_error('Nenhum campo real foi solicitado para consulta', E_USER_WARNING);
-            return false;
+        // Se nao consultou, mas o objeto estava preenchido: limpa-lo
+        if (!$r && $this->existe()) {
+            $this->limpar_objeto();
         }
-
-        // Consultar
-        $retorno = self::$dao->select($this, $vt_campos, $condicoes, null, null, 1);
-
-        // Se nao conseguiu consultar
-        if (is_bool($retorno)) {
-            switch ($this->get_genero()) {
-            case 'M':
-                $this->erros[] = 'Erro ao consultar os dados do '.$this->get_entidade();
-                break;
-            case 'F':
-                $this->erros[] = 'Erro ao consultar os dados da '.$this->get_entidade();
-                break;
-            case 'I':
-                $this->erros[] = 'Erro ao consultar os dados de '.$this->get_entidade();
-                break;
-            }
-            return false;
-
-        // Se consultou, mas o resultado e' um conjunto vazio
-        } elseif (count($retorno) == 0) {
-            return false;
-        }
-
-        $obj = array_pop($retorno);
-        unset($retorno);
-
-        // Desabilitar validacao para definir dados vindos do BD
-        $flag_bd = $this->instancia->flag_bd;
-        $this->instancia->flag_bd = true;
-        $r = $this->set_valores($obj);
-        $this->instancia->flag_bd = $flag_bd;
 
         return $r;
     }
@@ -2416,7 +2503,7 @@ $obj = objeto::usuario('login', 'admin');
     //
     //     Consulta os dados na lista de instancias (self::$instancias)
     //
-    private function consultar_cache($campo, $valor) {
+    private function consultar_lista_instancias($campo, $valor) {
     // String $campo: nome do campo usado para busca
     // Mixed $valor: valor usado para busca
     //
@@ -2425,10 +2512,10 @@ $obj = objeto::usuario('login', 'admin');
         // Se o campo de busca e' a chave primaria: otimo! fica mais facil
         if ($campo == $this->get_chave())  {
 
-            // Se ja' existe a instancia na cache
+            // Se ja' existe a instancia na lista de instancias
             if (self::possui_instancia($nome_classe, $valor)) {
 
-                // Definir a instancia da cache
+                // Definir a instancia da lista de instancias
                 $this->definir_instancia($nome_classe, $valor);
                 return true;
             }
@@ -2437,16 +2524,16 @@ $obj = objeto::usuario('login', 'admin');
         } else {
             $pos_atributo = array_search($campo, array_keys($this->get_atributos()));
 
-            // Percorrer as instancias da cache
+            // Percorrer as instancias da lista de instancias
             foreach (self::get_instancias($nome_classe) as $instancia) {
 
-                // Se o campo de busca foi consultado pela entidade na cache
+                // Se o campo de busca foi consultado pela entidade na lista de instancias e nao foi modificado
                 if (isset($instancia->valores[$campo]) && !$instancia->flag_mudanca[$pos_atributo]) {
 
-                    // Se o valor de busca e' igual ao da cache
+                    // Se o valor de busca e' igual ao da lista de instancias
                     if ($instancia->valores[$campo] == $valor) {
 
-                        // Definir a instancia da cache
+                        // Definir a instancia da lista de instancias
                         $valor_chave = $instancia->valores[$this->get_chave()];
                         $this->definir_instancia($nome_classe, $valor_chave);
                         return true;
@@ -2740,7 +2827,7 @@ $obj = objeto::usuario('login', 'admin');
             $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores, $flag);
             $vt_campos = array_merge($vt_campos, $objetos, $vetores);
 
-            return $this->consultar($this->get_chave(), $this->get_valor_chave(), $campos);
+            return $this->consultar($this->get_chave(), $this->get_valor_chave(), $vt_campos);
         }
         trigger_error('O objeto nao pode consultar campos sem existir', E_USER_WARNING);
         return false;
@@ -3395,17 +3482,13 @@ $obj = objeto::usuario('login', 'admin');
     // Array[String => Bool] || String $ordem: campo usado para ordenacao
     // Array[String => Bool] || String $ordem_agrupamento: campo usado para ordenacao do objeto de agrupamento
     //
-
-//TODO: permitir que o objeto do agrupamento nao seja um objeto imediato
-// Por exemplo: em docente, ser possivel agrupar por departamento:campus
-
         if (!$this->possui_rel_uu($objeto_agrupamento)) {
             trigger_error('Parametro invalido para $objeto_agrupamento (esperado um objeto da classe)', E_USER_WARNING);
             return false;
         }
 
-        $obj      = $this->get_objeto_rel_uu($objeto_agrupamento);
-        $chave_pk = $obj->get_chave();
+        // Obter objeto de agrupamento e dados necessarios para consulta
+        $obj = $this->get_objeto_rel_uu($objeto_agrupamento);
         if (!$campo_agrupamento) {
             $campo_agrupamento = $obj->get_campo_nome();
         }
@@ -3413,38 +3496,44 @@ $obj = objeto::usuario('login', 'admin');
             trigger_error('A classe "'.$obj->get_classe().'" nao possui o atributo "'.$campo_agrupamento.'"', E_USER_WARNING);
             return false;
         }
-        $grupos = $obj->consultar_varios($condicoes_agrupamento, array($chave_pk, $campo_agrupamento), $ordem_agrupamento);
+        $chave_fk = $this->get_nome_chave_rel_uu($objeto_agrupamento);
+        $pos = strpos($objeto_agrupamento, ':');
+        $prefixo = ($pos === false) ? '' : substr($objeto_agrupamento, 0, $pos).':';
+
+        // Consultar registros de agrupamento
+        $grupos = $obj->consultar_varios($condicoes_agrupamento, array($campo_agrupamento), $ordem_agrupamento);
         unset($condicoes_agrupamento, $ordem_agrupamento);
 
+        // Vetor a ser retornado
         $vetor = array();
 
         // Checar se e' um relacionamento fraco
         $def = $this->get_definicao_rel_uu($objeto_agrupamento);
         if (!$def->forte) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($chave_pk, '=', 0, false);
+                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', 0, false);
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($chave_pk, '=', 0, false);
+                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', 0, false);
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = '[Sem '.$obj->get_entidade().']';
             $vetor[$index] = $subvetor ? $subvetor : array();
         }
-        $chave_fk = $this->get_nome_chave_rel_uu($objeto_agrupamento);
 
         // Percorrer os valores de cada grupo
         foreach ($grupos as $grupo) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($chave_fk, '=', $grupo->$chave_pk, false);
+                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave(), false);
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($chave_fk, '=', $grupo->$chave_pk, false);
+                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave(), false);
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = (string)$grupo->__get($campo_agrupamento);
             $vetor[$index] = $subvetor ? $subvetor : array();
         }
+
         return $vetor;
     }
 
@@ -3569,6 +3658,10 @@ $obj = objeto::usuario('login', 'admin');
 
         // Checar chaves unicas compostas
         if ($this->instancia->flag_unicidade && count($this->definicao->uk_compostas)) {
+
+//TODO: consultar todos os atributos que fazem parte de chaves compostas antes de realizar o foreach abaixo
+// para evitar consultas sob demanda.
+
             $atributos = array_keys($this->get_atributos());
             foreach ($this->definicao->uk_compostas as $indices_campos_uk) {
                 $classe = $this->get_classe();
@@ -3722,7 +3815,7 @@ $obj = objeto::usuario('login', 'admin');
                 if (is_numeric($s)) {
                     $flag_bd = $this->instancia->flag_bd;
                     $this->instancia->flag_bd = true;
-                    $this->__set($this->get_chave(), $s);
+                    $this->set_atributo($this->get_chave(), $s);
                     $this->instancia->flag_bd = $flag_bd;
                     $pk = $s;
 
@@ -3731,9 +3824,6 @@ $obj = objeto::usuario('login', 'admin');
                         $this->set_flag_mudanca($campo, false);
                     }
 
-                    // Adicionar no vetor de instancias
-                    self::$instancias[$this->get_classe()][$pk] = clone($this->instancia);
-                    $this->instancia = &self::$instancias[$this->get_classe()][$pk];
                 }
 
             // Se ocorreu um erro ao inserir
@@ -6251,19 +6341,30 @@ $obj = objeto::usuario('login', 'admin');
 
         // Obter uma instancia especifica
         if ($valor_chave) {
-            self::$instancias[$classe][$valor_chave] = false;
-            $instancia = self::unserialize_instancia($classe, $_SESSION[OBJETO_CACHE_INSTANCIAS][$classe][$valor_chave]);
-            self::$instancias[$classe][$valor_chave] = $instancia;
-            $obj = new $classe('', $valor_chave);
+
+            // Se a instancia ainda nao foi consultada
+            if (!isset(self::$instancias[$classe][$valor_chave])) {
+                self::$instancias[$classe][$valor_chave] = false;
+                $instancia = self::unserialize_instancia($classe, $_SESSION[OBJETO_CACHE_INSTANCIAS][$classe][$valor_chave]);
+                self::$instancias[$classe][$valor_chave] = $instancia;
+            }
+            $obj = self::get_objeto($classe);
+            $obj->definir_instancia($classe, $valor_chave);
             return $obj;
 
         // Obter todas instancias de uma classe
         } else {
             foreach ($_SESSION[OBJETO_CACHE_INSTANCIAS][$classe] as $chave => $instancia) {
-                self::$instancias[$classe][$chave] = false;
-                $instancia = self::unserialize_instancia($classe, $_SESSION[OBJETO_CACHE_INSTANCIAS][$classe][$chave]);
-                self::$instancias[$classe][$chave] = $instancia;
-                $vetor[] = new $classe('', $chave);
+
+                // Se a instancia ainda nao foi consultada
+                if (!isset(self::$instancias[$classe][$chave])) {
+                    self::$instancias[$classe][$chave] = false;
+                    $instancia = self::unserialize_instancia($classe, $_SESSION[OBJETO_CACHE_INSTANCIAS][$classe][$chave]);
+                    self::$instancias[$classe][$chave] = $instancia;
+                }
+                $obj = self::get_objeto($classe);
+                $obj->definir_instancia($classe, $chave);
+                $vetor[] = $obj;
             }
             return $vetor;
         }
@@ -6356,6 +6457,8 @@ $obj = objeto::usuario('login', 'admin');
         $instancia->valores        = $i->valores;
         $instancia->objetos        = array();
         $instancia->vetores        = array();
+        $instancia->referencias    = 1;
+        $instancia->orfa           = false;
 
         // Restaurar referencias dos objetos filhos
         foreach ($i->ref_objetos as $nome_obj => $ref_obj) {
@@ -6365,7 +6468,9 @@ $obj = objeto::usuario('login', 'admin');
             } elseif (self::$instancias[$classe_ref][$chave_ref] === false) {
                 // Aguardar
             } else {
-                $instancia->objetos[$nome_obj] = new $classe_ref('', $chave_ref);
+                $obj_ref = self::get_objeto($classe_ref);
+                $obj_ref->definir_instancia($classe_ref, $chave_ref);
+                $instancia->objetos[$nome_obj] = $obj_ref;
             }
         }
 
@@ -6379,7 +6484,9 @@ $obj = objeto::usuario('login', 'admin');
                 } elseif (self::$instancias[$classe_ref][$chave_ref] === false) {
                     // Aguardar
                 } else {
-                    $instancia->vetores[$nome_vet][$indice] = new $classe_ref('', $chave_ref);
+                    $obj = self::get_objeto($classe_ref);
+                    $obj->definir_instancia($classe_ref, $chave_ref);
+                    $instancia->vetores[$nome_vet][$indice] = $obj;
                 }
             }
         }
@@ -6392,27 +6499,30 @@ $obj = objeto::usuario('login', 'admin');
 
 
     //
-    //     Lista as instancias que estao na cache
+    //     Exibe a lista as instancias (self::$instancias)
     //
     final static public function dump_instancias($classe = false) {
     // String $classe: classe a ser analisada
     //
         if ($classe) {
-            $vt_instancias = array($classe => &self::$instancias[$classe]);
+            $vt_classes = array($classe => &self::$instancias[$classe]);
         } else {
-            $vt_instancias = &self::$instancias;
+            $vt_classes = &self::$instancias;
         }
+        $quantidade_classes = count($vt_classes);
+
+
         echo '<div style="border: 1px solid red">';
-        echo '<p style="background-color: #FFEEEE; margin: 0; padding: .5em; border-bottom: 1px solid green;">INST&Acirc;NCIAS ('.count($vt_instancias).' entidades)</p>';
-        foreach ($vt_instancias as $classe => &$instancias) {
-            $quantidade = count($instancias);
+        echo '<p style="background-color: #FFEEEE; margin: 0; padding: .5em; border-bottom: 1px solid green;">INST&Acirc;NCIAS ('.$quantidade_classes.' classe'.(($quantidade_classes != 1) ? 's' : '').')</p>';
+        foreach ($vt_classes as $classe => &$instancias) {
+            $quantidade_instancias = count($instancias);
             echo '<div style="margin: 1em; border: 1px solid green;">';
-            echo '<p style="background-color: #EEFFEE; margin: 0; padding: .5em; border-bottom: 1px solid green;">CLASSE: '.$classe.' ('.$quantidade.' inst&acirc;ncia'.(($quantidade != 1) ? 's' : '').')</p>';
-            if ($quantidade) {
+            echo '<p style="background-color: #EEFFEE; margin: 0; padding: .5em; border-bottom: 1px solid green;">CLASSE: '.$classe.' ('.$quantidade_instancias.' inst&acirc;ncia'.(($quantidade_instancias != 1) ? 's' : '').')</p>';
+            if ($quantidade_instancias) {
                 foreach ($instancias as $pos => &$i) {
                     echo '<div style="margin: 1em; border: 1px solid blue;">';
                     echo '<p style="background-color: #EEEEFF; margin: 0; padding: .5em; border-bottom: 1px solid blue;">';
-                    echo $classe.'['.$pos.']';
+                    echo $classe.'['.$pos.'] ('.$i->referencias.' refer&ecirc;ncia'.(($i->referencias != 1) ? 's' : '').')';
                     echo '</p>';
                     echo '<ul>';
                     foreach ($i->valores as $atributo => $valor) {
@@ -6427,6 +6537,14 @@ $obj = objeto::usuario('login', 'admin');
             echo '</div>';
         }
         echo '</div>';
+    }
+
+
+    //
+    //     Exibe as instancias na forma completa
+    //
+    final public function dump_instancias_completa() {
+        util::dump(self::$instancias, 2);
     }
 
 }//class

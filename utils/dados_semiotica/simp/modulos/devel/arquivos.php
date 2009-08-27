@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.18
+// Versao: 1.0.0.20
 // Data: 31/07/2007
-// Modificado: 24/06/2009
+// Modificado: 18/08/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -86,40 +86,102 @@ function imprimir_arquivos() {
             $situacao = "O valor est&aacute; muito alto, reduzindo a performance dos c&oacute;digos. Reduza os coment&aacute;rios e utilize identa&ccedil;&atilde;o de tamanho 4! {$icone_vermelho}";
         }
 
-        echo '<h2>Estat&iacute;sticas</h2>';
-        echo '<p><em>Total de Arquivos PHP:</em> '.$estatisticas->total.'</p>';
-        echo '<p><em>Tamanho dos Arquivos PHP:</em> '.texto::formatar_bytes($estatisticas->tamanho_total);
-        echo ' (corresponde a um livro de '.$num_paginas.' p&aacute;ginas A4)</p>';
-        echo '<p><em>Tamanho dos Arquivos PHP sem coment&aacute;rios e espa&ccedil;os:</em> '.texto::formatar_bytes($estatisticas->tamanho_real).'</p>';
-        echo '<p>'.$porcentagem.'% do c&oacute;digo s&atilde;o coment&aacute;rios e espa&ccedil;os: '.$situacao.'</p>';
-
         if (count($estatisticas->sistemas) > 1) {
             echo '<h2>Sistemas</h2>';
-            echo '<ul>';
+            echo '<table class="tabela">';
+            echo '<caption>Tabela de tamanhos dos sub-sistemas</caption>';
+            echo '<thead>';
+            echo '<tr>';
+            echo '<th scope="col">Sistema</th>';
+            echo '<th scope="col">Arquivos</th>';
+            echo '<th scope="col">Tamanho Total</th>';
+            echo '<th scope="col">Tamanho Real</th>';
+            echo '</tr>';
+            echo '</thead>';
+            echo '<tfoot>';
+            echo '<tr>';
+            echo '<td scope="row">Total</td>';
+            echo '<td>'.$estatisticas->total.' (100%)</td>';
+            echo '<td>'.texto::formatar_bytes($estatisticas->tamanho_total).' (100%)</td>';
+            echo '<td>'.texto::formatar_bytes($estatisticas->tamanho_real).' (100%)</td>';
+            echo '</tr>';
+            echo '</tfoot>';
+            echo '<tbody>';
             foreach ($estatisticas->sistemas as $sistema) {
                 $sistema->porcentagem = new stdClass();
                 $sistema->porcentagem->total = round($sistema->total * 100 / $estatisticas->total, 2);
                 $sistema->porcentagem->tamanho_total = round($sistema->tamanho_total * 100 / $estatisticas->tamanho_total, 2);
                 $sistema->porcentagem->tamanho_real = round($sistema->tamanho_real * 100 / $estatisticas->tamanho_real, 2);
 
-                echo '<li>';
-                echo '<div>';
-                echo '<strong>'.texto::codificar($sistema->nome).'</strong>';
-                echo '<p><em>Arquivos:</em> '.$sistema->total.' ('.$sistema->porcentagem->total.'%)</p>';
-                echo '<p><em>Tamanho Total:</em> '.texto::formatar_bytes($sistema->tamanho_total).' ('.$sistema->porcentagem->tamanho_total.'%)</p>';
-                echo '<p><em>Tamanho Real:</em> '.texto::formatar_bytes($sistema->tamanho_real).' ('.$sistema->porcentagem->tamanho_real.'%)</p>';
-                echo '</div>';
-                echo '</li>';
+                echo '<tr>';
+                echo '<td scope="row">'.texto::codificar($sistema->nome).'</td>';
+                echo '<td>'.$sistema->total.' ('.$sistema->porcentagem->total.'%)</td>';
+                echo '<td>'.texto::formatar_bytes($sistema->tamanho_total).' ('.$sistema->porcentagem->tamanho_total.'%)</td>';
+                echo '<td>'.texto::formatar_bytes($sistema->tamanho_real).' ('.$sistema->porcentagem->tamanho_real.'%)</td>';
+                echo '</tr>';
             }
-            echo '</ul>';
+            echo '</tbody>';
+            echo '</table>';
+            echo '<p><em>Tamanho dos Arquivos PHP:</em> '.texto::formatar_bytes($estatisticas->tamanho_total);
+            echo ' (corresponde a um livro de '.$num_paginas.' p&aacute;ginas A4)</p>';
+            echo '<p>'.$porcentagem.'% do c&oacute;digo s&atilde;o coment&aacute;rios e espa&ccedil;os: '.$situacao.'</p>';
+        } else {
+            echo '<h2>Estat&iacute;sticas</h2>';
+            echo '<p><em>Total de Arquivos PHP:</em> '.$estatisticas->total.'</p>';
+            echo '<p><em>Tamanho dos Arquivos PHP:</em> '.texto::formatar_bytes($estatisticas->tamanho_total);
+            echo ' (corresponde a um livro de '.$num_paginas.' p&aacute;ginas A4)</p>';
+            echo '<p><em>Tamanho dos Arquivos PHP sem coment&aacute;rios e espa&ccedil;os:</em> '.texto::formatar_bytes($estatisticas->tamanho_real).'</p>';
+            echo '<p>'.$porcentagem.'% do c&oacute;digo s&atilde;o coment&aacute;rios e espa&ccedil;os: '.$situacao.'</p>';
         }
 
         echo '<h2>Autores</h2>';
-        echo '<ul>';
-        foreach ($estatisticas->autores as $autor => $quantidade) {
-            echo '<li>'.$autor.': '.$quantidade.' arquivo(s)</li>';
+        echo '<table class="tabela">';
+        echo '<caption>Tabela de autores por c&oacute;digo gerado</caption>';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th scope="col" rowspan="2">Autor</th>';
+        echo '<th scope="col" colspan="2">Principal</th>';
+        echo '<th scope="col" colspan="2">Secund&aacute;rio</th>';
+        echo '<th scope="col" colspan="2">Total</th>';
+        echo '<th scope="col" rowspan="2">Participa&ccedil;&atilde;o</th>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="col">Arquivos</th>';
+        echo '<th scope="col">Tamanho</th>';
+        echo '<th scope="col">Arquivos</th>';
+        echo '<th scope="col">Tamanho</th>';
+        echo '<th scope="col">Arquivos</th>';
+        echo '<th scope="col">Tamanho</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        foreach ($estatisticas->autores as $autor => $dados) {
+            echo '<tr>';
+            echo '<td scope="row">'.$autor.'</td>';
+            echo '<td>'.$dados->quantidade.'</td>';
+            echo '<td>'.texto::formatar_bytes($dados->tamanho).'</td>';
+            if (isset($estatisticas->secundarios[$autor])) {
+                $dados_secundario = $estatisticas->secundarios[$autor];
+                echo '<td>'.$dados_secundario->quantidade.'</td>';
+                echo '<td>'.texto::formatar_bytes($dados_secundario->tamanho).'</td>';
+            } else {
+                $dados_secundario = new stdClass();
+                $dados_secundario->quantidade = 0;
+                $dados_secundario->tamanho = 0;
+                echo '<td>-</td>';
+                echo '<td>-</td>';
+            }
+
+            $total_quantidade = $dados->quantidade + $dados_secundario->quantidade;
+            $total_tamanho = $dados->tamanho + $dados_secundario->tamanho;
+
+            echo '<td>'.($total_quantidade).'</td>';
+            echo '<td>'.texto::formatar_bytes($total_tamanho).'</td>';
+            echo '<td>'.round($total_tamanho * 100 / $estatisticas->tamanho_total, 2).'%</td>';
+            echo '</tr>';
         }
-        echo '</ul>';
+        echo '</tbody>';
+        echo '</table>';
 
         if (count($estatisticas->arq_invalidos)) {
             echo '<h2>Arquivos inv&aacute;lidos (Documenta&ccedil;&atilde;o incompleta)</h2>';
@@ -423,19 +485,30 @@ function calcular_estatisticas_dir($dir, &$obj, $ignore_doc = false) {
     // Percorrer arquivos PHP primeiro para economizar memoria (a funcao e' recursiva em diretorios)
     foreach ($arquivos as $arq) {
         $dados = parser_simp::get_cabecalho_arquivo($dir.$arq);
-        list($principal, $secundarios) = get_autores($dados);
-        if (!isset($obj->autores[$principal])) {
-            $obj->autores[$principal] = 0;
-        }
-        $obj->autores[$principal] += 1;
-        foreach ($secundarios as $s) {
-            if (!isset($obj->secundarios[$s])) {
-                $obj->secundarios[$s] = 0;
-            }
-            $obj->secundarios[$s] += 1;
-        }
         $tam_arquivo = filesize($dir.$arq);
         $tam_codigos = strlen(php_strip_whitespace($dir.$arq));
+
+        list($principal, $secundarios) = get_autores($dados);
+
+        // Calcular trabalho do principal
+        if (!isset($obj->autores[$principal])) {
+            $obj->autores[$principal] = new stdClass();
+            $obj->autores[$principal]->quantidade = 0;
+            $obj->autores[$principal]->tamanho    = 0;
+        }
+        $obj->autores[$principal]->quantidade += 1;
+        $obj->autores[$principal]->tamanho    += $tam_arquivo;
+
+        // Calcular trabalho dos secundarios
+        foreach ($secundarios as $s) {
+            if (!isset($obj->secundarios[$s])) {
+                $obj->secundarios[$s] = new stdClass();
+                $obj->secundarios[$s]->quantidade = 0;
+                $obj->secundarios[$s]->tamanho    = 0;
+            }
+            $obj->secundarios[$s]->quantidade += 1;
+            $obj->secundarios[$s]->tamanho    += $tam_arquivo;
+        }
 
         $obj->total += 1;
         $obj->tamanho_total += $tam_arquivo;

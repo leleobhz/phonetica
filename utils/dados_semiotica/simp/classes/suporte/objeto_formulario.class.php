@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.29
+// Versao: 1.3.0.30
 // Data: 27/08/2007
-// Modificado: 16/07/2009
+// Modificado: 14/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -690,12 +690,8 @@ abstract class objeto_formulario extends objeto {
                 $obj->set_valores($entidade, false, true);
                 $campos_entidade = array_keys((array)$entidade);
 
-                // Se salvou, limpar a instancia para economizar memoria
-                if ($obj->salvar_completo($campos_entidade)) {
-                    objeto::remover_instancia($classe, $obj->get_valor_chave());
-
-                // Se possui erros
-                } else {
+                // Se nao salvou
+                if (!$obj->salvar_completo($campos_entidade)) {
                     $r = false;
                     $this->erros[] = 'Erro ao importar '.$this->get_entidade()." (registro {$n})";
                     $this->erros[] = $obj->get_erros();

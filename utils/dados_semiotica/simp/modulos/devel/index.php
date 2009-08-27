@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.12
+// Versao: 1.0.0.13
 // Data: 30/07/2007
-// Modificado: 24/06/2009
+// Modificado: 11/08/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -40,6 +40,12 @@ exit(0);
 //
 function listar_opcoes_devel() {
     global $CFG, $modulo;
+
+    // Exibir o aviso apenas na primeira vez que acessou a pagina com uma sessao valida
+    if (!isset($_SESSION[$modulo]['aviso_inicial'])) {
+        mensagem::aviso('P&aacute;gina reservada aos desenvolvedores do sistema');
+        $_SESSION[$modulo]['aviso_inicial'] = 1;
+    }
 
     // Informacoes
     $info = array('info.php'        => 'Informa&ccedil;&otilde;es do Servidor',
@@ -94,9 +100,5 @@ function listar_opcoes_devel() {
     echo "</ul>\n";
     echo "</div>\n";
 
-    // Exibir o aviso apenas na primeira vez que acessou a pagina com uma sessao valida
-    if (!isset($_SESSION[$modulo]['aviso_inicial'])) {
-        mensagem::aviso('P&aacute;gina reservada aos desenvolvedores do sistema');
-        $_SESSION[$modulo]['aviso_inicial'] = 1;
-    }
+    echo "<p class=\"clear\">Para desabilitar o acesso a esta &aacute;rea, mude o valor da constante DEVEL_BLOQUEADO no arquivo \"constantes.php\".</p>\n";
 }

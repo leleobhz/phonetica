@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.5
+// Versao: 1.1.0.6
 // Data: 22/10/2007
-// Modificado: 28/04/2009
+// Modificado: 20/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -112,16 +112,16 @@ final class paginacao {
     //
         if ($this->pagina > 1) {
             $l = link::adicionar_atributo($this->link, $this->nome, $this->pagina - 1);
-            $link_voltar  = link::texto($l, '&larr;', 'Exibir p&aacute;gina anterior', '', 'seta', 1, 1, 0);
+            $link_voltar  = link::texto($l, self::seta_esquerda(), 'Exibir p&aacute;gina anterior', '', 'seta', 1, 1, 0);
         } else {
-            $link_voltar = '<strong class="seta">&larr;</strong>';
+            $link_voltar = '<strong class="seta">'.self::seta_esquerda().'</strong>';
         }
 
         if ($this->pagina < $this->total_paginas) {
             $l = link::adicionar_atributo($this->link, $this->nome, $this->pagina + 1);
-            $link_avancar =  link::texto($l, '&rarr;', 'Exibir p&aacute;gina seguinte', '', 'seta', 1, 1, 0);
+            $link_avancar =  link::texto($l, self::seta_direita(), 'Exibir p&aacute;gina seguinte', '', 'seta', 1, 1, 0);
         } else {
-            $link_avancar = '<strong class="seta">&rarr;</strong>';
+            $link_avancar = '<strong class="seta">'.self::seta_direita().'</strong>';
         }
 
         $pagina = $pagina ? $pagina : $this->pagina;
@@ -343,5 +343,29 @@ final class paginacao {
         $this->impressao_singular = $singular;
         $this->impressao_plural = $plural;
         $this->impressao_genero = $genero;
+    }
+
+
+    //
+    //     Gera uma seta para esquerda
+    //
+    public static function seta_esquerda() {
+        global $CFG;
+        if ($CFG->agent->mozfamily && $CFG->utf8) {
+            return '&#x21E6;';
+        }
+        return '&larr;';
+    }
+
+
+    //
+    //     Gera uma seta para direita
+    //
+    public static function seta_direita() {
+        global $CFG;
+        if ($CFG->agent->mozfamily && $CFG->utf8) {
+            return '&#x21E8;';
+        }
+        return '&rarr;';
     }
 }

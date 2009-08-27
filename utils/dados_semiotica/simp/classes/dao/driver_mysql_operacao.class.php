@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// Versao: 1.0.0.3
 // Data: 24/04/2008
-// Modificado: 06/08/2008
+// Modificado: 20/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -199,7 +199,7 @@ final class driver_mysql_operacao extends driver_mysql {
                 $campo->tabela_ref = $relacoes[$campo->nome]->tabela_ref;
                 $campo->chave_ref  = $relacoes[$campo->nome]->chave_ref;
             }
-            $campos[] = $campo;
+            $campos[$campo->nome] = $campo;
         }
         $this->liberar_resultado($resultado);
         return $campos;

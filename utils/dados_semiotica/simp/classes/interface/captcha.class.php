@@ -5,18 +5,19 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// Versao: 1.0.0.11
 // Data: 30/01/2008
-// Modificado: 19/06/2009
+// Modificado: 26/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 // Constantes
 define('CAPTCHA_TAMANHO',       5);    // Numero de caracteres gerados
+define('CAPTCHA_ANGULO',        20);   // Angulo maximo que os caracteres podem girar para direita ou esquerda de 90 graus
 define('CAPTCHA_LARGURA',       120);  // Largura da imagem em Pixels
 define('CAPTCHA_ALTURA',        60);   // Altura da imagem em Pixels
-define('CAPTCHA_CARACTERES',    'adhkmnprsxwz346'); // Caracteres utilizados (os omitidos podem confundir)
+define('CAPTCHA_CARACTERES',    'adhkmnprsxwz346'); // Caracteres utilizados (os omitidos podem confundir humanos)
 
 define('CAPTCHA_FONTE',         $CFG->dirclasses.'interface/fontes/AppleGaramond.ttf');
 define('CAPTCHA_LOCALIDADE',    $CFG->localidade);
@@ -70,6 +71,7 @@ final class captcha {
             trigger_error("A sessao nao foi aberta", E_USER_ERROR);
         }
         $_SESSION[__CLASS__]['chave'] = self::codificar($chave);
+        $_SESSION[__CLASS__]['time'] = time();
 
         // Gerar imagem
         $img = imagecreatetruecolor(CAPTCHA_LARGURA, CAPTCHA_ALTURA);
@@ -80,17 +82,28 @@ final class captcha {
         self::$cores['fundo3'] = imagecolorallocate($img, 255, 200, 255);
         self::$cores['fundo4'] = imagecolorallocate($img, 200, 200, 200);
 
-        self::$cores['texto1'] = imagecolorallocate($img, 100, 170, 170);
-        self::$cores['texto2'] = imagecolorallocate($img, 100, 110, 120);
-        self::$cores['texto3'] = imagecolorallocate($img, 100, 160, 100);
-        self::$cores['texto4'] = imagecolorallocate($img, 160, 100, 100);
-        self::$cores['texto5'] = imagecolorallocate($img, 130, 130, 180);
+        self::$cores['texto1'] = imagecolorallocate($img, 100 + mt_rand(-5, 5), 170 + mt_rand(-5, 5), 170 + mt_rand(-5, 5));
+        self::$cores['texto2'] = imagecolorallocate($img, 100 + mt_rand(-5, 5), 110 + mt_rand(-5, 5), 120 + mt_rand(-5, 5));
+        self::$cores['texto3'] = imagecolorallocate($img, 100 + mt_rand(-5, 5), 160 + mt_rand(-5, 5), 100 + mt_rand(-5, 5));
+        self::$cores['texto4'] = imagecolorallocate($img, 160 + mt_rand(-5, 5), 100 + mt_rand(-5, 5), 100 + mt_rand(-5, 5));
+        self::$cores['texto5'] = imagecolorallocate($img, 130 + mt_rand(-5, 5), 130 + mt_rand(-5, 5), 180 + mt_rand(-5, 5));
 
         // Pintar o fundo e escrever a chave
         imagefill($img, 0, 0, self::$cores['fundo1']);
-        self::rabiscar($img);
+
+        for ($x = 0; $x < CAPTCHA_LARGURA; $x += 2) {
+            $cor = mt_rand(2, 4);
+            for ($y = ($x % 2); $y < CAPTCHA_ALTURA; $y += 2) {
+                imagesetpixel($img, $x, $y, self::$cores['fundo'.$cor]);
+            }
+        }
+
+        self::riscar_linha($img);
+        imagefilter($img, IMG_FILTER_GAUSSIAN_BLUR);
         self::escrever($img, $chave);
-        self::riscar($img, 2);
+
+        // Testar qualidade do captcha
+//        imagefilter($img, IMG_FILTER_CONTRAST, -80);
 
         // Exibir a imagem
         self::header();
@@ -100,63 +113,35 @@ final class captcha {
 
 
     //
-    //     Gera alguns rabiscos na imagem para ficar dificil uma maquina entender
+    //     Risca a imagem aleatoreamente com linhas consecutivas
     //
-    static private function rabiscar(&$img) {
+    static private function riscar_linha(&$img, $curvas = 50) {
     // Resource $img: imagem a ser utilizada
+    // Int $vezes: numero de vezes que a linha ganhara curva
     //
-        // Desenhar retangulos aleatorios
-        for ($i = 2; $i < 7; $i++) {
-            $x1 = mt_rand(0, CAPTCHA_LARGURA);
-            $x2 = mt_rand(0, CAPTCHA_LARGURA);
-            $y1 = mt_rand(0, CAPTCHA_ALTURA);
-            $y2 = mt_rand(0, CAPTCHA_ALTURA);
-            $cor = ($i % 4) + 1;
-            imagefilledrectangle($img, $x1, $y1, $x2, $y2, self::$cores['fundo'.$cor]);
+        // Rabiscar com linhas da cor do texto
+        $x1 = mt_rand(0, CAPTCHA_LARGURA / 5);
+        $y1 = mt_rand(0, CAPTCHA_ALTURA);
+        $cor = self::$cores['texto'.(mt_rand(1, 5))];
+        for ($i = 0; $i < $curvas; $i++) {
+            $x2 = $x1 + (CAPTCHA_LARGURA / $curvas);
 
-            $cx = mt_rand(0, CAPTCHA_LARGURA);
-            $cy = mt_rand(0, CAPTCHA_ALTURA);
-            $w = mt_rand(10, CAPTCHA_LARGURA / 2);
-            $h = mt_rand(10, CAPTCHA_ALTURA / 2);
-            $cor2 = (mt_rand(0, 99) % 4) + 1;
-            imagefilledellipse($img, $cx, $cy, $w, $h, self::$cores['fundo'.$cor2]);
-        }
+            $dif = $y2 - $y1;
 
-        self::riscar($img, 10, 2);
-    }
+            // Esta decendo
+            if ($dif > 0) {
+                $min = max(10, $y1 - 3);
+                $max = min(CAPTCHA_ALTURA - 10, $y1 + 5);
 
-
-    //
-    //     Risca a imagem aleatoriamente
-    //
-    static private function riscar(&$img, $vezes = 10, $largura = 1) {
-    // Resource $img: imagem a ser utilizada
-    // Int $vezes: numero de vezes que a imagem sera riscada
-    // Int $largura: largura da linha
-    //
-        // Montar estilos aleatorios
-        $num_estilos = 10;
-        $estilos = array();
-        for ($i = 0; $i < $num_estilos; $i++) {
-            $pontos = mt_rand(3, 8);
-            $estilo = array();
-            for ($j = 0; $j < $pontos; $j++) {
-                $cor = mt_rand(1, 4);
-                $estilo[] = self::$cores['fundo'.$cor];
+            // Esta subindo
+            } else {
+                $min = max(10, $y1 - 5);
+                $max = min(CAPTCHA_ALTURA - 10, $y1 + 3);
             }
-            $estilos[] = $estilo;
-        }
-
-        // Rabiscar com linhas de estilos diferentes
-        for ($i = 0; $i < $vezes; $i++) {
-            $x1 = mt_rand(0, CAPTCHA_LARGURA / 2);
-            $x2 = mt_rand(CAPTCHA_LARGURA / 2, CAPTCHA_LARGURA);
-            $y1 = mt_rand(0, CAPTCHA_ALTURA);
-            $y2 = mt_rand(0, CAPTCHA_ALTURA);
-            imagesetstyle($img, $estilos[mt_rand(0, $num_estilos - 1)]);
-            for ($j = $largura; $j > 0; $j--, $y1--, $y2--) {
-                imageline($img, $x1, $y1, $x2, $y2, IMG_COLOR_STYLED);
-            }
+            $y2 = mt_rand($min, $max);
+            imageline($img, $x1, $y1, $x2, $y2, $cor);
+            $x1 = $x2;
+            $y1 = $y2;
         }
     }
 
@@ -168,18 +153,26 @@ final class captcha {
     // Resource $img: imagem a ser utilizada
     // String $chave: chave a ser escrita
     //
-        $len     = strlen($chave);
-        $largura = CAPTCHA_LARGURA / $len;
-        $altura  = 14;
-        $meio    = (CAPTCHA_ALTURA / 2) - ($altura / 2);
+        $altura_min = 15;
+        $altura_max = 25;
+        $len        = strlen($chave);
+        $largura    = CAPTCHA_LARGURA / $len;
+        $base       = mt_rand(0, CAPTCHA_ALTURA - (2 * ($altura_max + 2)));
 
         for ($i = 0; $i < $len; $i++) {
+            $altura = mt_rand($altura_min, $altura_max);
 
             // Calcular uma posicao X e Y
-            $x = $i * $largura + mt_rand(1, 6);
-            $y = $meio + mt_rand(-($altura / 2), ($altura / 2));
-            $angulo = mt_rand(-10, 10);
+            $x = $i * $largura + mt_rand(2, 6);
+            $y = $base + mt_rand(0, $altura);
+            $angulo = mt_rand(-1 * CAPTCHA_ANGULO, CAPTCHA_ANGULO);
             $cor = self::$cores['texto'.(mt_rand(1, 5))];
+            
+            $x_bola = $x + 10 + mt_rand(-5, 5);
+            $y_bola = $y + ($altura / 2) + mt_rand(-5, 5);
+
+            imageellipse($img, $x_bola, $y_bola, 400 / $altura, 400 / $altura, $cor);
+
             imagettftext($img, $altura, $angulo, $x, $y + $altura, $cor, CAPTCHA_FONTE, $chave[$i]);
         }
     }
@@ -217,12 +210,19 @@ final class captcha {
             return false;
         }
 
-        // Validar o campo
+        // Validar o tempo: precisa de pelo menos 3 segundos para responder
+        $agora = time();
+        if ($agora < ($_SESSION[__CLASS__]['time'] + 3)) {
+            return false;
+        }
+
+        // Validar o valor da chave
         $valido = strcmp($_SESSION[__CLASS__]['chave'], self::codificar($chave)) == 0;
 
         // Apagar a sessao
         $_SESSION[__CLASS__]['chave'] = null;
-        unset($_SESSION[__CLASS__]['chave']);
+        $_SESSION[__CLASS__]['time'] = null;
+        unset($_SESSION[__CLASS__]);
 
         return $valido;
     }
@@ -232,6 +232,26 @@ final class captcha {
     //     Gera um capctha "modo texto", com uma pergunta e resposta
     //
     static public function gerar_texto() {
+        $metodos = array('gerar_conta', 'gerar_pergunta');
+
+        $metodo = $metodos[mt_rand(0, count($metodos) - 1)];
+        $obj = self::$metodo();
+
+        // Salvar chave criptografada na sessao
+        if (!isset($_SESSION)) {
+            trigger_error("A sessao nao foi aberta", E_USER_ERROR);
+        }
+        $_SESSION[__CLASS__]['chave'] = self::codificar($obj->resposta);
+        $_SESSION[__CLASS__]['time'] = time();
+
+        return $obj;
+    }
+
+
+    //
+    //     Gera uma conta
+    //
+    static public function gerar_conta() {
         $obj = new stdClass();
         $obj->pergunta = '';
         $obj->resposta = '';
@@ -257,8 +277,10 @@ final class captcha {
         $posicao = $posicoes[$r5];
 
         // Gerar uma conta aleatoria e a pergunta
+        $vt_quanto = array('Quanto &eacute;', 'Quanto vale', 'Em quanto resulta', 'Qual o valor de', 'Qual o resultado de');
+        $quanto = $vt_quanto[mt_rand(0, count($vt_quanto) - 1)];
         $conta = '<span><span>'.$n1.' </span><span>'.$operacao.' '.$n2.'</span></span>';
-        $obj->pergunta = "Quanto &eacute; {$conta} com a letra \"{$letra}\" no {$posicao}?";
+        $obj->pergunta = "{$quanto} {$conta} com a letra \"{$letra}\" no {$posicao}? (utilize n&uacute;meros)";
 
         // Gerar a resposta
         switch ($r3) {
@@ -277,12 +299,31 @@ final class captcha {
             $obj->resposta = $resultado.$letra;
             break;
         }
+        return $obj;
+    }
 
-        // Salvar chave criptografada na sessao
-        if (!isset($_SESSION)) {
-            trigger_error("A sessao nao foi aberta", E_USER_ERROR);
-        }
-        $_SESSION[__CLASS__]['chave'] = self::codificar($obj->resposta);
+
+    //
+    //     Gera uma pergunta simples
+    //
+    public static function gerar_pergunta() {
+        $obj = new stdClass();
+        $obj->pergunta = '';
+        $obj->resposta = '';
+
+        $base = array('Qual a cor do c&eacute;u?' => 'azul',
+                      'Que dia &eacute; hoje? (Escreva o n&uacute;mero)' => strftime('%d'),
+                      'Em que m&ecirc;s estamos? (Escreva o n&uacute;mero)' => strftime('%m'),
+                      'Em que ano estamos? (Escreva o n&uacute;mero)' => strftime('%Y'),
+                      'Quantos dedos tem em uma m&atilde;o?' => '5',
+                      'Qual o nome do nosso planeta?' => 'terra');
+
+        $perguntas = array_keys($base);
+        $respostas = array_values($base);
+
+        $numero = mt_rand(0, count($base) - 1);
+        $obj->pergunta = $perguntas[$numero];
+        $obj->resposta = $respostas[$numero];
         return $obj;
     }
 

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.15
+// Versao: 1.0.0.16
 // Data: 03/03/2007
-// Modificado: 13/07/2009
+// Modificado: 06/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -126,10 +126,11 @@ abstract class usuario_base extends objeto_formulario {
     public function validar_login($login) {
     // String $login: login informado
     //
+        // Checar se o login nao e' permitido
         $nao_permitidos = array('simp');
         $login_minusculo = texto::strtolower($login);
         if (in_array($login_minusculo, $nao_permitidos)) {
-            $this->erros[] = "Este login n&atilde;o pode ser utilizado";
+            $this->erros[] = 'Este login n&atilde;o pode ser utilizado';
             return false;
         }
         return true;

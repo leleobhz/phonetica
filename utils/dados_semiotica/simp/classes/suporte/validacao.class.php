@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.50
+// Versao: 1.0.0.51
 // Data: 09/08/2007
-// Modificado: 04/08/2009
+// Modificado: 26/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -621,6 +621,12 @@ final class validacao {
     // String $ip: IP a ser validado
     // String $erro_campo: string que guarda o erro ocorrido caso consiga identificar
     //
+        // IPv6 local
+        if ($ip == '::1') {
+            return true;
+        }
+
+        // IPv4
         $vetor = explode('.', $ip);
         if (count($vetor) != 4) {
             $erro_campo = 'O IP precisa estar no formato X.X.X.X';

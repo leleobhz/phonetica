@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// Versao: 1.0.0.12
 // Data: 17/04/2008
-// Modificado: 29/07/2009
+// Modificado: 20/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -63,9 +63,9 @@ final class driver_mysql_objeto extends driver_objeto {
         $vt_campos = array();
         $vt_constraint = array();
         foreach ($objeto->get_atributos() as $def_atributo) {
-            $sql_campo   = $this->delimitar_campo($def_atributo->nome);
-            $sql_tipo    = $this->gerar_sql_tipo($def_atributo);
-            $descricao   = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            $sql_campo = $this->delimitar_campo($def_atributo->nome);
+            $sql_tipo  = $this->gerar_sql_tipo($def_atributo);
+            $descricao = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
             if (strpos($descricao, '&') !== false) {
                 trigger_error('Erro de entities no atributo "'.$def_atributo->nome.'" da classe "'.$objeto->get_classe().'"', E_USER_ERROR);
             }
@@ -163,6 +163,85 @@ final class driver_mysql_objeto extends driver_objeto {
 
 
     //
+    //     ALTER TABLE: Gera uma SQL de alteracao de uma tabela do BD
+    //
+    public function sql_alter_table($objeto, $atributo, $operacao) {
+    // Object $objeto: instancia de uma entidade derivada da classe objeto
+    // String $atributo: nome do atributo a ser adicionado ou removido
+    // Int $operacao: operacao desejada (DRIVER_OBJETO_ADICIONAR_ATRIBUTO ou DRIVER_OBJETO_REMOVER_ATRIBUTO)
+    //
+        $sql_tabela = $this->delimitar_tabela($objeto->get_tabela());
+        $sql_atributo = $this->delimitar_campo($atributo);
+
+        switch ($operacao) {
+        case DRIVER_OBJETO_ADICIONAR_ATRIBUTO:
+            $def_atributo = $objeto->get_definicao_atributo($atributo);
+            $sql_tipo     = $this->gerar_sql_tipo($def_atributo);
+            $sql_nulo     = ' NOT NULL';
+            $sql_default  = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+
+            $descricao   = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
+            if (strpos($descricao, '&') !== false) {
+                trigger_error('Erro de entities no atributo "'.$def_atributo->nome.'" da classe "'.$objeto->get_classe().'"', E_USER_ERROR);
+            }
+            $sql_comment = " COMMENT '{$descricao}'";
+            
+            $sql_alter = "ALTER TABLE {$sql_tabela} ADD COLUMN {$sql_atributo} {$sql_tipo}{$sql_nulo}{$sql_default}{$sql_comment}";
+
+            // Se e' uma chave estrangeira
+            if ($objeto->possui_rel_uu($atributo, false)) {
+                $def_relacionamento = $objeto->get_definicao_rel_uu($atributo, false);
+                $obj_ref = $objeto->get_objeto_rel_uu($def_relacionamento->nome);
+
+                // Se o relacionamento e' fraco e nao possui registros na tabela
+                if ($def_relacionamento->forte && !$objeto->possui_registros()) {
+                    $sql_index = "ALTER TABLE {$sql_tabela} ADD INDEX ($sql_atributo)";
+
+                    $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
+                    $sql_atributo_rel = $this->delimitar_campo($atributo);
+                    $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
+                    $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
+                    $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
+                                      "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                      "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                      "      ON DELETE CASCADE\n".
+                                      "      ON UPDATE CASCADE";
+
+                    $sql = array($sql_alter, $sql_index, $sql_constraint);
+                } else {
+                    $sql = $sql_alter;
+                }
+            } else {
+                $sql = $sql_alter;
+            }
+            break;
+        case DRIVER_OBJETO_REMOVER_ATRIBUTO:
+            $sql_alter = "ALTER TABLE {$sql_tabela} DROP COLUMN {$sql_atributo}";
+
+            $dao = new objeto_dao();
+            $dao->carregar('operacao');
+            $campos_tabela = $dao->get_campos($objeto->get_tabela());
+            $campo_tabela = $campos_tabela[$atributo];
+        
+            // Se e' uma chave estrangeira
+            if ($campo_tabela->tabela_ref && $campo_tabela->chave_ref) {
+                $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
+                $sql_index = "ALTER TABLE {$sql_tabela} DROP FOREIGN KEY {$sql_constraint}";
+                $sql = array($sql_index, $sql_alter);
+            } else {
+                $sql = $sql_alter;
+            }
+            break;
+        default:
+            $this->adicionar_erro('Opera&ccedil;&atilde;o inv&aacute;lida');
+            trigger_error("Operacao invalida para o metodo: ".util::exibir_var($operacao), E_USER_WARNING);
+            return false;
+        }
+        return $sql;
+    }
+
+
+    //
     //     Gera o tipo adequado ao atributo
     //
     protected function gerar_sql_tipo($atributo) {
@@ -175,7 +254,8 @@ final class driver_mysql_objeto extends driver_objeto {
             if (is_numeric($atributo->minimo) && ($atributo->minimo >= 0)) {
                 if (!$atributo->maximo) {
                     return 'INT UNSIGNED';
-                } elseif ($atributo->maximo >= pow(2, 4 * 8)) {
+                }
+                if ($atributo->maximo >= pow(2, 4 * 8)) {
                     return 'BIGINT UNSIGNED';
                 } elseif ($atributo->maximo >= pow(2, 3 * 8)) {
                     return 'INT UNSIGNED';
@@ -190,10 +270,11 @@ final class driver_mysql_objeto extends driver_objeto {
             // Sinalizado
             } else {
                 $max = max($atributo->maximo, abs($atributo->minimo));
-
                 if (!$max) {
                     return 'INT';
-                } elseif ($max >= pow(2, 4 * 8 - 1)) {
+                }
+                
+                if ($max >= pow(2, 4 * 8 - 1)) {
                     return 'BIGINT';
                 } elseif ($max >= pow(2, 3 * 8 - 1)) {
                     return 'INT';

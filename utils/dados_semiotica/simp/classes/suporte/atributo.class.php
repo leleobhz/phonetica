@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.2.10
+// Versao: 1.0.2.11
 // Data: 06/08/2007
-// Modificado: 23/07/2009
+// Modificado: 05/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -302,7 +302,7 @@ final class atributo {
     //    Define as caracteristicas basicas do atributo
     //
     public function set_tipo($tipo, $pode_vazio = null, $chave = null) {
-    // String $tipo: string, int, bool, float, char ou binario
+    // String $tipo: string, int, bool, float, char, binario ou data
     // Bool $pode_vazio: indica se o campo deve ser preenchido ou nao
     // String $chave: PK (chave primaria), FK (chave estrangeira forte), OFK (chave estrangeira fraca), CK (chave candidata) ou false (nao e' chave)
     //
@@ -395,7 +395,7 @@ final class atributo {
     //     Define a forma de validacao do atributo
     //
     public function set_validacao($validacao = null, $validacao_especifica = null, $unico = null) {
-    // String $validacao: tipo de validacao
+    // String $validacao: tipo de validacao (consulte o metodo validar_campo da classe suporte/validacao.class.php)
     // String $validacao_especifica: nome do metodo que faz a validacao especifica (o metodo deve receber o valor a ser validado por parametro)
     // Bool $unico: indica se o campo pode se repetir ou nao no BD
     //
@@ -434,10 +434,10 @@ final class atributo {
 
 
     //
-    //     Define as casas decimais
+    //     Define o numero de casas decimais de campos float
     //
     public function set_casas_decimais($casas_decimais, $fixo = null) {
-    // Int $casas_decimais: define o numero de casas decimais
+    // Int $casas_decimais: define o numero de casas decimais de campos float
     // Bool $fixo: numero fixo ou variavel de casas decimais
     //
         $this->__set('casas_decimais', abs($casas_decimais));

@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.12
+// Versao: 1.0.0.13
 // Data: 03/03/2007
-// Modificado: 22/06/2009
+// Modificado: 14/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -42,9 +42,9 @@ if (!isset($_SESSION[$CFG->codigo_session])) {
 
 // Consultar grupos no BD ou na Cache
 try {
-    objeto::get_cache('grupo');
+    $grupos = objeto::get_cache('grupo');
 } catch (Exception $e) {
-    objeto::get_objeto('grupo')->consultar_varios(condicao_sql::vazia(), true);
+    $grupos = objeto::get_objeto('grupo')->consultar_varios(condicao_sql::vazia(), true);
 }
 
 // Consultar usuario logado
@@ -56,8 +56,10 @@ try {
 } catch (Exception $e) {
     $USUARIO = new usuario('', COD_USUARIO, true);
 
-    // Consultar permissoes do usuario
+    // Consultar grupos do usuario
     $USUARIO->consultar_vetor_rel_un('grupos', array('grupo:nome'));
+
+    // Consultar permissoes de cada grupo do usuario
     $campos_permissoes = array('visivel', 'posicao', 'cod_grupo', 'cod_arquivo',
                                'arquivo:cod_arquivo', 'arquivo:arquivo',
                                'arquivo:modulo', 'arquivo:descricao');
@@ -65,10 +67,12 @@ try {
     foreach ($USUARIO->grupos as $usuarios_grupos) {
         $usuarios_grupos->grupo->consultar_vetor_rel_un('permissoes', $campos_permissoes);
     }
+    unset($campos_permissoes);
+
     objeto::set_cache('usuario', COD_USUARIO);
     objeto::set_cache('grupo');
 }
-
+unset($grupos);
 
 // Checar permissoes de acesso a pagina
 $arq = $CFG->site;

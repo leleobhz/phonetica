@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.25
+// Versao: 1.0.0.26
 // Data: 17/04/2008
-// Modificado: 29/07/2009
+// Modificado: 20/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -1062,23 +1062,49 @@ abstract class driver_objeto {
     // Int $operacao: operacao desejada (DRIVER_OBJETO_ADICIONAR_ATRIBUTO ou DRIVER_OBJETO_REMOVER_ATRIBUTO)
     //
         $sql_tabela = $this->delimitar_tabela($objeto->get_tabela());
+        $sql_atributo = $this->delimitar_campo($atributo);
+
         switch ($operacao) {
         case DRIVER_OBJETO_ADICIONAR_ATRIBUTO:
             $def_atributo = $objeto->get_definicao_atributo($atributo);
             $sql_tipo     = $this->gerar_sql_tipo($def_atributo);
             $sql_nulo     = ' NOT NULL';
             $sql_default  = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
-            $sql_operacao = 'ADD COLUMN '.$this->delimitar_campo($atributo).' '.$sql_tipo.$sql_nulo.$sql_default;
+            $sql_alter = "ALTER TABLE {$sql_tabela} ADD COLUMN {$sql_atributo} {$sql_tipo}{$sql_nulo}{$sql_default}";
+
+            // Se e' uma chave estrangeira
+            if ($objeto->possui_rel_uu($atributo, false)) {
+                $def_relacionamento = $objeto->get_definicao_rel_uu($atributo, false);
+                $obj_ref = $objeto->get_objeto_rel_uu($def_relacionamento->nome);
+
+                // Se o relacionamento e' fraco e nao possui registros na tabela relacionada
+                if ($def_relacionamento->forte && !$objeto->possui_registros()) {
+                    $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
+                    $sql_atributo_rel = $this->delimitar_campo($atributo);
+                    $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
+                    $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
+                    $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
+                                      "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                      "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                      "      ON DELETE CASCADE\n".
+                                      "      ON UPDATE CASCADE";
+
+                    $sql = array($sql_alter, $sql_constraint);
+                } else {
+                    $sql = $sql_alter;
+                }
+            } else {
+                $sql = $sql_alter;
+            }
             break;
         case DRIVER_OBJETO_REMOVER_ATRIBUTO:
-            $sql_operacao = 'DROP COLUMN '.$this->delimitar_campo($atributo);
+            $sql = "ALTER TABLE {$sql_tabela} DROP COLUMN {$sql_atributo}";
             break;
         default:
             $this->adicionar_erro('Opera&ccedil;&atilde;o inv&aacute;lida');
             trigger_error("Operacao invalida para o metodo: ".util::exibir_var($operacao), E_USER_WARNING);
-            break;
+            return false;
         }
-        $sql = 'ALTER TABLE '.$sql_tabela.' '.$sql_operacao;
         return $sql;
     }
 

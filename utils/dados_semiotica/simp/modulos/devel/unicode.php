@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// Versao: 1.0.0.3
 // Data: 20/11/2008
-// Modificado: 29/06/2009
+// Modificado: 20/08/2009
 // License: LICENSE.TXT
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 //
@@ -165,9 +165,9 @@ PHP;
         $voltar = $CFG->site;
         link::normalizar($voltar, true);
         $voltar = link::adicionar_atributo($voltar, 'inicio', $inicio - 100);
-        $link_voltar = link::texto($voltar, '&larr;', 'Voltar', false, false, true, true, false);
+        $link_voltar = link::texto($voltar, paginacao::seta_esquerda(), 'Voltar', false, false, true, true, false);
     } else {
-        $link_voltar = '&larr;';
+        $link_voltar = paginacao::seta_esquerda();
     }
 
     // Link para avancar
@@ -175,9 +175,9 @@ PHP;
         $avancar = $CFG->site;
         link::normalizar($avancar, true);
         $avancar = link::adicionar_atributo($avancar, 'inicio', $inicio + 100);
-        $link_avancar = link::texto($avancar, '&rarr;', 'Avan&ccedil;ar', false, false, true, true, false);
+        $link_avancar = link::texto($avancar, paginacao::seta_direita(), 'Avan&ccedil;ar', false, false, true, true, false);
     } else {
-        $link_avancar = '&rarr;';
+        $link_avancar = paginacao::seta_direita();
     }
 
     echo '<table class="tabela">';

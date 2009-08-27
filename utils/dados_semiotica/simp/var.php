@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.26
+// Versao: 1.1.0.27
 // Data: 03/03/2007
-// Modificado: 08/07/2009
+// Modificado: 14/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -328,7 +328,6 @@ if (isset($dados_config) && $dados_config->existe()) {
 if ($CFG->gd && !extension_loaded('gd')) {
     $CFG->gd = false;
 }
-unset($dados_config, $erros);
 
 
 /// NAVEGADOR E SISTEMA OPERACIONAL

@@ -170,7 +170,7 @@ final class usuario extends usuario_base {
     // String $senha: senha nao codificada
     // String $senha_codificada: senha codificada (para conferencia de senhas com sal)
     //
-        $senha = utf8_decode($senha);
+        //$senha = utf8_decode($senha);
 
         // Metodo MD5
         return md5($senha);
@@ -650,11 +650,14 @@ final class usuario extends usuario_base {
         if ($consultou) {
             return isset($vt_cache[$modulo.':'.$arquivo]) ? $vt_cache[$modulo.':'.$arquivo] : false;
         }
+
+        // Criar um vetor indexado pelo nome do modulo, dois-pontos, e o nome do arquivo
         foreach ($this->get_vetor_rel_un('grupos') as $usuarios_grupos) {
             foreach ($usuarios_grupos->grupo->permissoes as $p) {
                 $vt_cache[$p->arquivo->modulo.':'.$p->arquivo->arquivo] = $p->arquivo;
             }
         }
+
         $consultou = true;
         return $this->get_arquivo($modulo, $arquivo);
     }

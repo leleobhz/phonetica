@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// Versao: 1.0.0.8
 // Data: 16/05/2008
-// Modificado: 09/07/2009
+// Modificado: 20/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -864,16 +864,16 @@ function imprimir_resultado(&$dados, &$sessao) {
 
         if ($pagina_atual > 1) {
             $link_voltar = link::adicionar_atributo($link_base, 'op', 'voltar_pagina');
-            $voltar = link::texto($link_voltar, '&larr;', 'Voltar', '', '', 1, 0, 0);
+            $voltar = link::texto($link_voltar, paginacao::seta_esquerda(), 'Voltar', '', '', 1, 0, 0);
         } else {
-            $voltar = '&larr;';
+            $voltar = paginacao::seta_esquerda();
         }
 
         if ($pagina_atual < $total_paginas) {
             $link_avancar = link::adicionar_atributo($link_base, 'op', 'avancar_pagina');
-            $avancar = link::texto($link_avancar, '&rarr;', 'Avan&ccedil;ar', '', '', 1, 0, 0);
+            $avancar = link::texto($link_avancar, paginacao::seta_direita(), 'Avan&ccedil;ar', '', '', 1, 0, 0);
         } else {
-            $avancar = '&rarr;';
+            $avancar = paginacao::seta_direita();
         }
 
         echo '<tr>';

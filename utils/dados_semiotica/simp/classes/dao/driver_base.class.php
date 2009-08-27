@@ -362,7 +362,8 @@ abstract class driver_base {
             return $resultados;
         } else {
 //if (headers_sent()) {
-//echo '<p style="overflow: auto; border: 1px dotted #000000; font-family: monospace; background-color: #EEEEEE; color: #660000; padding: 1em;">'.texto::codificar($sql).'</p>';
+//echo '<p style="overflow: auto; border: 1px dotted #000000; font-family: monospace; background-color: #EEEEEE; color: #660000; padding: 1em">['.self::$instrucoes.'] '.texto::codificar($sql).'</p>';
+//$f = fopen('/tmp/sql', 'a');fputs($f, $sql."\n");fclose($f);
 //}
             $resultado = $this->query($sql);
             self::$instrucoes += 1;

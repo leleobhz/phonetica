@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.36
+// Versao: 1.1.0.38
 // Data: 05/09/2007
-// Modificado: 14/07/2009
+// Modificado: 24/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -955,7 +955,7 @@ ARQ;
         }
 
         foreach (listas::get_entidades() as $classe => $descricao) {
-            $obj = new $classe();
+            $obj = objeto::get_objeto($classe);
             $bd->truncate($obj);
         }
         unset($obj, $bd);
@@ -997,17 +997,28 @@ ARQ;
             $funcao = $dados->funcao;
             $classe = $dados->classe;
 
+            $obj = objeto::get_objeto($classe);
+            switch ($obj->get_genero()) {
+            case 'M':
+                $de = 'dos';
+                break;
+            case 'F':
+                $de = 'das';
+                break;
+            case 'I':
+                $de = 'de';
+                break;
+            }
+            $entidade = $obj->get_entidade(true);
+            unset($obj);
+
             // Instalar classe
             $erros_classe = array();
             $resultado_funcao = $funcao($erros_classe);
-
-            // Remover instancias para economizar memoria
-            objeto::remover_instancias($classe);
-
             if ($resultado_funcao) {
-                $avisos[] = "({$i}) Instala&ccedil;&atilde;o da classe \"{$classe}\" realizada com sucesso";
+                $avisos[] = "({$i}) Instala&ccedil;&atilde;o {$de} {$entidade} realizada com sucesso (classe {$classe})";
             } else {
-                $erros[] = "({$i}) Erro ao instalar a classe \"{$classe}\":";
+                $erros[] = "({$i}) Erro na instala&ccedil;&atilde;o {$de} {$entidade} (classe {$classe})";
                 $erros[] = $erros_classe;
                 $r = false;
                 break;

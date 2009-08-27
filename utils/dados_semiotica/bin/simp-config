@@ -11,7 +11,7 @@
 # Copyright (C) 2008  Rubens Takiguti Ribeiro
 #
 
-SIMP_VERSAO="1.3.5b"
+SIMP_VERSAO="1.4.1b"
 SIMP_BIN="/projetos/analises/bin/"
 SIMP_DOC="/projetos/analises/doc/"
 SIMP_EXTRAS="/projetos/analises/extras/"

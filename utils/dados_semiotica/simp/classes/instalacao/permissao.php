@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.10
+// Versao: 1.1.0.11
 // Data: 10/09/2007
-// Modificado: 06/07/2009
+// Modificado: 14/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -114,6 +114,7 @@ function inserir_permissao($cod_grupo, $modulo, $arquivo, $visivel, $posicao, &$
 
     if (!$consultou) {
         $erros[] = "O arquivo {$arquivo} (m&oacute;dulo {$modulo}) n&atilde;o foi cadastrado, mas foi solicitado no arquivo de instala&ccedil;&atilde;o \"{$arq_ini}\"";
+        $erros[] = 'Verifique se este arquivo existe de verdade e se foi especificado no arquivo "arquivo.ini"';
         return false;
     }
     $cod_arquivo = $arq->cod_arquivo;

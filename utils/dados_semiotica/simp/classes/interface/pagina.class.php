@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.45
+// Versao: 1.0.0.47
 // Data: 21/05/2007
-// Modificado: 24/06/2009
+// Modificado: 24/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -444,7 +444,7 @@ final class pagina {
             foreach ($grupo->permissoes as $permissao) {
                 if (!$permissao->visivel) { continue; }
                 $permissao->arquivo->consultar_campos(array('descricao', 'arquivo', 'modulo'));
-                $descricao = $permissao->arquivo->descricao;
+                $descricao = $permissao->arquivo->exibir('descricao');
                 $link      = $permissao->arquivo->link;
 
                 if (!isset($opcoes[$link])) {
@@ -574,6 +574,17 @@ final class pagina {
             echo "<div id=\"rodape\">\n";
             echo "  <a id=\"voltar_topo\" href=\"{$CFG->site}#titulo_pagina\">Voltar ao Topo</a>\n";
             echo "  <h2 class=\"hide\">Cr&eacute;ditos</h2>\n";
+            if (!DEVEL_BLOQUEADO) {
+                $modulo = util::get_modulo(util::get_arquivo());
+                echo "<p id=\"devel\">\n";
+                echo "<strong>Sistema em modo de Desenvolvimento</strong><br />\n";
+                if ($modulo == 'devel') {
+                    echo "<a href=\"{$CFG->wwwroot}\">SISTEMA</a> | <strong><a href=\"{$CFG->wwwmods}devel/\">DEVEL</a></strong>\n";
+                } else {
+                    echo "<strong><a href=\"{$CFG->wwwroot}\">SISTEMA</a></strong> | <a href=\"{$CFG->wwwmods}devel/\">DEVEL</a>\n";
+                }
+                echo "</p>\n";
+            }
             echo "  <p>Este sistema est&aacute; protegido sob os termos da Licen&ccedil;a ";
             echo "<a href=\"http://www.gnu.org/\"><acronym title=\"GNU is Not Unix\">GNU</acronym></a><span>-</span>";
             echo "<a href=\"http://www.gnu.org/licenses/old-licenses/gpl-2.0.html\" title=\"GPL v.2\"><acronym title=\"General Public License\">GPL</acronym> 2</a></p>\n";

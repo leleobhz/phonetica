@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// Versao: 1.0.0.8
 // Data: 06/05/2008
-// Modificado: 31/07/2009
+// Modificado: 25/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -233,31 +233,6 @@ table.tabela {
   margin-bottom: 20px;
   margin-left: auto;
   margin-right: auto;
-}
-
-/* CAMPOS DE DATA E HORA */
-.data_hora,
-.data {
-  clear: both;
-  display: block;
-}
-
-.data_hora .hora,
-.data_hora .minuto,
-.data_hora .segundo {
-  width: 4em;
-}
-
-.data .dia {
-  width: 3.5em;
-}
-
-.data .mes {
-  width: 7.5em;
-}
-
-.data .ano {
-  width: 4.5em;
 }
 
 .formulario hr {

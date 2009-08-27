@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// Versao: 1.0.0.13
 // Data: 11/03/2008
-// Modificado: 24/07/2009
+// Modificado: 25/08/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -448,6 +448,7 @@ ul.hierarquia li .valor img.bt_expandir {
   display: block;
   opacity: <?php echo $CFG->opaco; ?>;
   position: absolute;
+  text-align: left;
   width: 25em;
 }
 
@@ -699,32 +700,32 @@ form a.ajuda a img {
 }
 
 /* CAMPOS DE DATA E HORA */
-.data_hora,
-.data {
+.formulario .data_hora,
+.formulario .data {
   clear: both;
   display: block;
 }
 
-.data_hora .hora,
-.data_hora .minuto,
-.data_hora .segundo {
+.formulario .data_hora .hora,
+.formulario .data_hora .minuto,
+.formulario .data_hora .segundo {
   width: 4em;
 }
 
-.data .dia {
+.formulario .data .dia {
   width: 3.5em;
 }
 
-.data .mes {
+.formulario .data .mes {
   width: 7.5em;
 }
 
-.data .ano {
+.formulario .data .ano {
   width: 4.5em;
 }
 
-/* CAMPOS DE DATA */
-.formulario .data span {
+.formulario .data span,
+.formulario .data_hora span {
   font-size: 1.3em;
   margin: 0 .2em;
   vertical-align: middle;
@@ -823,8 +824,24 @@ form a.ajuda a img {
 }
 
 <?php
+
 // Formularios no IE
 if ($CFG->agent->ie) {
     echo "form { margin: 0; }\n";
 }
+
+// Devel
+if (!DEVEL_BLOQUEADO) {
+echo <<<CSS
+#devel {
+  background-color: #FFFF88;
+  border: 1px solid #999900;
+  margin: 3px auto;
+  padding: .5em;
+  width: 270px;
+}
+
+CSS;
+}//if
+
 ?>

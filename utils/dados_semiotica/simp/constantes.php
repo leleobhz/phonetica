@@ -45,7 +45,7 @@ define('COD_ANALISTAS', 3);
 define('VERSAO_SISTEMA', '1.0');
 define('TEMPO_EXPIRA', 31536000);   // Tempo de duracao da cache (1 ano)
 define('DESCRICAO_SIMP', 'Framework para o Desenvolvimento de Sistemas de Informação Modulares em PHP');
-define('VERSAO_SIMP', '1.3.5b');
+define('VERSAO_SIMP', '1.4.1b');
 define('MANUAL_PHP', 'http://br.php.net/manual/pt_BR/');
 define('DEVEL_BLOQUEADO', true);
 
