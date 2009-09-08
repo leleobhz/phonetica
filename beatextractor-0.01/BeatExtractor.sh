@@ -16,26 +16,26 @@ esac
 
 case "$2" in
 "butterworth")
-        filter="1";
+	filter="1";
 	;;
 "hanning")
-        filter="2";
+	filter="2";
 	;;
 *)
 	echo "Invalid filter" >&2 
-        exit 1;
+	exit 1;
 esac
 
 case "$3" in
 "order_filter_1")
-        filter_order="1";
+	filter_order="1";
 	;;
 "order_filter_2")
-        filter_order="2";
+	filter_order="2";
 	;;
 *)
 	echo "Invalid orfer_filter" >&2 
-        exit 1;
+	exit 1;
 esac
 
 left_Cut_off_frequency="$4"
@@ -48,12 +48,12 @@ case "$7" in
 	technique_str="\"Derivative\""
 	;;
 "amplitude")
-        technique="2"
-        technique_str="\"Amplitude\""
+	technique="2"
+	technique_str="\"Amplitude\""
 	;;
 *)
 	echo "Invalid technique" >&2 
-        exit 1;
+	exit 1;
 esac
 
 threshold1=$8
