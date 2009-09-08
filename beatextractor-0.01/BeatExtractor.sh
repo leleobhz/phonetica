@@ -1,46 +1,60 @@
 #!/bin/bash -x
 
 # Start to get sysarg and convert into variables readable in Praat
-if [ "$1" == "male" ]; then
+
+case "$1" in
+"male")
 	speaker_sex="\"1\"";
-elif [ "$1" == "female" ]; then
+	;;
+"female")
 	speaker_sex="\"2\"";
-else
+	;;
+*) 
+	echo "Invalid speaker_sex" >&2 
 	exit 1;
-fi
+esac
 
-if [ "$2" == "butterworth" ]; then
+case "$2" in
+"butterworth")
         filter="1";
-elif [ "$2" == "hanning" ]; then
-        filer="2";
-else
+	;;
+"hanning")
+        filter="2";
+	;;
+*)
+	echo "Invalid filter" >&2 
         exit 1;
-fi
+esac
 
-if [ "$3" == "order_filter_1" ]; then
+case "$3" in
+"order_filter_1")
         filter_order="1";
-elif [ "$3" == "order_filter_2" ]; then
+	;;
+"order_filter_2")
         filter_order="2";
-else
+	;;
+*)
+	echo "Invalid orfer_filter" >&2 
         exit 1;
-fi
+esac
 
 left_Cut_off_frequency="$4"
 right_Cut_off_frequency="$5"
 smoothing_cut_freq="$6"
 
-if [ "$7" == "derivative" ]; then {
+case "$7" in
+"derivative")
 	technique="1"
 	technique_str="\"Derivative\""
-	}
-       
-elif [ "$7" == "amplitude" ]; then {
+	;;
+"amplitude")
         technique="2"
         technique_str="\"Amplitude\""
-        }
-else
+	;;
+*)
+	echo "Invalid technique" >&2 
         exit 1;
-fi
+esac
 
 threshold1=$8
 threshold2=$9
@@ -56,7 +70,7 @@ else
 fi
 
 ## Setting commander to 0%
-/usr/share/BeatExtractor/Progress.sh "$PrBarObj" "0"
+`pwd`/Progress.sh "$PrBarObj" "0"
 
 # TODO01
 # rm -rf *.beat.wav *filt.wav *.orig-beat-mix.wav
@@ -122,7 +136,7 @@ path$ = $dir
 file$ = $file
 fil$ = path$ + "/" + file$
 
-progressbar$ = "/usr/share/BeatExtractor/Progress.sh"
+progressbar$ = environment$ ("PWD") + "/Progress.sh"
 
 ##
 # mindur is the minimum duration allowed between two consecutive boundaries
@@ -358,6 +372,7 @@ system_nocheck 'progressbar$' "$PrBarObj" "9"
 # Fim do codigo do praat
 EOF
 
-praat $TMPFILE  && rm -f $TMPFILE && echo "Procedure Finished Successfully!" && exit 0
+praat $TMPFILE && rm -f $TMPFILE && echo "Procedure Finished Successfully!" && exit 0
 
 echo "Procedure Failled!"
+exit 1

@@ -44,7 +44,7 @@ Há 4 arquivos de scripting no diretório. A seguir vai a descrição deles:
 	-- Sintaxe do BeatExtractor.sh:
 		-- $ ./BeatExtractor sexo_do_falante(male|female) filtro(butterworth|hanning) ordem_do_filtro(1|2) frequencia_de_corte_esquerda(Valor Numérico) frequencia_de_corte_direita(Valor Numérico) frequencia_de_corte_smooth(Valor Numérico) tecnica(derivative|amplitude) threshold1(Valor decimal com 2 casas) threshold2 (Valor decimal com 2 casas) nome_do_arquivo(Diretórios SEMPRE completos - Relativos em alguns casos dão problemas) barra_de_progresso(Para programação DCOP/Kommander - não usado por usuários)
 
-		-- $ ./BeatExtractorRecursive sexo_do_falante(male|female) filtro(butterworth|hanning) ordem_do_filtro(1|2) frequencia_de_corte_esquerda(Valor Numérico) frequencia_de_corte_direita(Valor Numérico) frequencia_de_corte_smooth(Valor Numérico) tecnica(derivative|amplitude) threshold1(Valor decimal com 2 casas) threshold2 (Valor decimal com 2 casas) barra_de_progresso(Para programação DCOP/Kommander - não usado por usuários)
+		-- $ ./BeatExtractorRecursive sexo_do_falante(male|female) filtro(butterworth|hanning) ordem_do_filtro(order_filter_1|order_filter_2) frequencia_de_corte_esquerda(Valor Numérico) frequencia_de_corte_direita(Valor Numérico) frequencia_de_corte_smooth(Valor Numérico) tecnica(derivative|amplitude) threshold1(Valor decimal com 2 casas) threshold2 (Valor decimal com 2 casas) barra_de_progresso(Para programação DCOP/Kommander - não usado por usuários)
 
 - BeatExtractor
 
