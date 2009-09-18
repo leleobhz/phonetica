@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.4
+// Versao: 1.1.1.5
 // Data: 03/03/2007
-// Modificado: 08/06/2009
+// Modificado: 09/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -207,9 +207,9 @@ function imprimir_usuarios($condicoes, $modulo, $id_lista, $link) {
                       link::icone_modulo($USUARIO, $modulo, "logs.php?{$chave}={$cod}", icone::endereco('grafico'), 'Ver Log').
                       "<span class=\"hide\">|</span>";
             if ($usuario->cancelado) {
-                $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?ativar={$cod}", icone::endereco('inativo'), 'Tornar Ativo', 0, 0, 0);
+                $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?ativar={$cod}", icone::endereco('inativo'), 'Tornar Ativo', '', 0, 0, 0);
             } else {
-                $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?desativar={$cod}", icone::endereco('ativo'), 'Tornar Inativo', 0, 0, 0);
+                $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?desativar={$cod}", icone::endereco('ativo'), 'Tornar Inativo', '', 0, 0, 0);
             }
             $opcoes .= '</div>';
 

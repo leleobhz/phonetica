@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.25
+// Versao: 1.0.0.26
 // Data: 03/03/2007
-// Modificado: 08/07/2009
+// Modificado: 03/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -79,6 +79,7 @@ if (isset($_GET['encerrar'])) {
 // Se a sessao expirou
 } elseif (isset($_COOKIE['sessao_expirada']) && $_COOKIE['sessao_expirada']) {
     $avisos[] = 'O tempo da sess&atilde;o expirou. Por favor, autentique-se novamente.';
+    setcookie('sessao_expirada', null, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
 }
 
 
@@ -122,7 +123,7 @@ if (!$dados) {
     $usuario = new usuario('login', $dados->login);
     $cod_usuario = $usuario->existe() ? $usuario->cod_usuario : 0;
     $log = new log_sistema();
-    $log->inserir($cod_usuario, LOG_ENTRADA, 1, $cod_usuario, 'usuario', 'tentou logar ('.$_SERVER['HTTP_USER_AGENT'].')');
+    $log->inserir($cod_usuario, LOG_ENTRADA, 1, $cod_usuario, 'usuario', 'tentou logar como '.$dados->login.' ('.$_SERVER['HTTP_USER_AGENT'].')');
 
     // Imprimir pagina
     $pagina = new pagina($id_pagina);

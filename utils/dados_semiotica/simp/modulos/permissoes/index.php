@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// Versao: 1.0.0.10
 // Data: 25/09/2007
-// Modificado: 16/03/2009
+// Modificado: 09/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -179,10 +179,10 @@ function listar_permissoes($condicoes, $modulo, $id_lista, $link) {
 
             $opcoes_posicao = array();
             if ($permissao->posicao < $maior_posicao) {
-                $opcoes_posicao[] = link::icone("{$CFG->wwwmods}{$modulo}/index.php?descer={$cod}", icone::endereco('baixo'), 'Descer', 0, 0, 0);
+                $opcoes_posicao[] = link::icone("{$CFG->wwwmods}{$modulo}/index.php?descer={$cod}", icone::endereco('baixo'), 'Descer', '', 0, 0, 0);
             }
             if ($permissao->posicao > 1) {
-                $opcoes_posicao[] = link::icone("{$CFG->wwwmods}{$modulo}/index.php?subir={$cod}", icone::endereco('cima'), 'Subir', 0, 0, 0);
+                $opcoes_posicao[] = link::icone("{$CFG->wwwmods}{$modulo}/index.php?subir={$cod}", icone::endereco('cima'), 'Subir', '', 0, 0, 0);
             }
 
             // Gerar as opcoes
@@ -191,9 +191,9 @@ function listar_permissoes($condicoes, $modulo, $id_lista, $link) {
                       link::icone("{$CFG->wwwmods}{$modulo}/excluir.php?{$chave}={$cod}", icone::endereco('excluir'), 'Excluir').
                       "<span class=\"hide\">|</span>";
                       if (!$permissao->visivel) {
-                          $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?ativar={$cod}", icone::endereco('inativo'), 'Tornar Ativa', 0, 0, 0);
+                          $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?ativar={$cod}", icone::endereco('inativo'), 'Tornar Ativa', '', 0, 0, 0);
                       } else {
-                          $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?desativar={$cod}", icone::endereco('ativo'), 'Tornar Inativa', 0, 0, 0);
+                          $opcoes .= link::icone("{$CFG->wwwmods}{$modulo}/index.php?desativar={$cod}", icone::endereco('ativo'), 'Tornar Inativa', '', 0, 0, 0);
                       }
                       $opcoes .= implode("<span class=\"hide\">|</span>", $opcoes_posicao).
                                  "</div>";

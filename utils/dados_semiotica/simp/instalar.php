@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.16
+// Versao: 1.0.0.19
 // Data: 30/05/2007
-// Modificado: 09/02/2009
+// Modificado: 15/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -18,6 +18,11 @@ if ($CFG->versao && (!isset($_COOKIE['instalando']))) {
     header("Location: {$CFG->wwwlogin}");
 }
 
+// 5 minutos de execucao (minimo)
+$tempo_necessario = 60 * 5;
+if (ini_get('max_execution_time') < $tempo_necessario) {
+    ini_set('max_execution_time', $tempo_necessario);
+}
 
 /// Dados da Pagina
 $titulo  = 'Instala&ccedil;&atilde;o';
@@ -33,9 +38,9 @@ $dados = formulario::get_dados();
 $instalacao = new instalacao();
 
 // Checar pre-requisitos para instalacao
-if (!isset($_SESSION['pre_requisitos']) || !$_SESSION['pre_requisitos']) {
+if (!isset($_SESSION['instalacao']['pre_requisitos']) || !$_SESSION['instalacao']['pre_requisitos']) {
     $instalacao->checar_pre_requisitos();
-    $_SESSION['pre_requisitos'] = true;
+    $_SESSION['instalacao']['pre_requisitos'] = true;
 }
 
 // Erros, avisos e mensagens
@@ -44,11 +49,11 @@ $avisos    = array();
 $resultado = '';
 
 // Dados da Sessao
-$_SESSION['aceitou']  = isset($_SESSION['aceitou'])  ? $_SESSION['aceitou']  : false;
-$_SESSION['gerou_bd'] = isset($_SESSION['gerou_bd']) ? $_SESSION['gerou_bd'] : false;
-$_SESSION['instalou'] = isset($_SESSION['instalou']) ? $_SESSION['instalou'] : false;
-if (isset($_GET['aceitou']))  { $_SESSION['aceitou']  = 0; }
-if (isset($_GET['gerou_bd'])) { $_SESSION['gerou_bd'] = 0; }
+$_SESSION['instalacao']['aceitou']  = isset($_SESSION['instalacao']['aceitou'])  ? $_SESSION['instalacao']['aceitou']  : false;
+$_SESSION['instalacao']['gerou_bd'] = isset($_SESSION['instalacao']['gerou_bd']) ? $_SESSION['instalacao']['gerou_bd'] : false;
+$_SESSION['instalacao']['instalou'] = isset($_SESSION['instalacao']['instalou']) ? $_SESSION['instalacao']['instalou'] : false;
+if (isset($_GET['aceitou']))  { $_SESSION['instalacao']['aceitou']  = 0; }
+if (isset($_GET['gerou_bd'])) { $_SESSION['instalacao']['gerou_bd'] = 0; }
 
 
 /// Logica de negocios da pagina de instalacao
@@ -57,7 +62,7 @@ if ($dados):
 /// Se aceitou os termos da licenca
 if (isset($dados->aceitar)) {
     if ($dados->aceitar) {
-        $_SESSION['aceitou'] = true;
+        $_SESSION['instalacao']['aceitou'] = true;
         $avisos[] = 'Os termos da licen&ccedil;a foram aceitos (fim da fase 1)';
     } else {
         $erros[] = '&Eacute; necess&aacute;rio aceitar os termos da licen&ccedil;a para instalar o sistema';
@@ -66,9 +71,11 @@ if (isset($dados->aceitar)) {
 // Se submeteu os dados do formulario 1
 } elseif (isset($dados->instalacao1)) {
 
+    // Filtrar dados
+    $dados->servidor = util::host_local($dados->servidor) ? 'localhost' : $dados->servidor;
+
     // Se nao possui erros
     if (!$instalacao->possui_erros($dados, $erros)) {
-
         $bd_config = new stdClass();
         $bd_config->sgbd     = $dados->sgbd;
         $bd_config->porta    = $dados->porta;
@@ -93,7 +100,7 @@ if (isset($dados->aceitar)) {
             $r = $r && $instalacao->criar_arquivo($dados, $erros, $avisos);
             if ($r) {
                 $avisos[] = 'Base de dados criada com sucesso (fim da fase 2)';
-                $_SESSION['gerou_bd'] = true;
+                $_SESSION['instalacao']['gerou_bd'] = true;
             }
 
         // Se nao precisa realizar operacoes no BD: usar usuario informado
@@ -105,7 +112,7 @@ if (isset($dados->aceitar)) {
                 $instalacao->criar_arquivo($dados, $erros, $avisos)
                ) {
                 $avisos[] = 'Base de dados criada com sucesso (fim da fase 2)';
-                $_SESSION['gerou_bd'] = true;
+                $_SESSION['instalacao']['gerou_bd'] = true;
             }
         }
     }
@@ -114,7 +121,7 @@ if (isset($dados->aceitar)) {
 } elseif (isset($dados->instalacao2)) {
     if ($instalacao->instalar_classes($erros, $avisos)) {
         $avisos[] = 'Instala&ccedil;&atilde;o das classes completa (fim da fase 3)';
-        $_SESSION['instalou'] = true;
+        $_SESSION['instalacao']['instalou'] = true;
     }
 }
 endif;
@@ -124,7 +131,7 @@ $num_fases = 4;
 
 
 /// [1] Aceitar os termos de Licenca do Sistema
-if (!$_SESSION['aceitou']) {
+if (!$_SESSION['instalacao']['aceitou']) {
     $fase = 1;
     setcookie('instalando', $fase, 0, '/');
 
@@ -140,7 +147,7 @@ if (!$_SESSION['aceitou']) {
     exit(0);
 
 /// [2] Gerar o BD e arquivo de configuracoes
-} elseif (!$_SESSION['gerou_bd']) {
+} elseif (!$_SESSION['instalacao']['gerou_bd']) {
     $fase = 2;
     setcookie('instalando', $fase, 0, '/');
 
@@ -163,7 +170,7 @@ if (!$_SESSION['aceitou']) {
     exit(0);
 
 /// [3] Instalar classes
-} elseif (!$_SESSION['instalou']) {
+} elseif (!$_SESSION['instalacao']['instalou']) {
     $fase = 3;
     setcookie('instalando', $fase, 0, '/');
 
@@ -185,12 +192,14 @@ if (!$_SESSION['aceitou']) {
     $fase = 4;
 
     // Apagar sessao e cookies da instalacao
+    $_SESSION['instalacao'] = null;
     session_destroy();
     if ($CFG->abriu_session) {
         setcookie($CFG->id_session, '', $CFG->time - 1, $CFG->cookie_params['path'], $CFG->cookie_params['domain']);
     }
     setcookie('instalando', '', $CFG->time - 1, '/');
     setcookie('cookie_instalacao', '', $CFG->time - 1, '/');
+    unset($_COOKIE['id_session']);
     unset($_COOKIE['instalando']);
     unset($_COOKIE['cookie_instalacao']);
 
@@ -202,14 +211,15 @@ if (!$_SESSION['aceitou']) {
     $pagina->inicio_conteudo('Instala&ccedil;&atilde;o completa');
     if ($erros)  { mensagem::erro($erros);   }
     if ($avisos) { mensagem::aviso($avisos); }
-    echo "<p>O sistema j&aacute; est&aacute; acess&iacute;vel no <em>link</em>: ".
+    echo "<p>O sistema j&aacute; est&aacute; acess&iacute;vel no link: ".
          link::texto($link, 'P&aacute;gina Inicial', '', '', '', true, false, false, false).
          "</p>\n".
          "<p>\n".
          "  Dados para acesso:<br />\n".
          "  <em>Login:</em> <strong>admin</strong><br />\n".
          "  <em>Senha:</em> <strong>admin</strong><br />\n".
-         "</p>\n";
+         "</p>\n".
+         "<p>Assim que acessar o sistema, modifique a senha para maior seguran&ccedil;a.</p>\n";
     $pagina->nota_rodape("{$fase}/{$num_fases}: Instala&ccedil;&atilde;o completa.");
     $pagina->fim_conteudo();
     $pagina->rodape();

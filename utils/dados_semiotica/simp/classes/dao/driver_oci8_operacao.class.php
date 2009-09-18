@@ -7,7 +7,7 @@
 // E-mail: rubens@tecnolivre.ufla.br
 // Versao: 1.0.0.0
 // Data: 11/09/2008
-// Modificado: 11/09/2008
+// Modificado: 02/09/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -105,12 +105,13 @@ final class driver_oci8_operacao extends driver_oci8 {
     //
     //     GRANT: Da permissao a um usuario sobre uma base de dados
     //
-    public function grant($usuario, $base) {
+    public function grant($usuario, $base, $host) {
     // String $usuario: nome de identificacao do usuario a ser criado
     // String $base: nome da base de dados referenciada
+    // String $host: host do servidor onde fica o sistema
     //
         // Obter SQL
-        $sql = $this->sql_grant($usuario, $base);
+        $sql = $this->sql_grant($usuario, $base, $host);
         if (!$sql) {
             return false;
         }
@@ -297,9 +298,10 @@ final class driver_oci8_operacao extends driver_oci8 {
     //
     //     GRANT: Gera uma SQL para dar permissoes a um usuario sobre uma base de dados
     //
-    public function sql_grant($usuario, $base) {
+    public function sql_grant($usuario, $base, $host) {
     // String $usuario: nome de identificacao do usuario
     // String $base: nome da base de dados referenciada
+    // String $host: host do servidor onde fica o sistema
     //
         $sql_permissoes = 'SELECT, UPDATE, INSERT, DELETE, ALTER, DEBUG, EXECUTE, INDEX, REFERENCES, '.
                           'CREATE TABLE, ALTER TABLE, DROP TABLE,';

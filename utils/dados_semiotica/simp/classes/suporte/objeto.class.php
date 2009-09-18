@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.2.3
+// Versao: 1.3.2.4
 // Data: 06/08/2007
-// Modificado: 27/08/2009
+// Modificado: 10/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -5030,6 +5030,10 @@ XML;
     //     Bool principal: indica se a opcao e' o link principal da lista ou deve ficar na lista de opcoes (opcional)
     //                     Apenas uma opcao pode ser a principal dentro de um conjunto de opcoes escolhidas
     //     String icone: endereco do icone desejado (opcional)
+    //     String texto: texto a ser colocado apos o icone
+    //     Bool exibir_texto: indica de deve exibir o texto apos o icone ou apenas defini-lo como descricao do icone
+    //     Bool carregando: indica se o link deve exibir o "carregando" na tela
+    //     Bool foco: indica se o link deve definir o foco ao primeiro campo da proxima pagina
     //     String arquivo: nome do arquivo para onde a opcao aponta (opcional)
     //     String modulo: nome do modulo para onde a opcao aponta (opcional)
     //     String descricao: descricao da opcao (opcional)

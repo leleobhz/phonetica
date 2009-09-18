@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.3
+// Versao: 1.0.0.4
 // Data: 24/04/2008
-// Modificado: 20/08/2009
+// Modificado: 02/09/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -105,12 +105,13 @@ final class driver_mysql_operacao extends driver_mysql {
     //
     //     GRANT: Da permissao a um usuario sobre uma base de dados
     //
-    public function grant($usuario, $base) {
+    public function grant($usuario, $base, $host) {
     // String $usuario: nome de identificacao do usuario a ser criado
     // String $base: nome da base de dados referenciada
+    // String $host: host do servidor onde fica o sistema
     //
         // Obter SQL
-        $sql = $this->sql_grant($usuario, $base);
+        $sql = $this->sql_grant($usuario, $base, $host);
         if (!$sql) {
             return false;
         }
@@ -368,16 +369,16 @@ final class driver_mysql_operacao extends driver_mysql {
     //
     //     GRANT: Gera uma SQL para dar permissoes a um usuario sobre uma base de dados
     //
-    public function sql_grant($usuario, $base) {
+    public function sql_grant($usuario, $base, $host) {
     // String $usuario: nome de identificacao do usuario
     // String $base: nome da base de dados referenciada
+    // String $host: host do servidor onde fica o sistema
     //
         $sql_permissoes = 'ALTER, CREATE, DELETE, DROP, INDEX, INSERT, LOCK TABLES, SELECT, UPDATE';
         $sql_base = str_replace('`', '', $base);
         $sql_usuario = str_replace("'", '', $usuario);
-        $sql_servidor = $this->servidor;
-
-        $sql = "GRANT {$sql_permissoes} ON `{$sql_base}`.* TO '{$sql_usuario}'@'{$sql_servidor}'";
+        $sql_host = $host;
+        $sql = "GRANT {$sql_permissoes} ON `{$sql_base}`.* TO '{$sql_usuario}'@'{$sql_host}'";
         return $sql;
     }
 

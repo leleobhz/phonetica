@@ -24,8 +24,7 @@ $ajuda  = <<<AJUDA
   atualiza&ccedil;&atilde;o de entidades no BD. Deve ser
   usado com cautela, uma vez que modifica as tabelas do BD
   sem dar garantias de recupera&ccedil;&atilde;o dos dados.</p>
-  <p><strong>Aten&ccedil;&atilde;o:</strong> Os novos campos 
-  adicionados n&atilde;o podem ser relacionamento 1:1.
+  <p><strong>Aten&ccedil;&atilde;o:</strong>
   N&atilde;o &eacute; poss&iacute;vel identificar campos que
   apenas trocaram de nome.</p>
 AJUDA;

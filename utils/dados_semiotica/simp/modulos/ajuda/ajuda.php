@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// Versao: 1.0.0.12
 // Data: 15/06/2007
-// Modificado: 16/03/2009
+// Modificado: 18/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -48,12 +48,12 @@ $obj->titulo = 'N&atilde;o consigo entrar no Sistema';
 $obj->solucao = <<<SOLUCAO
  <p>Para conseguir acesso ao sistema certifique-se antes que:</p>
  <ul>
- <li>Voc&ecirc; tenha sido cadastrado no sistema;</li>
- <li>Os cookies do navegador estejam habilitados;</li>
- <li>Voc&ecirc; n&atilde;o esteja digitando a senha com as teclas <em>Caps Lock</em> ativada ou <em>Num Lock</em> desativada no teclado;</li>
- <li>O sistema n&atilde;o esteja fechado para manuten&ccedil;&atilde;o (nestes casos, um aviso &eacute; mostrado e apenas os Administradores do sistema podem acess&aacute;-lo);</li>
- <li>Voc&ecirc; n&atilde;o esteja suspenso do sistema (nestes casos, um aviso &eacute; mostrado);</li>
- <li>Voc&ecirc; n&atilde;o esteja digitando a senha de maneira incorreta.</li>
+ <li>Voc&ecirc; tenha sido cadastrado no sistema</li>
+ <li>Os cookies do navegador estejam habilitados</li>
+ <li>Voc&ecirc; n&atilde;o esteja digitando a senha com as teclas <em>Caps Lock</em> ativada ou <em>Num Lock</em> desativada no teclado</li>
+ <li>O sistema n&atilde;o esteja fechado para manuten&ccedil;&atilde;o (nestes casos, um aviso &eacute; mostrado e apenas os Administradores do sistema podem acess&aacute;-lo)</li>
+ <li>Voc&ecirc; n&atilde;o esteja suspenso do sistema (nestes casos, um aviso &eacute; mostrado)</li>
+ <li>Voc&ecirc; n&atilde;o esteja digitando a senha de maneira incorreta</li>
  </ul>
 SOLUCAO;
 $topicos[] = $obj;
@@ -66,8 +66,8 @@ $obj->solucao = <<<SOLUCAO
  usabilidade. O <em>layout</em> foi testado nos seguintes navegadores:</p>
  <ul>
    <li><a rel="blank" href="http://www.microsoft.com/brasil/windows/ie/default.mspx">Internet Explorer 6</a>,</li>
-   <li><a rel="blank" href="http://br.mozdev.org/firefox/">Mozilla Firefox vers&otilde;es 1.5, 2 e 3</a>,</li>
-   <li><a rel="blank" href="http://netscape.aol.com/">Netscape Navigator vers&atilde;o 9</a>,</li>
+   <li><a rel="blank" href="http://br.mozdev.org/firefox/">Mozilla Firefox vers&otilde;es 1.5, 2, 3 e 3.5</a>,</li>
+   <li><a rel="blank" href="http://netscape.aol.com/">Netscape Navigator vers&atilde;o 9 e 10</a>,</li>
    <li><a rel="blank" href="http://www.opera.com/">Opera vers&atilde;o 9</a>,</li>
    <li><a rel="blank" href="http://elinks.or.cz/">ELinks vers&atilde;o 0.11.3</a>,</li>
    <li><a rel="blank" href="http://lynx.isc.org/">Lynx vers&atilde;o 2.8.6</a> e</li>

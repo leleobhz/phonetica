@@ -26,7 +26,7 @@ $classe  = 'usuario';
 $dados   = formulario::get_dados();
 $campos  = array('login', 'email', 'captcha');
 $action  = $CFG->site;
-$email   = '&lt;'.texto::proteger_email($CFG->email_padrao).'&gt;';
+$email   = texto::proteger_email($CFG->email_padrao);
 $ajuda   = <<<AJUDA
   <p>Este formul&aacute;rio permite aos usu&aacute;rios, que esqueceram suas senhas, gerar uma nova senha e envi&aacute;-la por e-mail 
   mediante a confirma&ccedil;&atilde;o de alguns campos. Caso os campos pedidos foram esquecidos ou seu e-mail tenha sido alterado,

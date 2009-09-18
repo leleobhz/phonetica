@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// Versao: 1.0.0.9
 // Data: 16/05/2008
-// Modificado: 20/08/2009
+// Modificado: 09/09/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -353,11 +353,11 @@ function exibir_atributos(&$sessao, &$obj, $nome, $vetor = false) {
         case 1://campos
         case 3://ordem
             if (!$vetor) {
-                echo link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, false, false, false);
+                echo link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, '', false, false, false);
             }
             break;
         case 2://condicoes
-            echo link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, false, false, false);
+            echo link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, '', false, false, false);
             break;
         }
         echo '</li>';
@@ -383,7 +383,7 @@ function exibir_implicitos(&$sessao, &$obj, $nome, $vetor = false) {
         switch ($sessao['aba']) {
         case 1://campos
             if (!$vetor) {
-                echo ' '.link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, false, false, false);
+                echo ' '.link::icone($link, icone::endereco('adicionar'), 'Adicionar '.$def_atributo->descricao, '', false, false, false);
             }
             break;
         case 2://condicoes
@@ -496,7 +496,7 @@ function imprimir_formulario(&$dados, &$sessao) {
             foreach ($sessao['campos'] as $campo) {
                 echo '<li>';
                 echo str_replace(':', ' &rarr;', $campo).' ';
-                echo link::icone(link::adicionar_atributo($link_base, array('op', 'atributo'), array('remover_atributo', $campo)), icone::endereco('excluir'), 'Remover Campo', false, false, false, false, false);
+                echo link::icone(link::adicionar_atributo($link_base, array('op', 'atributo'), array('remover_atributo', $campo)), icone::endereco('excluir'), 'Remover Campo', '', false, false, false, false, false);
                 echo '</li>';
             }
             echo '</ul>';
@@ -598,12 +598,12 @@ function imprimir_formulario(&$dados, &$sessao) {
                 echo str_replace(':', ' &rarr;', $campo).' ';
                 $link_ordem = link::adicionar_atributo($link_base, array('op', 'atributo'), array('mudar_tipo_ordem', $campo));
                 if ($tipo) {
-                    echo link::icone($link_ordem, icone::endereco('crescente'), 'Tornar Decrescente', false, false, false, false, false);
+                    echo link::icone($link_ordem, icone::endereco('crescente'), 'Tornar Decrescente', '', false, false, false, false, false);
                 } else {
-                    echo link::icone($link_ordem, icone::endereco('decrescente'), 'Tornar Crescente', false, false, false, false, false);
+                    echo link::icone($link_ordem, icone::endereco('decrescente'), 'Tornar Crescente', '', false, false, false, false, false);
                 }
                 echo ' <span class="hide">|</span> ';
-                echo link::icone(link::adicionar_atributo($link_base, array('op', 'atributo'), array('remover_ordem', $campo)), icone::endereco('excluir'), 'Remover Campo', false, false, false, false, false);
+                echo link::icone(link::adicionar_atributo($link_base, array('op', 'atributo'), array('remover_ordem', $campo)), icone::endereco('excluir'), 'Remover Campo', '', false, false, false, false, false);
                 echo '</li>';
             }
             echo '</ul>';

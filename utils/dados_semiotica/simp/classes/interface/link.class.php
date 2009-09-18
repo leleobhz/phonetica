@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.21
+// Versao: 1.1.0.0
 // Data: 22/08/2007
-// Modificado: 12/11/2008
+// Modificado: 09/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -123,11 +123,12 @@ final class link {
     //     Imprime um icone com um link caso o usuario passado como parametro tenha permissao de acesso ao arquivo do modulo
     //     Caso o usuario nao tenha permissao, nada e' apresentado
     //
-    static public function icone_modulo(&$usuario, $modulo, $arquivo, $icone, $texto = '', $exibir_texto = false, $carregar = true, $foco = true) {
+    static public function icone_modulo(&$usuario, $modulo, $arquivo, $icone, $descricao = '', $texto = '', $exibir_texto = false, $carregar = true, $foco = true) {
     // usuario $usuario: usuario para quem e' apresentado o link
     // String $modulo: nome do modulo
     // String $arquivo: nome do arquivo
     // String $icone: endereco do icone
+    // String $descricao: descricao do icone
     // String $texto: texto explicativo opcional
     // Bool $exibir_texto: exibir o texto apos a imagem ou nao
     // Bool $carregar: exibe o "carregando" com Ajax ou nao
@@ -153,7 +154,7 @@ final class link {
             if ($parametros) {
                 $l .= '?'.$parametros;
             }
-            return self::icone($l, $icone, $texto, $exibir_texto, $carregar, $foco);
+            return self::icone($l, $icone, $descricao, $texto, $exibir_texto, $carregar, $foco);
         }
         return '';
     }
@@ -162,9 +163,10 @@ final class link {
     //
     //     Imprime um link com um icone
     //
-    static public function icone($link, $icone, $texto = '', $exibir_texto = false, $carregar = true, $foco = true) {
+    static public function icone($link, $icone, $descricao = '', $texto = '', $exibir_texto = false, $carregar = true, $foco = true) {
     // String $link: link de destino
     // String $icone: endereco do icone
+    // String $descricao: descricao do icone
     // String $texto: texto explicativo opcional
     // Bool $exibir_texto: exibir o texto apos a imagem ou nao
     // Bool $carregar: exibe o "carregando" com Ajax ou nao
@@ -177,13 +179,12 @@ final class link {
         } else {
             $tamanho = $tamanhos[$icone] = imagem::tamanho_html($icone);
         }
-
         if ($link) {
             $carregar = $carregar ? 1 : 0;
             $foco = $foco ? 1 : 0;
             $onclick = $CFG->ajax ? "onclick=\"return carregar(this, {$carregar}, {$foco});\"" : '';
-            return "<a href=\"{$link}\" title=\"{$texto}\" {$onclick}>".
-                   "<img src=\"{$icone}\" alt=\"{$texto}\" {$tamanho} />".
+            return "<a href=\"{$link}\" title=\"{$descricao}\" {$onclick}>".
+                   "<img src=\"{$icone}\" alt=\"{$descricao}\" {$tamanho} />".
                    (($exibir_texto) ? ' '.$texto : '').
                    "</a>";
         }

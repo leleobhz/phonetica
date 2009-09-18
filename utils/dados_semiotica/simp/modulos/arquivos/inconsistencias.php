@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.4
+// Versao: 1.1.0.5
 // Data: 17/12/2007
-// Modificado: 08/06/2009
+// Modificado: 18/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -30,13 +30,13 @@ $ajuda = <<<AJUDA
   e os arquivos reais nos m&oacute;dulos.</p>
   <p>As inconsist&ecirc;ncias s&atilde;o classificadas em:</p>
   <ul>
-    <li>Nenhuma: indica que n&atilde;o representa uma inconsist&ecirc;ncia (verde);</li>
+    <li>Nenhuma: indica que n&atilde;o representa uma inconsist&ecirc;ncia (representado em verde)</li>
     <li>Media: indica que &eacute; um poss&iacute;vel arquivo inconsist&ecirc;nte,
         pois existe, mas n&atilde;o est&aacute; cadastrado no BD OU
-        est&aacute; cadastrado, mas n&atilde;o existe (amarelo);</li>
+        est&aacute; cadastrado, mas n&atilde;o existe (representado em amarelo)</li>
     <li>Alta: indica que tem grande chances de ser uma inconsist&ecirc;ncia, pois o arquivo existe,
         n&atilde;o est&aacute; cadastrado no BD e inclui o arquivo sessao.php, resons&aacute;vel por
-        realizar a autentica&ccedil;&atilde;o do usu&aacute;rio (vermelho).</li>
+        realizar a autentica&ccedil;&atilde;o do usu&aacute;rio (representado em vermelho)</li>
   </ul>
   <p>Apenas os m&oacute;dulos que apresentaram inconsist&ecirc;ncias s&atilde;o apresentados.</p>
   <p>A lista auxiliar&aacute; no cadastro ou exclus&atilde;o de arquivos no BD.</p>

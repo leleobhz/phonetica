@@ -5,15 +5,17 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.0
+// Versao: 1.1.0.2
 // Data: 09/08/2007
-// Modificado: 05/05/2009
+// Modificado: 18/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 // Constantes
-define('MENSAGEM_AJAX', $CFG->ajax);
+define('MENSAGEM_AJAX',    $CFG->ajax);
+define('MENSAGEM_CHARSET', $CFG->charset);
+define('MENSAGEM_SOM',     true);
 
 // Tipos de mensagens
 define('MENSAGEM_ERRO',  1);
@@ -147,6 +149,10 @@ final class mensagem {
             $onclick = MENSAGEM_AJAX ? "onclick=\"return mostrar_ajuda(this);\"" : '';
 
             $c = "<div class=\"bloco_ajuda_aberto\">\n";
+            if (MENSAGEM_SOM) {
+                $texto_fala = self::preparar_texto_fala($comentarios);
+                $c .= fala::gerar_html_som($texto_fala);
+            }
             $c .= "  <a class=\"ajuda\" href=\"{$link}\" title=\"Esconder Coment&aacute;rio\" {$onclick}>Ajuda</a>\n";
             $c .= "  <blockquote>{$comentarios}</blockquote>\n";
             $c .= "</div>\n";
@@ -155,6 +161,10 @@ final class mensagem {
             $onclick = MENSAGEM_AJAX ? "onclick=\"return mostrar_ajuda(this);\"" : '';
 
             $c = "<div class=\"bloco_ajuda_fechado\">\n";
+            if (MENSAGEM_SOM) {
+                $texto_fala = self::preparar_texto_fala($comentarios);
+                $c .= fala::gerar_html_som($texto_fala);
+            }
             $c .= "  <a class=\"ajuda\" href=\"{$link}\" title=\"Expandir Coment&aacute;rio\" {$onclick}>Ajuda</a>\n";
             $c .= "  <blockquote class=\"hide\">{$comentarios}</blockquote>\n";
             $c .= "</div>\n";
@@ -162,6 +172,141 @@ final class mensagem {
 
         if ($return) { return $c; }
         echo $c;
+    }
+
+
+    //
+    //     Prepara um texto da ajuda para ser falado
+    //
+    public static function preparar_texto_fala($texto) {
+    // String $texto: texto a ser preparado
+    //
+        if (extension_loaded('dom')) {
+            $texto_fala = texto::decodificar($texto);
+
+            $xml = '<ajuda>'.$texto_fala.'</ajuda>';
+
+            $dom = new DOMDocument();
+            if (!$dom->loadXML($xml)) {
+                $texto_fala = strip_tags($texto_fala);
+                return $texto_fala;
+            }
+            $texto_fala = '';
+            $child = $dom->documentElement->firstChild;
+            while ($child) {
+                $texto_fala .= self::preparar_texto_fala_elemento($child);
+                $child = $child->nextSibling;
+            }
+        } else {
+            $texto_fala = texto::decodificar($texto);
+            $texto_fala = strip_tags($texto_fala);
+        }
+        $texto_fala = str_replace('.', '. ', $texto_fala);
+        $texto_fala = texto::strip_espacos($texto_fala);
+        return $texto_fala;
+    }
+
+
+    //
+    //     Prepara o texto para fala de um elemento DOM
+    //
+    private static function preparar_texto_fala_elemento($elemento) {
+    // DOMNode $elemento: elemento a ser preparado
+    //
+        $texto_fala = '';
+        switch ($elemento->nodeType) {
+        case XML_ELEMENT_NODE:
+            switch (strtolower($elemento->nodeName)) {
+
+            // img: obter alt ou title
+            case 'img':
+                if ($elemento->hasAttribute('alt')) {
+                    $texto_fala .= $elemento->getAttribute('alt');
+                } elseif ($elemento->hasAttribute('title')) {
+                    $texto_fala .= $elemento->getAttribute('title');
+                } else {
+                    $src = $elemento->getAttribute('src');
+                    $dados = parse_url($src);
+                    $texto_fala .= 'imagem '.basename($dados['path']);
+                }
+                break;
+
+            // abbr ou acronym: obter title
+            case 'abbr':
+            case 'acronym':
+                if ($elemento->hasAttribute('title')) {
+                    $texto_fala .= $elemento->getAttribute('title');
+                } else {
+                    $texto_fala .= $elemento->textContent;
+                }
+                break;
+
+            // br ou hr
+            case 'br':
+            case 'hr':
+                $texto_fala .= '; ';
+                break;
+
+            // Elementos com pausa no final
+            case 'address':
+            case 'blockquote':
+            case 'dd':
+            case 'dl':
+            case 'dt':
+            case 'div':
+            case 'fieldset':
+            case 'legend':
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+            case 'p':
+            case 'li':
+            case 'th':
+            case 'td':
+                $child = $elemento->firstChild;
+                while ($child) {
+                    $texto_fala .= self::preparar_texto_fala_elemento($child);
+                    $child = $child->nextSibling;
+                }
+                if (!preg_match('/^(\.|;)$/', substr(trim($texto_fala), -1))) {
+                    $texto_fala .= '; ';
+                }
+                break;
+
+            // Elementos ignorados
+            case 'applet':
+            case 'area':
+            case 'base':
+            case 'basefont':
+            case 'frameset':
+            case 'iframe':
+            case 'meta':
+            case 'object':
+            case 'script':
+                break;
+
+            // Outras tags:
+            default:
+                $child = $elemento->firstChild;
+                while ($child) {
+                    $texto_fala .= self::preparar_texto_fala_elemento($child);
+                    $child = $child->nextSibling;
+                }
+                break;
+            }
+            break;
+        case XML_COMMENT_NODE:
+            // Ignorar comentarios
+            break;
+        case XML_TEXT_NODE:
+        case XML_CDATA_SECTION_NODE:
+            $texto_fala .= $elemento->nodeValue;
+            break;
+        }
+        return $texto_fala;
     }
 
 }//class

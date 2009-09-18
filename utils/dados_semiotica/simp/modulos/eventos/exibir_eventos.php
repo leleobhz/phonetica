@@ -43,8 +43,8 @@ function imprimir_eventos($pagina) {
     $link     = $CFG->site;
     $ajuda    = <<<AJUDA
 <p>A tabela a seguir apresenta a lista de eventos registrados no sistema. 
-  As op&ccedil;&otilde;es poss&iacute;veis s&atilde;o editar dados do evento 
-  e excluir evento(somente para administradores ou o criador do evento).</p>
+  As op&ccedil;&otilde;es poss&iacute;veis s&atilde;o: editar dados do evento 
+  e excluir evento (somente para administradores ou o criador do evento).</p>
 AJUDA;
 
 

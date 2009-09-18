@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// Versao: 1.0.0.13
 // Data: 19/03/2008
-// Modificado: 28/05/2009
+// Modificado: 03/09/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -363,8 +363,9 @@ class fpdf_table extends fpdf {
     private function DefineHeight(&$table) {
     // SimpleXMLElement $table: table to be updated
     //
-        $check_after = array();
-        $l = 0;
+        $check_after = array(); // Cells to be checked after the main loop
+        $l = 0; // Current line
+
         foreach ($table->tr as $tr) {
             $line_height = (double)0;
             $c = 0;
@@ -376,7 +377,7 @@ class fpdf_table extends fpdf {
                 $cell['height'] = (double)max((double)$height, (double)$cell['height']);
                 $cell['content_height'] = (double)$height - ((double)2 * ((double)$cell['padding'] + (double)$cell['border']));
 
-                // Check rowspan after loop
+                // Check rowspan after this loop
                 if ((int)$cell['rowspan'] > 1) {
                     $obj = new stdClass();
                     $obj->tag   = $cell->getName();
@@ -389,10 +390,12 @@ class fpdf_table extends fpdf {
                 $c += (int)$cell['colspan'];
                 $child++;
             }
+
             $tr->addAttribute('height', sprintf('%0.40f', (double)$line_height));
             $table_line_height[] = (double)$line_height;
             $l += 1;
 
+            // Update cell Height
             foreach ($tr->children() as $cell) {
                 if ((int)$cell['rowspan'] == 1) {
                     $cell['height'] = (double)$line_height;
@@ -400,12 +403,211 @@ class fpdf_table extends fpdf {
             }
         }
 
-        // Ajust height of rowspan cells
+        // Adjust height of rowspan cells
         foreach ($check_after as $obj) {
             $children = $table->tr[$obj->line]->children();
             $cell = &$children[$obj->child];
             $cell['height'] = (double)array_sum(array_slice($table_line_height, $obj->line, (int)$cell['rowspan']));
         }
+
+        // Adjust lines taller than the page height
+        $this->AdjustLongLines($table);
+    }
+
+
+    //
+    //     Adjust lines taller than the page height
+    //
+    private function AdjustLongLines(&$table) {
+    // SimpleXMLElement $table: table to be updated
+    //
+        if (!extension_loaded('dom')) {
+            trigger_error('fpdf_table works better with DOM extension.', E_USER_NOTICE);
+            return false;
+
+//TODO: implementar uma forma de fazer isso sem a extensao DOM
+        }
+
+        $page_height = (double)$this->h - ((double)$this->bMargin + (double)$this->tMargin);
+        $lines = count($table->tr);
+        $adjust_again = false;
+        for ($l = 0; $l < $lines; $l++) {
+            $tr = $table->tr[$l];
+            if ((double)$tr['height'] > $page_height) {
+                $this->SplitLine($table, $l);
+                $adjust_again = true;
+                break;
+            }
+        }
+        if ($adjust_again) {
+            $this->AdjustLongLines($table);
+        }
+    }
+
+
+    //
+    //     Splits the line
+    //
+    private function SplitLine(&$table, $line) {
+    // SimpleXMLElement $table: table to be updated
+    // Int $line: line to be splited
+    //
+        $page_height = (double)$this->h - ((double)$this->bMargin + (double)$this->tMargin);
+
+        $dom = new DOMDocument();
+        $dom->loadXML($table->asXML());
+        $tr = &$dom->getElementsByTagName('tr')->item($line);
+        $tr_before = $tr->cloneNode(true);
+        $count_cells = $tr->getElementsByTagName('*')->length;
+
+        $max_height        = 0.0;
+        $max_height_before = 0.0;
+
+        for ($c = 0; $c < $count_cells; $c++) {
+
+            $cell_before = $tr_before->getElementsByTagName('*')->item($c);
+            $cell = $tr->getElementsByTagName('*')->item($c);
+
+            // Get text
+            $text = $cell->textContent;
+            $len = strlen($text);
+
+            // Split text
+            $this->SplitCell(simplexml_import_dom($cell), $part1, $part2);
+
+            // Update cell before
+            $cell_before->removeAttribute('rowspan');
+            $cell_before->firstChild->deleteData(0, $len);
+            $cell_before->firstChild->appendData($part1->text);
+            $cell_before->setAttribute('content_height', sprintf('%0.40f', (double)$part1->content_height));
+
+            $max_height_before = (double)max((double)$part1->height, (double)$max_height_before);
+
+            // Update Cell
+            $cell->firstChild->deleteData(0, $len);
+            $cell->firstChild->appendData($part2->text);
+            $cell->setAttribute('content_height', sprintf('%0.40f', (double)$part2->content_height));
+
+            $max_height = (double)max((double)$part2->height, (double)$max_height);
+        }
+
+        $tr_before->setAttribute('height', sprintf('%0.40f', (double)$max_height_before));
+        foreach ($tr_before->getElementsByTagName('*') as $cell) {
+            $cell->setAttribute('height', sprintf('%0.40f', (double)$max_height_before));
+        }
+
+        $tr->setAttribute('height', sprintf('%0.40f', $max_height));
+        foreach ($tr->getElementsByTagName('*') as $cell) {
+            $cell->setAttribute('height', sprintf('%0.40f', (double)$max_height));
+        }
+
+        $dom->documentElement->insertBefore($tr_before, $tr);
+        $table = simplexml_load_string($dom->saveXML());
+    }
+
+
+    //
+    //     Splits cell text in 2 parts
+    //
+    private function SplitCell($cell, &$part1, &$part2) {
+    // SimpleXMLElement $cell: cell to be splited
+    // stdClass $part1: first slice (text, height and content_height)
+    // stdClass $part2: second slice (text, height enad content_height)
+    //
+        $part1 = new stdClass();
+        $part1->text = '';
+        $part1->height = 0.0;
+        $part1->content_height = 0.0;
+
+        $part2 = new stdClass();
+        $part2->text = '';
+        $part2->height = 0.0;
+        $part2->content_height = 0.0;
+
+        $page_height = (double)$this->h - ((double)$this->bMargin + (double)$this->tMargin);
+
+        $text = (string)$cell;
+        $vt_split_pos = $this->GetSplitPos($text);
+        for ($i = count($vt_split_pos) - 1; $i >= 0; $i--) {
+            $pos = $vt_split_pos[$i];
+            $part1->text = substr($text, 0, $pos);
+            $part2->text = substr($text, $pos + 1);
+            if (empty($part2->text)) {
+                $part2->text = ' ';
+            }
+
+            $width = (double)$cell['content_width'];
+            $border = (double)$cell['border'];
+            $padding = (double)$cell['padding'];
+            $bold = $cell->getName() == 'th';
+
+            $sub = (double)(2 * ((double)$border + (double)$padding));
+
+            $part1->height = (double)$this->GetTextCellHeight($part1->text, $width, $border, $padding, $bold);
+            $part1->content_height = (double)$part1->height - (double)$sub;
+
+            if ((double)$part1->height < (double)$page_height) {
+                $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold);
+                $part2->content_height = (double)$part2->height - (double)$sub;
+                return;
+            }
+        }
+        $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold);
+        $part2->content_height = (double)$part2->height - (double)$sub;
+    }
+
+
+    //
+    //     Returns an array of positions of spaces and new lines
+    //
+    private function GetSplitPos($text) {
+    // String $text: text to be parsed
+    //
+        $pos = array();
+        $length = strlen($text);
+        for ($i = 0; $i < $length; $i++) {
+            switch ($text[$i]) {
+            case ' ':
+            case "\r":
+            case "\n":
+            case "\t":
+                $pos[] = $i;
+            }
+        }
+        $pos[] = $length;
+        return $pos;
+    }
+
+
+    //
+    //     Calculates height of text cell
+    //
+    private function GetTextCellHeight($text, $width, $border, $padding, $bold) {
+    // String $text: Text to be checked
+    // Float $width: cell width
+    // Float $border: border size
+    // Float $padding: padding size
+    // Bool $bold: bold font
+    //
+        $text = utf8_decode($text);
+        $text = preg_replace('/<br[\s]*\/>/i', "\n", $text);
+
+        // Get the size of Cell
+        $w = (double)$width;
+        $h = (double)$this->FontSize;
+
+        if ($bold) {
+            $this->SetFont('', 'B');
+        } else {
+            $this->SetFont('', '');
+        }
+        $cell_height = (double)$border +
+                       (double)$padding +
+                       (double)$this->MultiCellHeight((double)$w, (double)$h, $text) +
+                       (double)$padding +
+                       (double)$border;
+
+        return $cell_height;
     }
 
 
@@ -493,7 +695,7 @@ class fpdf_table extends fpdf {
     //
     //     Convert HTML RGB color to Array with 'r', 'g' and 'b' index
     //
-    private function getHtmlColor($rgb_color) {
+    private function GetHTMLColor($rgb_color) {
     // String $rgb_color: color in RGB HTML format (#XXX or #XXXXXX)
     //
         switch (strlen($rgb_color)) {
@@ -569,7 +771,6 @@ class fpdf_table extends fpdf {
             }
             $line++;
         }
-        //TODO: quebrar linhas quando existir celulas maiores que a pagina (em altura)
     }
 
 
@@ -581,7 +782,7 @@ class fpdf_table extends fpdf {
     //
         $table->x0 = sprintf('%0.40f', (double)$this->GetX());
         $table->y0 = sprintf('%0.40f', (double)$this->GetY());
-        $table_color = $this->getHtmlColor($table['bordercolor']);
+        $table_color = $this->GetHTMLColor($table['bordercolor']);
 
         if (DEBUG_FPDF_TABLE) {
             $this->Rect((double)$this->lMargin, (double)$this->tMargin,
@@ -672,9 +873,10 @@ class fpdf_table extends fpdf {
     // SimpleXMLElement $cell: cell to be printed
     //
         // Get Align
-        $aligns = array('left'   => 'L',
-                        'right'  => 'R',
-                        'center' => 'C');
+        $aligns = array('left'    => 'L',
+                        'right'   => 'R',
+                        'center'  => 'C',
+                        'justify' => 'J');
         $align = $aligns[strtolower($cell['align'])];
 
         // Image offset
@@ -692,6 +894,7 @@ class fpdf_table extends fpdf {
                 $x_offset -= (double)$cell['border'] + (double)$cell['padding'];
                 break;
             default:
+            case 'justify':
             case 'left':
                 $x_offset = (double)$cell['border'] + (double)$cell['padding'];
                 break;
@@ -742,7 +945,7 @@ class fpdf_table extends fpdf {
         $by = (double)$this->y + ($text ? ((double)$cell['border'] / (double)2) : 0);
         $bwidth  = (double)$cell['width']  - ($text ? ((double)$cell['border']) : 0);
         $bheight = (double)$cell['height'] - ($text ? ((double)$cell['border']) : 0);
-        $bgcolor = $this->getHtmlColor($cell['bgcolor']);
+        $bgcolor = $this->GetHTMLColor($cell['bgcolor']);
         $this->SetFillColor($bgcolor['r'], $bgcolor['g'], $bgcolor['b']);
         $this->SetLineWidth(0);
         $this->Rect((double)$bx, (double)$by, (double)$bwidth, (double)$bheight, 'F');
@@ -854,7 +1057,7 @@ class fpdf_table extends fpdf {
             $by = (double)$this->y + ((double)$cell['border'] / (double)2);
             $bwidth = (double)$cell['width'] - (double)$cell['border'];
             $bheight = (double)$cell['height'] - (double)$cell['border'];
-            $border_color = $this->getHtmlColor($cell['bordercolor']);
+            $border_color = $this->GetHTMLColor($cell['bordercolor']);
             $this->SetDrawColor($border_color['r'], $border_color['g'], $border_color['b']);
             $line_width = (double)$this->LineWidth;
             $this->SetLineWidth((double)$cell['border']);

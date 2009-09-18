@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.38
+// Versao: 1.1.0.41
 // Data: 05/09/2007
-// Modificado: 24/08/2009
+// Modificado: 18/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -390,7 +390,7 @@ LICENCA;
   <li>Dom&iacute;nio: dom&iacute;nio ou IP do servidor com o sistema</li>
   <li>Endere&ccedil;o: URL completa da ra&iacute;z do sistema (encerrar com /)</li>
   <li>Diret&oacute;rio do Sistema: caminho completo do diret&oacute;rio ra&iacute;z do sistema</li>
-  <li>Codifica&ccedil;&atilde;o: tipo de condifica&ccedil;&atilde;o de caracteres utilizada (no sistema e no BD)</li>
+  <li>Codifica&ccedil;&atilde;o: tipo de codifica&ccedil;&atilde;o de caracteres utilizada (no sistema e no BD)</li>
   <li>Op&ccedil;&otilde;es do BD:
     <ul>
       <li>Criar Nova Base de Dados: cria uma nova base com o nome especificado e, antes disso, <strong>APAGA</strong>
@@ -417,7 +417,7 @@ LICENCA;
   </li>
   <li>Usu&aacute;rio: login do usu&aacute;rio a ser criado ou a ser utilizado</li>
   <li>Senha: senha a ser criada para o novo usu&aacute;rio ou senha do usu&aacute;rio j&aacute; existente</li>
-  <li>Senha do Root: senha do usu&aacute;rio administrador do SGBD (caso deseja-se criar o BD e/ou o usu&aacute;rio</li>
+  <li>Senha do Root: senha do usu&aacute;rio administrador do SGBD (caso deseja-se criar o BD e/ou o usu&aacute;rio)</li>
 </ul>
 AJUDA;
 
@@ -802,7 +802,7 @@ AJUDA;
             $bd->drop_user($dados->usuario, $dados->base);
             $r = $bd->create_user($dados->usuario, $dados->senha, $dados->base);
         }
-        $r = $r && $bd->grant($dados->usuario, $dados->base);
+        $r = $r && $bd->grant($dados->usuario, $dados->base, $dados->servidor);
 
         if ($r) {
             $avisos[] = 'Usu&aacute;rio criado com sucesso no BD';

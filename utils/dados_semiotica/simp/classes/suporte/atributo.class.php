@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.2.11
+// Versao: 1.0.2.12
 // Data: 06/08/2007
-// Modificado: 05/08/2009
+// Modificado: 02/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -504,9 +504,9 @@ final class atributo {
         switch ($this->__get('tipo')) {
         case 'data':
             $data = objeto::parse_data($valor, false);
-            return is_null($valor) || $valor === '' || $data['ano'] == 0;
+            return is_null($valor) || $data['ano'] == 0;
         default:
-            return is_null($valor) || $valor === '';
+            return is_null($valor);
         }
     }
 

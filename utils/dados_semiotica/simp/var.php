@@ -5,9 +5,9 @@
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
 // E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.27
+// Versao: 1.1.0.28
 // Data: 03/03/2007
-// Modificado: 14/08/2009
+// Modificado: 02/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -85,8 +85,9 @@ if ($CFG->localhost) {
 
 
 /// COOKIES E SESSOES
-$CFG->tempo_session  = 7200;                           // Tempo de sessao: 2 horas = 2 * 60 * 60
-$CFG->codigo_session = md5($CFG->ip);                  // Nome do campo da sessao para guardar o cod_usuario
+$CFG->tempo_session       = 7200;                      // Tempo de sessao: 2 horas = 2 * 60 * 60
+$CFG->inatividade_session = true;                      // Tempo de sessao por inatividade
+$CFG->codigo_session      = md5($CFG->ip);             // Nome do campo da sessao para guardar o cod_usuario
 if ($CFG->versao && !isset($_COOKIE['instalando'])) {
     $CFG->nome_cookie  = 'cookie_'.$CFG->sistema;      // Nome do cookie para guardar dados gerais
     $CFG->id_session   = md5($CFG->id);                // Nome do cookie da sessao
@@ -263,14 +264,20 @@ if (!defined('IGNORAR_SESSAO') && php_sapi_name() != 'cli') {
     // Gravar o time de criacao da sessao
     if (!isset($_SESSION['inicio_sessao'])) {
         $_SESSION['inicio_sessao'] = $CFG->time;
+    }
 
     // Se o tempo expirou: apagar a sessao e o cookie de sessao
-    } elseif ($_SESSION['inicio_sessao'] + $CFG->tempo_session < $CFG->time) {
+    if ($_SESSION['inicio_sessao'] + $CFG->tempo_session < $CFG->time) {
         session_destroy();
         setcookie($CFG->id_session, false, $CFG->time - 1, $CFG->path, $CFG->dominio_cookies);
         setcookie('sessao_expirada', 1, $CFG->time + 10, $CFG->path, $CFG->dominio_cookies);
         unset($_SESSION, $_COOKIE[$CFG->id_session]);
     }
+
+    if ($CFG->inatividade_session) {
+        $_SESSION['inicio_sessao'] = $CFG->time;
+    }
+
 } else {
     $CFG->abriu_session = false;
 }
