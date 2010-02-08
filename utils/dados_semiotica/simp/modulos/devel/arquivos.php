@@ -4,10 +4,10 @@
 // Descricao: Script que lista as funcoes de cada arquivo do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.20
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.25
 // Data: 31/07/2007
-// Modificado: 18/08/2009
+// Modificado: 18/01/2010
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -107,7 +107,13 @@ function imprimir_arquivos() {
             echo '</tr>';
             echo '</tfoot>';
             echo '<tbody>';
+
+            $dados_grafico = new stdClass();
+            $dados_grafico->titulo = 'Tamanho dos Sistemas';
+            $dados_grafico->formatar = 1;
             foreach ($estatisticas->sistemas as $sistema) {
+                $dados_grafico->valores[] = $sistema->tamanho_real;
+                $dados_grafico->legenda[] = $sistema->nome;
                 $sistema->porcentagem = new stdClass();
                 $sistema->porcentagem->total = round($sistema->total * 100 / $estatisticas->total, 2);
                 $sistema->porcentagem->tamanho_total = round($sistema->tamanho_total * 100 / $estatisticas->tamanho_total, 2);
@@ -122,6 +128,9 @@ function imprimir_arquivos() {
             }
             echo '</tbody>';
             echo '</table>';
+
+            grafico::exibir_grafico('Tamanho dos sistemas', $CFG->wwwmods.'devel/grafico_pizza.php', $CFG->dirmods.'devel/grafico_pizza.php', $dados_grafico);
+
             echo '<p><em>Tamanho dos Arquivos PHP:</em> '.texto::formatar_bytes($estatisticas->tamanho_total);
             echo ' (corresponde a um livro de '.$num_paginas.' p&aacute;ginas A4)</p>';
             echo '<p>'.$porcentagem.'% do c&oacute;digo s&atilde;o coment&aacute;rios e espa&ccedil;os: '.$situacao.'</p>';
@@ -155,6 +164,11 @@ function imprimir_arquivos() {
         echo '</tr>';
         echo '</thead>';
         echo '<tbody>';
+
+        $dados_grafico = new stdClass();
+        $dados_grafico->titulo = 'Atuação dos Autores';
+        $dados_grafico->formatar = 1;
+        $dados_grafico->valor_topo = $estatisticas->tamanho_total;
         foreach ($estatisticas->autores as $autor => $dados) {
             echo '<tr>';
             echo '<td scope="row">'.$autor.'</td>';
@@ -174,6 +188,8 @@ function imprimir_arquivos() {
 
             $total_quantidade = $dados->quantidade + $dados_secundario->quantidade;
             $total_tamanho = $dados->tamanho + $dados_secundario->tamanho;
+            $dados_grafico->escala[] = $autor;
+            $dados_grafico->valores[] = $total_tamanho;
 
             echo '<td>'.($total_quantidade).'</td>';
             echo '<td>'.texto::formatar_bytes($total_tamanho).'</td>';
@@ -182,6 +198,8 @@ function imprimir_arquivos() {
         }
         echo '</tbody>';
         echo '</table>';
+
+        grafico::exibir_grafico('Atuação dos Autores', $CFG->wwwmods.'devel/grafico_barra.php', $CFG->dirmods.'devel/grafico_barra.php', $dados_grafico);
 
         if (count($estatisticas->arq_invalidos)) {
             echo '<h2>Arquivos inv&aacute;lidos (Documenta&ccedil;&atilde;o incompleta)</h2>';
@@ -342,21 +360,26 @@ function get_cabecalho_arquivo($arquivo) {
     $obj = parser_simp::get_cabecalho_arquivo($arquivo);
 
     if ($obj) {
-        $a = base64_encode($arquivo);
+        if ($obj->ignore_doc) {
+            $dados = "<div class=\"comentario\">Arquivo sem descri&ccedil;&atilde;o</div>";
+        } else {
 
-        // Imprimir dados obtidos
-        $dados = "<div class=\"comentario\">".
-                 "<p><strong>Descri&ccedil;&atilde;o:</strong> ".texto::codificar($obj->descricao)."</p>\n".
-                 "<p><strong>Vers&atilde;o:</strong> ".texto::codificar($obj->versao)."</p>\n".
-                 "<p><strong>Cria&ccedil;&atilde;o:</strong> ".texto::codificar($obj->data)." &nbsp; - &nbsp;".
-                 "   <strong>Modifica&ccedil;&atilde;o:</strong> ".texto::codificar($obj->modificado)."</p>\n".
-                 (isset($obj->utilizacao) ? '<p><strong>Utiliza&ccedil;&atilde;o:</strong> '.texto::codificar($obj->utilizacao).'</p>' : '').
-                 (isset($obj->observacao) ? '<p><strong>Observa&ccedil;&atilde;o:</strong> '.texto::codificar($obj->observacao).'</p>' : '').
-                 "<p><a href=\"{$CFG->wwwmods}{$modulo}/ver_arquivo.php?a={$a}\" rel=\"blank\">Visualizar</a></p>\n".
-                 "<hr />\n".
-                 "<p><strong>Autor:</strong> ".texto::codificar($obj->autor)." &lt;".texto::codificar($obj->email)."&gt;</p>\n".
-                 "<p><strong>&Oacute;rg&atilde;o:</strong> ".texto::codificar($obj->orgao)."</p>\n".
-                 "</div>\n";
+            $a = base64_encode($arquivo);
+
+            // Imprimir dados obtidos
+            $dados = "<div class=\"comentario\">".
+                     "<p><strong>Descri&ccedil;&atilde;o:</strong> ".texto::codificar($obj->descricao)."</p>\n".
+                     "<p><strong>Vers&atilde;o:</strong> ".texto::codificar($obj->versao)."</p>\n".
+                     "<p><strong>Cria&ccedil;&atilde;o:</strong> ".texto::codificar($obj->data)." &nbsp; - &nbsp;".
+                     "   <strong>Modifica&ccedil;&atilde;o:</strong> ".texto::codificar($obj->modificado)."</p>\n".
+                     (isset($obj->utilizacao) ? '<p><strong>Utiliza&ccedil;&atilde;o:</strong> '.texto::codificar($obj->utilizacao).'</p>' : '').
+                     (isset($obj->observacao) ? '<p><strong>Observa&ccedil;&atilde;o:</strong> '.texto::codificar($obj->observacao).'</p>' : '').
+                     "<p><a href=\"{$CFG->wwwmods}{$modulo}/ver_arquivo.php?a={$a}\" rel=\"blank\">Visualizar</a></p>\n".
+                     "<hr />\n".
+                     "<p><strong>Autor:</strong> ".texto::codificar($obj->autor)." &lt;".texto::codificar($obj->email)."&gt;</p>\n".
+                     "<p><strong>&Oacute;rg&atilde;o:</strong> ".texto::codificar($obj->orgao)."</p>\n".
+                     "</div>\n";
+        }
     } else {
         $dados = "<div class=\"comentario\">Erro ao ler cabe&ccedil;alho do arquivo.</div>\n";
     }

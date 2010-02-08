@@ -3,10 +3,10 @@
 // Descricao: JavaScript para exibir janelas dinamicamente
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.30
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.33
 // Data: 20/12/2007
-// Modificado: 17/07/2009
+// Modificado: 10/12/2009
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -297,6 +297,7 @@ function class_seletor(link) {
                 that.input.value = item.codigo;
                 that.seletor.janela.fechar();
                 that.input.focus();
+                that.input.select();
 
             // Se nao ha nenhum item selecionado
             } else {
@@ -326,6 +327,7 @@ function class_seletor(link) {
         case 27:
             that.seletor.janela.fechar();
             that.input.focus();
+            that.input.select();
             return false;
 
         // Outra tecla
@@ -378,6 +380,7 @@ function class_seletor(link) {
                 that.input.value = this.codigo;
                 that.seletor.janela.fechar();
                 that.input.focus();
+                that.input.select();
             };
 
             // Adicionar linha na caixa de itens
@@ -385,6 +388,7 @@ function class_seletor(link) {
         }
         that.seletor.input_busca.removeAttribute("disabled");
         that.seletor.input_busca.focus();
+        that.seletor.input_busca.select();
         obj_filtro = that;
         filtrar_seletor();
         that.marcar(true);
@@ -525,6 +529,7 @@ function class_seletor(link) {
 
         // Dar o foco no campo de busca
         that.seletor.input_busca.focus();
+        that.seletor.input_busca.select();
         return false;
     };
 }
@@ -767,6 +772,7 @@ function class_hierarquia(link) {
                         that.input.value = this.linha.valor;
                         that.seletor.janela.fechar();
                         that.input.focus();
+                        that.input.select();
                     };
 
                     // Adicionar link na linha
@@ -872,7 +878,7 @@ function class_hierarquia(link) {
 //     Classe seletor de datas
 //
 function class_calendario(div) {
-// DIV div: elemento que armazena uma linha com um campo de data (com 3 SELECTs)
+// DIV div: elemento que armazena uma linha com um campo de data
 //
     var that = this;
     this.id = class_calendario.instancias.length;
@@ -894,7 +900,18 @@ function class_calendario(div) {
     this.get = function(item) {
     // Int item: codigo para obter um valor (0 = dia, 1 = mes, 2 = ano)
     //
-        return that.div_form.getElementsByTagName("select").item(item).value;
+        switch (item) {
+        case 0:
+        case 1:
+            return that.div_form.getElementsByTagName("select").item(item).value;
+        case 2:
+            var elementos = that.div_form.getElementsByTagName("select");
+            if (elementos.length == 3) {
+                return elementos.item(2).value;
+            }
+            return that.div_form.getElementsByTagName("input").item(0).value;
+        }
+        return false;
     };
   
   
@@ -902,7 +919,11 @@ function class_calendario(div) {
     //     Obtem valor minimo do campo de ano
     //
     this.get_min_ano = function() {
-        var options = that.div_form.getElementsByTagName("select").item(2).getElementsByTagName("option");
+        var elementos = that.div_form.getElementsByTagName("select");
+        if (elementos.length != 3) {
+            return 0;
+        }
+        var options = elementos.item(2).getElementsByTagName("option");
         if (that.pode_vazio) {
             return options.item(1).value;
         }
@@ -914,7 +935,12 @@ function class_calendario(div) {
     //    Obtem o valor maximo do campo de ano
     //
     this.get_max_ano = function() {
-        var options = that.div_form.getElementsByTagName("select").item(2).getElementsByTagName("option");
+        var elementos = that.div_form.getElementsByTagName("select");
+        if (elementos.length != 3) {
+            var hoje = new Date();
+            return hoje.getFullYear() + 500;
+        }
+        var options = elementos.item(2).getElementsByTagName("option");
         return options.item(options.length - 1).value;
     };
   
@@ -944,9 +970,15 @@ function class_calendario(div) {
         td.onclick = function() {
             this.style.outline = "none";
             this.style.backgroundColor = "transparent";
-            that.div_form.getElementsByTagName("select").item(0).value = dia;
-            that.div_form.getElementsByTagName("select").item(1).value = that.mes + 1;
-            that.div_form.getElementsByTagName("select").item(2).value = that.ano;
+
+            var elementos = that.div_form.getElementsByTagName("select");
+            elementos.item(0).value = dia;
+            elementos.item(1).value = that.mes + 1;
+            if (elementos.length == 3) {
+                elementos.item(2).value = that.ano;
+            } else {
+                that.div_form.getElementsByTagName("input").item(0).value = that.ano;
+            }
             that.seletor.janela.fechar();
             that.div_form.getElementsByTagName("select").item(0).focus();
         };
@@ -1142,9 +1174,14 @@ function class_calendario(div) {
         hoje.appendChild(document.createTextNode("Hoje"));
         hoje.onclick = function () {
             var hoje = new Date();
-            that.div_form.getElementsByTagName("select").item(0).value = hoje.getDate();
-            that.div_form.getElementsByTagName("select").item(1).value = hoje.getMonth() + 1;
-            that.div_form.getElementsByTagName("select").item(2).value = hoje.getFullYear();
+            var elementos = that.div_form.getElementsByTagName("select");
+            elementos.item(0).value = hoje.getDate();
+            elementos.item(1).value = hoje.getMonth() + 1;
+            if (elementos.length == 3) {
+                elementos.item(2).value = hoje.getFullYear();
+            } else {
+                that.div_form.getElementsByTagName("input").item(0).value = hoje.getFullYear();
+            }
             that.seletor.janela.fechar();
             that.div_form.getElementsByTagName("select").item(0).focus();
         };
@@ -1155,9 +1192,14 @@ function class_calendario(div) {
             var nenhum = document.createElement("a");
             nenhum.appendChild(document.createTextNode("Nenhum"));
             nenhum.onclick = function () {
-                that.div_form.getElementsByTagName("select").item(0).value = 0;
-                that.div_form.getElementsByTagName("select").item(1).value = 0;
-                that.div_form.getElementsByTagName("select").item(2).value = 0;
+                var elementos = that.div_form.getElementsByTagName("select");
+                elementos.item(0).value = 0;
+                elementos.item(1).value = 0;
+                if (elementos.length == 3) {
+                    elementos.item(2).value = 0;
+                } else {
+                    that.div_form.getElementsByTagName("input").item(0).value = 0;
+                }
                 that.seletor.janela.fechar();
                 that.div_form.getElementsByTagName("select").item(0).focus();
             };
@@ -1192,7 +1234,20 @@ function class_calendario(div) {
     this.adicionar_link = function() {
 
         // Incluir CSS de calendario como processing instruction
-        if (class_calendario.instancias.length == 1) {
+        var i = 0;
+        var incluir_estilo = true;
+        var regex = new RegExp(/\/calendario.css/);
+        while (i < document.childNodes.length) {
+            var c = document.childNodes.item(i);
+            if (c.nodeType == 7 && c.target.toLowerCase() == 'xml-stylesheet') {
+                if (regex.test(c.data)) {
+                    incluir_estilo = false;
+                    break;
+                }
+            }
+            i++;
+        }
+        if (incluir_estilo) {
             try {
                 var estilo = document.createProcessingInstruction('xml-stylesheet', 'href="' + wwwroot + 'layout/calendario.css" type="text/css" media="screen" charset="utf-8"');
                 document.insertBefore(estilo, document.firstChild);
@@ -1208,7 +1263,7 @@ function class_calendario(div) {
         }
 
         // Criar imagem de um calendario
-        var s = "Selecionar pelo Calendario";
+        var s = "Selecionar pelo Calendário";
         that.link = document.createElement("img");
         that.link.setAttribute("src", wwwroot + "imgs/icones/calendario.gif");
         that.link.setAttribute("alt", s);
@@ -1223,7 +1278,7 @@ function class_calendario(div) {
 
         that.div_form.appendChild(that.link);
 
-        that.pode_vazio = that.div_form.getElementsByTagName("select").item(2).getElementsByTagName("option").item(0).value == 0;
+        that.pode_vazio = that.div_form.getElementsByTagName("select").item(0).getElementsByTagName("option").item(0).value == 0;
         if (that.pode_vazio) {
             var anular = document.createElement("img");
             var s = "Nenhuma data";
@@ -1233,9 +1288,14 @@ function class_calendario(div) {
             anular.style.cursor = "pointer";
             anular.style.marginLeft = "5px";
             anular.onclick = function() {
-                that.div_form.getElementsByTagName("select").item(0).value = 0;
-                that.div_form.getElementsByTagName("select").item(1).value = 0;
-                that.div_form.getElementsByTagName("select").item(2).value = 0;
+                var elementos = that.div_form.getElementsByTagName("select");
+                elementos.item(0).value = 0;
+                elementos.item(1).value = 0;
+                if (elementos.length == 3) {
+                    elementos.item(2).value = 0;
+                } else {
+                    that.div_form.getElementsByTagName("input").item(0).value = 0;
+                }
             };
             that.div_form.appendChild(anular);
         }
@@ -1351,4 +1411,3 @@ function class_popup(link) {
   
     this.definir_link();
 }
-

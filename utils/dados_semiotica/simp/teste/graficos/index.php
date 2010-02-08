@@ -1,7 +1,16 @@
 <?php
-//@ignoredoc
-/// Exemplos de graficos
-
+//
+// SIMP
+// Descricao: Lista os tipos de graficos
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 $arquivos = array('barra2.php',

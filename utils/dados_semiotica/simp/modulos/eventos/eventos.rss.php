@@ -4,10 +4,10 @@
 // Descricao: Feed de eventos em formato RSS 2.0
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.1
 // Data: 01/11/2007
-// Modificado: 25/04/2008
+// Modificado: 18/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -27,7 +27,7 @@ $vt_condicoes[] = condicao_sql::montar('data', '<', $fim);
 if ($cod_grupo) {
     $vt_aux = array();
     $vt_aux[] = condicao_sql::montar('visibilidade', '=', $cod_grupo);
-    $vt_aux[] = condicao_sql::montar('visibilidade', '=', 0);
+    $vt_aux[] = condicao_sql::montar('visibilidade', '=', null);
     $vt_condicoes[] = condicao_sql::sql_or($vt_aux);
     unset($vt_aux);
     $grupo = new grupo('', $cod_grupo);

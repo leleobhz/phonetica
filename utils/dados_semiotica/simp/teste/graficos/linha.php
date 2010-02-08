@@ -1,7 +1,16 @@
 <?php
-//@ignoredoc
-/// Exemplo de grafico de linha simples
-
+//
+// SIMP
+// Descricao: Exemplo de grafico de linha simples
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 $g = new grafico('Gráfico de Linha');
@@ -18,9 +27,8 @@ $g->escala = array('Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio');
 $g->valores = array(50, 23, 54, 13, 92);
 $g->valor_topo = 100;
 
-$media = array_sum($g->valores) / count($g->valores);
+$media = matematica::get_media($g->valores);
 $g->legenda_linhas = array('Média Geral', 'Valor Mínimo');
-
 $g->linhas         = array($media, $media,
                            50, 50);
 

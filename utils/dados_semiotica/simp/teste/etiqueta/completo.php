@@ -1,4 +1,16 @@
 <?php
+//
+// SIMP
+// Descricao: Arquivo que testa os tipos de etiquetas
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 if (isset($_GET['debug'])) {
@@ -49,9 +61,17 @@ class etiqueta extends fpdf_etiqueta {
         $this->MultiCell($w, $h, $texto, DEBUG_FPDF_ETIQUETA);
     }
 
+
+    //
+    //     Obtem a unidade usada pelo usuario
+    //
+    public function get_unidade_usuario() {
+        return 'cm';
+    }
+
 }
 
-$e = new etiqueta('3080', 'cm');        // Construtor de etiquetas do tipo 3080
+$e = new etiqueta('3080');              // Construtor de etiquetas do tipo 3080
 $e->set_id('tipo1');                    // Definir o identificador do grupo de etiquetas
 $e->set_quantidade(65);                 // Definir a quantidade de etiquetas a serem impressas (65)
 $e->imprimir_etiquetas();               // Imprimir 65 etiquetas (tipo 3080) a partir da linha 1 coluna 1

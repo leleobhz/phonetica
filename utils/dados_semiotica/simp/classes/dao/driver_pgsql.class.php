@@ -4,10 +4,10 @@
 // Descricao: Driver de conexao com o PostgreSQL usando funcoes da extensao pgsql para PHP
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.11
 // Data: 01/08/2008
-// Modificado: 06/07/2009
+// Modificado: 15/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -107,6 +107,7 @@ class driver_pgsql extends driver_base {
                 return false;
             }
         }
+
         $v = pg_version($this->conexao);
         if (isset($v['server'])) {
             $this->versao = $v['server'];
@@ -156,7 +157,7 @@ class driver_pgsql extends driver_base {
         }
 
         if ($persistente) {
-            $this->conexao = pg_connect($str_conexao);
+            $this->conexao = pg_pconnect($str_conexao);
         } else {
             $this->conexao = pg_connect($str_conexao);
         }
@@ -166,6 +167,12 @@ class driver_pgsql extends driver_base {
             $this->adicionar_erro("Erro ao conectar como \"{$this->usuario}\"");
             return false;
         }
+
+        $charset = $this->get_charset(OBJETO_DAO_CHARSET);
+        if ($charset) {
+            pg_set_client_encoding($charset, $this->conexao);
+        }
+
         return $this->conexao;
     }
 
@@ -230,7 +237,7 @@ class driver_pgsql extends driver_base {
     //
     //     Inicia uma transacao
     //
-    public function inicio_transacao($modo = DRIVER_BASE_REPEATABLE_READ) {
+    public function inicio_transacao($modo = DRIVER_BASE_MODO_PADRAO) {
     // Int $modo: codigo do modo de transacao
     //
 
@@ -240,7 +247,7 @@ class driver_pgsql extends driver_base {
         }
 
         // Conectar
-        if (!$this->conectar()) {
+        if (!$this->conectar(null, false)) {
             $this->adicionar_erro('Erro ao iniciar transa&ccedil;&atilde;o (conexao)');
             return false;
         }
@@ -285,7 +292,7 @@ class driver_pgsql extends driver_base {
         }
 
         // Voltar o modo de transacao para o padrao
-        $this->set_modo_transacao(DRIVER_BASE_REPEATABLE_READ);
+        $this->set_modo_transacao(DRIVER_BASE_MODO_PADRAO);
 
         $this->transacao = false; // Fechar a transacao
         $this->desconectar();     // Desconectar

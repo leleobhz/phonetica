@@ -4,10 +4,10 @@
 // Descricao: Classe Abstrata Objeto Formulario Confirmacao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.3
 // Data: 26/03/2009
-// Modificado: 22/04/2009
+// Modificado: 19/10/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -20,11 +20,12 @@ abstract class objeto_formulario_confirmacao extends objeto_formulario {
     //
     //     Faz a Logica de um formulario de alteracao de dados mediante confirmacao
     //
-    protected function logica_formulario_confirmar(&$dados, $campos, $opcoes = false, $captcha = false) {
+    protected function logica_formulario_confirmar(&$dados, $campos, $opcoes = false, $captcha = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos pelo formulario
     // Array[String] $campos: campos reais vindos do formulario
     // Array[String => Mixed] $opcoes: opcoes a serem salvas
     // Bool $captcha: indica se um campo captcha foi solicitado no formulario
+    // Int $modo_transacao: tipo de transacao
     //
         // Se os dados nao foram submetidos
         if (!isset($dados->id_form) ||
@@ -68,7 +69,7 @@ abstract class objeto_formulario_confirmacao extends objeto_formulario {
 
         // Se nao conseguir confirmar
         if (!$this->set_valores($dados->$classe, util::array_unique_recursivo($this->names), true) ||
-            !$this->salvar_completo($salvar_campos, 'salvar')) {
+            !$this->salvar_completo($salvar_campos, 'salvar', $modo_transacao)) {
             $this->imprimir_erros();
             return false;
         }
@@ -119,7 +120,7 @@ abstract class objeto_formulario_confirmacao extends objeto_formulario {
     //
     //     Logica de geracao de um formulario de confirmacao
     //
-    public function formulario_confirmar(&$dados, $mensagem, &$campos, $opcoes, $action, $prefixo_id = '', $class = false, $ajax = true, $nome_botao = false) {
+    public function formulario_confirmar(&$dados, $mensagem, &$campos, $opcoes, $action, $prefixo_id = '', $class = false, $ajax = true, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // String $mensagem: mensagem de confirmacao
     // Array[String || String => Array[String]] $campos: campos do formulario (true = todos)
@@ -129,11 +130,12 @@ abstract class objeto_formulario_confirmacao extends objeto_formulario {
     // String $class: nome da classe CSS utilizada
     // Bool $ajax: usar ajax ou nao
     // String $nome_botao: nome do botao de confirmar os dados
+    // Int $modo_transacao: tipo de transacao
     //
         global $USUARIO;
 
         if ($nome_botao === false) {
-            $nome_botao = 'Enviar';
+            $nome_botao = 'Confirmar';
         }
 
         if (!$this->existe()) {
@@ -188,7 +190,7 @@ abstract class objeto_formulario_confirmacao extends objeto_formulario {
         }
 
         // Executar a logica de confirmacao
-        $r = $this->logica_formulario_confirmar($dados, $campos, $opcoes, $captcha);
+        $r = $this->logica_formulario_confirmar($dados, $campos, $opcoes, $captcha, $modo_transacao);
 
         // Se nao submeteu ou ocorreu um erro
         if (!$r) {

@@ -4,10 +4,10 @@
 // Descricao: Arquivo de Instalacao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.19
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.1.0
 // Data: 30/05/2007
-// Modificado: 15/09/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -37,6 +37,14 @@ $dados = formulario::get_dados();
 // Criar objeto de instalacao
 $instalacao = new instalacao();
 
+
+// Iniciar Sessao
+if (!isset($_SESSION['instalacao'])) {
+    $_SESSION['instalacao']['aceitou']  = 0;
+    $_SESSION['instalacao']['gerou_bd'] = 0;
+    $_SESSION['instalacao']['instalou'] = 0;
+}
+
 // Checar pre-requisitos para instalacao
 if (!isset($_SESSION['instalacao']['pre_requisitos']) || !$_SESSION['instalacao']['pre_requisitos']) {
     $instalacao->checar_pre_requisitos();
@@ -49,11 +57,12 @@ $avisos    = array();
 $resultado = '';
 
 // Dados da Sessao
-$_SESSION['instalacao']['aceitou']  = isset($_SESSION['instalacao']['aceitou'])  ? $_SESSION['instalacao']['aceitou']  : false;
-$_SESSION['instalacao']['gerou_bd'] = isset($_SESSION['instalacao']['gerou_bd']) ? $_SESSION['instalacao']['gerou_bd'] : false;
-$_SESSION['instalacao']['instalou'] = isset($_SESSION['instalacao']['instalou']) ? $_SESSION['instalacao']['instalou'] : false;
-if (isset($_GET['aceitou']))  { $_SESSION['instalacao']['aceitou']  = 0; }
-if (isset($_GET['gerou_bd'])) { $_SESSION['instalacao']['gerou_bd'] = 0; }
+if (isset($_GET['aceitou']))  {
+    $_SESSION['instalacao']['aceitou']  = 0;
+}
+if (isset($_GET['gerou_bd'])) {
+    $_SESSION['instalacao']['gerou_bd'] = 0;
+}
 
 
 /// Logica de negocios da pagina de instalacao
@@ -62,7 +71,7 @@ if ($dados):
 /// Se aceitou os termos da licenca
 if (isset($dados->aceitar)) {
     if ($dados->aceitar) {
-        $_SESSION['instalacao']['aceitou'] = true;
+        $_SESSION['instalacao']['aceitou'] = 1;
         $avisos[] = 'Os termos da licen&ccedil;a foram aceitos (fim da fase 1)';
     } else {
         $erros[] = '&Eacute; necess&aacute;rio aceitar os termos da licen&ccedil;a para instalar o sistema';
@@ -76,6 +85,8 @@ if (isset($dados->aceitar)) {
 
     // Se nao possui erros
     if (!$instalacao->possui_erros($dados, $erros)) {
+        $r = true;
+
         $bd_config = new stdClass();
         $bd_config->sgbd     = $dados->sgbd;
         $bd_config->porta    = $dados->porta;
@@ -88,31 +99,26 @@ if (isset($dados->aceitar)) {
             $bd_config->senha   = $dados->senharoot;
 
             $instalacao->set_bd_config($bd_config);
-
-            $r = true;
             if (!$dados->usar_bd) {
-                $r = $r && $instalacao->criar_bd($dados, $erros, $avisos);
+                if ($r) {
+                    $r = $instalacao->criar_bd($dados, $erros, $avisos);
+                }
             }
-            $r = $r && $instalacao->criar_tabelas(INSTALACAO_TODAS_TABELAS, $erros, $avisos, $resultado, $dados->charset);
             if (!$dados->usar_usuario) {
-                $r = $r && $instalacao->criar_usuario($dados, $erros, $avisos);
+                if ($r) {
+                    $r = $instalacao->criar_usuario($dados, $erros, $avisos);
+                }
             }
-            $r = $r && $instalacao->criar_arquivo($dados, $erros, $avisos);
-            if ($r) {
-                $avisos[] = 'Base de dados criada com sucesso (fim da fase 2)';
-                $_SESSION['instalacao']['gerou_bd'] = true;
-            }
-
-        // Se nao precisa realizar operacoes no BD: usar usuario informado
-        } else {
-            $bd_config->usuario = $dados->usuario;
-            $bd_config->senha   = $dados->senha;
-            $instalacao->set_bd_config($bd_config);
+        }
+        $bd_config->usuario = $dados->usuario;
+        $bd_config->senha   = $dados->senha;
+        $instalacao->set_bd_config($bd_config);
+        if ($r) {
             if ($instalacao->criar_tabelas(INSTALACAO_TODAS_TABELAS, $erros, $avisos, $resultado) &&
                 $instalacao->criar_arquivo($dados, $erros, $avisos)
                ) {
                 $avisos[] = 'Base de dados criada com sucesso (fim da fase 2)';
-                $_SESSION['instalacao']['gerou_bd'] = true;
+                $_SESSION['instalacao']['gerou_bd'] = 1;
             }
         }
     }
@@ -121,7 +127,7 @@ if (isset($dados->aceitar)) {
 } elseif (isset($dados->instalacao2)) {
     if ($instalacao->instalar_classes($erros, $avisos)) {
         $avisos[] = 'Instala&ccedil;&atilde;o das classes completa (fim da fase 3)';
-        $_SESSION['instalacao']['instalou'] = true;
+        $_SESSION['instalacao']['instalou'] = 1;
     }
 }
 endif;

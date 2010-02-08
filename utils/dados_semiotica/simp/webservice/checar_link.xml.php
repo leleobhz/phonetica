@@ -4,10 +4,10 @@
 // Descricao: Arquivo que retorna se o link e' valido ou nao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.6
 // Data: 27/12/2007
-// Modificado: 16/06/2009
+// Modificado: 28/10/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -76,21 +76,39 @@ function salvar_link_quebrado($link) {
 
     $link = trim($link);
 
+    $arquivo = $CFG->dirarquivos.'links_quebrados.txt';
+
+    // Se o arquivo nao existe
+    if (!is_file($arquivo)) {
+        file_put_contents($arquivo, $link."\n", LOCK_EX);
+        return;
+    }
+
+    // Se o arquivo existe
+
     // Checar se o link ja foi cadastrado no arquivo
-    $f = fopen($CFG->dirarquivos.'links_quebrados.txt', 'r');
-    if ($f) {
-        while ($l = trim(fgets($f, 256))) {
+    $f = fopen($arquivo, 'r+');
+    if (!$f) {
+        return false;
+    }
 
-            // Se ja existe: ignorar
-            if ($l == $link) { return; }
+    // Travar
+    flock(LOCK_EX);
+
+    // Buscar link
+    while (!feof($f)) {
+        $l = trim(fgets($f, 256));
+
+        // Se ja existe: ignorar
+        if ($l == $link) {
+            return;
         }
-        fclose($f);
     }
 
-    // Salvar novo link no arquivo
-    $f = fopen($CFG->dirarquivos.'links_quebrados.txt', 'a');
-    if ($f) {
-        fwrite($f, $link."\n");
-        fclose($f);
-    }
+    // Se nao existe: salvar no arquivo
+    fwrite($f, $link."\n");
+
+    // Destravar e fechar
+    flock(LOCK_UN);
+    fclose($f);
 }

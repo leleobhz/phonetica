@@ -4,10 +4,10 @@
 // Descricao: Classe que exibe mensagens de erros, avisos e ajuda
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.4
 // Data: 09/08/2007
-// Modificado: 18/09/2009
+// Modificado: 27/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -61,7 +61,7 @@ final class mensagem {
 
 
     //
-    //     Imprime uma mensagem de erro
+    //     Imprime uma mensagem de generica
     //
     static private function imprimir_mensagem($mensagem, $tipo) {
     // String || Array[String] $mensagem: string ou vetor com as mensagens
@@ -133,8 +133,7 @@ final class mensagem {
     // String $comentarios: comentarios sobre uma pagina
     // Bool $return: retornar ou imprimir o comentario
     //
-        static $i = 0;
-        $i++;
+        global $CFG;
 
         if (isset($_GET['expandir'])) {
             $_SESSION[__CLASS__]['expandir'] = (int)$_GET['expandir'];
@@ -149,7 +148,7 @@ final class mensagem {
             $onclick = MENSAGEM_AJAX ? "onclick=\"return mostrar_ajuda(this);\"" : '';
 
             $c = "<div class=\"bloco_ajuda_aberto\">\n";
-            if (MENSAGEM_SOM) {
+            if (MENSAGEM_SOM && $CFG->pessoal->som) {
                 $texto_fala = self::preparar_texto_fala($comentarios);
                 $c .= fala::gerar_html_som($texto_fala);
             }
@@ -161,7 +160,7 @@ final class mensagem {
             $onclick = MENSAGEM_AJAX ? "onclick=\"return mostrar_ajuda(this);\"" : '';
 
             $c = "<div class=\"bloco_ajuda_fechado\">\n";
-            if (MENSAGEM_SOM) {
+            if (MENSAGEM_SOM && $CFG->pessoal->som) {
                 $texto_fala = self::preparar_texto_fala($comentarios);
                 $c .= fala::gerar_html_som($texto_fala);
             }
@@ -189,13 +188,13 @@ final class mensagem {
             $dom = new DOMDocument();
             if (!$dom->loadXML($xml)) {
                 $texto_fala = strip_tags($texto_fala);
-                return $texto_fala;
-            }
-            $texto_fala = '';
-            $child = $dom->documentElement->firstChild;
-            while ($child) {
-                $texto_fala .= self::preparar_texto_fala_elemento($child);
-                $child = $child->nextSibling;
+            } else {
+                $texto_fala = '';
+                $child = $dom->documentElement->firstChild;
+                while ($child) {
+                    $texto_fala .= self::preparar_texto_fala_elemento($child);
+                    $child = $child->nextSibling;
+                }
             }
         } else {
             $texto_fala = texto::decodificar($texto);

@@ -4,10 +4,10 @@
 // Descricao: Classe link
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.2
 // Data: 22/08/2007
-// Modificado: 09/09/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -27,7 +27,7 @@ final class link {
     //
     //     Retorna um link para um script de algum modulo (recomendado quando ja' se tem o nome do arquivo e modulo)
     //
-    static public function arquivo_modulo(&$usuario, $arquivo, $modulo = '', $descricao = false, $id = '', $class = '', $return = false, $carregar = true, $foco = true) {
+    static public function arquivo_modulo(&$usuario, $arquivo, $modulo = '', $descricao = false, $id = '', $class = '', $return = false, $carregar = true, $foco = true, $ajax = true) {
     // usuario $usuario: usuario para quem e' apresentado o link
     // String $arquivo: nome do arquivo
     // String $modulo: nome do modulo
@@ -37,6 +37,7 @@ final class link {
     // Bool $return: retornar ou imprimir o link
     // Bool $carregar: exibe o carregando ou nao
     // Bool $foco: define o foco no primeiro campo da proxima pagina
+    // Bool $ajax: utiliza AJAX para abrir o link
     //
         $link = false;
 
@@ -63,7 +64,7 @@ final class link {
                 $l .= '?'.$parametros;
             }
             $d = ($descricao === false) ? $dados_script->descricao : $descricao;
-            $link = self::texto($l, $d, $d, $id, $class, 1, $carregar, $foco);
+            $link = self::texto($l, $d, $d, $id, $class, 1, $carregar, $foco, $ajax);
         } else {
             $dados_script = objeto::get_objeto('arquivo')->consultar_arquivo_modulo($arquivo, $modulo, array('descricao'));
             if ($dados_script->existe()) {
@@ -196,9 +197,10 @@ final class link {
     //
     //     Monta uma URL baseado nos dados informados (mesmo padrao que a funcao parse_url)
     //
-    static public function montar_url($dados, $remover = array()) {
+    static public function montar_url($dados, $remover = array(), $delimitador = '&amp;') {
     // Array[String => Mixed] $dados: vetor associativo com os atributos da URL (scheme, host, port, user, pass, path, query, fragment)
     // Array[String] || Bool $remover: vetor de elementos que se deseja remover ou true para todos
+    // String $delimitador: delimitador de atributos
     //
         $link = '';
         if (isset($dados['scheme'])) {
@@ -233,10 +235,10 @@ final class link {
                     }
                 }
                 if (count($novos_parametros)) {
-                    $link .= '?'.http_build_query($novos_parametros, '', '&amp;');
+                    $link .= '?'.http_build_query($novos_parametros, '', $delimitador);
                 }
             } else {
-                $link .= '?'.http_build_query($parametros, '', '&amp;');
+                $link .= '?'.http_build_query($parametros, '', $delimitador);
             }
         }
         if (isset($dados['fragment'])) {
@@ -261,10 +263,11 @@ final class link {
     //
     //     Adiciona um atributo no link e retorna o novo link
     //
-    static public function adicionar_atributo($link, $atributo, $valor) {
+    static public function adicionar_atributo($link, $atributo, $valor, $delimitador = '&amp;') {
     // String $link: link
     // String || Array[String] $atributo: nome do atributo ou vetor de atributos
     // Mixed || Array[Mixed] $valor: valor do atributo ou vetor de valores
+    // String $delimitador: delimitador de atributos
     //
         $dados = parse_url($link);
         $parametros = array();
@@ -277,8 +280,8 @@ final class link {
         } elseif (is_array($atributo) && is_array($valor) && (count($atributo) == count($valor))) {
             $parametros = $parametros + array_combine($atributo, $valor);
         }
-        $dados['query'] = http_build_query($parametros, '', '&amp;');
-        return self::montar_url($dados);
+        $dados['query'] = http_build_query($parametros, '', $delimitador);
+        return self::montar_url($dados, array(), $delimitador);
     }
 
 

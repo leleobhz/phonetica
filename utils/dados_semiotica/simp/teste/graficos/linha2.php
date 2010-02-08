@@ -1,7 +1,16 @@
 <?php
-//@ignoredoc
-/// Exemplo de grafico de linhas multiplas
-
+//
+// SIMP
+// Descricao: Exemplo de grafico de linhas multiplas
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 $g = new grafico('Gráfico de Linhas Múltiplas');
@@ -21,8 +30,7 @@ $g->valores = array( array(100, 23, 54, 13, 90),
                    );
 
 // Linhas com a media geral e valor esperado
-$media = (array_sum($g->valores[0]) + array_sum($g->valores[1])) /
-         (count($g->valores[0]) + count($g->valores[1]));
+$media = matematica::get_media_geral($g->valores);
 
 $g->legenda_linhas = array('Média Geral', 'Valor Mínimo');
 $g->linhas         = array($media, $media,

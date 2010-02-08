@@ -4,7 +4,7 @@
 // Descricao: Classe de controle das permissoes de acesso aos arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.5
 // Data: 10/09/2007
 // Modificado: 06/11/2008

@@ -4,10 +4,10 @@
 // Descricao: Arquivo para checar inconsistencias entre o BD e os arquivos do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.6
 // Data: 17/12/2007
-// Modificado: 18/09/2009
+// Modificado: 04/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -141,7 +141,7 @@ function get_arquivos_reais($diretorio) {
     while (($item = readdir($dir)) !== false) {
 
         // Checar se e' um arquivo PHP
-        if (preg_match('/^[A-z0-9-_]+\.php$/', $item)) {
+        if (preg_match('/^[A-z0-9-_\.]+\.php$/', $item)) {
             $arquivos[] = $item;
         }
     }

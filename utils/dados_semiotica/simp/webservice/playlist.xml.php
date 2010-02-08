@@ -4,10 +4,10 @@
 // Descricao: Cria a lista de MP3 no formato XSPF (XML Shareable Playlist Format)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.1
 // Data: 17/09/2009
-// Modificado: 17/09/2009
+// Modificado: 22/09/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -20,8 +20,9 @@ $xml .= "<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">\n";
 $xml .= "<trackList>";
 foreach ($lista as $chave => $item) {
     $descricao = is_int($chave) ? 'Ajuda' : $chave;
+    $item = urlencode($item);
     $xml .= "<track>";
-    $xml .= "<location>{$CFG->wwwroot}webservice/fala.mp3.php?arquivo={$item}</location>";
+    $xml .= "<location>{$CFG->wwwroot}webservice/fala.mp3.php?arq={$item}</location>";
     $xml .= "<annotation>{$descricao}</annotation>";
     $xml .= "</track>\n";
 }

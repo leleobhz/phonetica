@@ -4,7 +4,7 @@
 // Descricao: Classe de autenticacao factory
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 12/08/2008
 // Modificado: 04/03/2009

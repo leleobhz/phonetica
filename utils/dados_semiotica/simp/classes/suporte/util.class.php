@@ -4,10 +4,10 @@
 // Descricao: Classe com metodos uteis
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.26
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.1.33
 // Data: 22/08/2007
-// Modificado: 27/07/2009
+// Modificado: 14/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -50,7 +50,8 @@ final class util {
                 $modulo = $pop.DIRECTORY_SEPARATOR.$modulo;
             }
         } while ($pop != $modulos && count($vt));
-        if (!$nome_completo && $pos = strpos($modulo, DIRECTORY_SEPARATOR)) {
+        $pos = strpos($modulo, DIRECTORY_SEPARATOR);
+        if (!$nome_completo && $pos !== false) {
             $modulo = substr($modulo, $pos + 1);
         }
         return $modulo;
@@ -95,7 +96,7 @@ final class util {
         }
 
         // Se nao informou o codigo, tentar consultar a chave primaria
-        if (!$nome_codigo && $obj) {
+        if (!$nome_codigo) {
             $nome_codigo = $obj->get_chave();
             $tipo = false;
         }
@@ -256,6 +257,80 @@ final class util {
 
 
     //
+    //     Cria um objeto com varios niveis
+    //
+    static public function definir_atributo_nivel(&$obj, $atributo, $valor) {
+    // stdClass $obj: objeto a ser modificado
+    // String || Array[String] $atributo: nome do atributo ou vetor com o caminho ate' o do atributo
+    // Mixed $valor: valor a ser definido
+    //
+        if (!($obj instanceof stdClass)) {
+            $obj = new stdClass();
+        }
+        if (is_string($atributo)) {
+            $obj->$atributo = $valor;
+        } elseif (is_array($atributo)) {
+            $count = count($atributo);
+            if (!$count) {
+                return false;
+            }
+            $a = array_shift($atributo);
+            $count -= 1;
+            if (!property_exists($obj, $a) || !($obj->$a instanceof stdClass)) {
+                $obj->$a = new stdClass();
+            }
+            if ($count) {
+                return self::definir_atributo_nivel($obj->$a, $atributo, $valor);
+            } else {
+                $obj->$a = $valor;
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    //
+    //     Cria um vetor com varios niveis
+    //
+    static public function definir_vetor_nivel(&$vetor, $posicao, $valor) {
+    // Array[Mixed] $vetor: vetor a ser modificado
+    // Int || String || Array[String] $posicao: nome do vetor ou vetor com o caminho ate' a posicao
+    // Mixed $valor: valor a ser definido
+    //
+        if (!is_array($vetor)) {
+            $vetor = array();
+        }
+        if (is_scalar($posicao)) {
+            $vetor[$atributo] = $valor;
+        } elseif (is_array($posicao)) {
+            $count = count($posicao);
+            if (!$count) {
+                return false;
+            }
+            $p = array_shift($posicao);
+            $count -= 1;
+
+            if ($p === null) {
+                $vetor[] = $valor;
+                return true;
+            } else {
+                if (!array_key_exists($p, $vetor) || !is_array($vetor[$p])) {
+                    $vetor[$p] = array();
+                }
+                if ($count) {
+                    return self::definir_vetor_nivel($vetor[$p], $posicao, $valor);
+                } else {
+                    $vetor[$p] = $valor;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    //
     //     Retorna o erro de upload na forma textual
     //
     static public function erro_upload($cod_erro) {
@@ -410,7 +485,8 @@ final class util {
             $erros_aux = $erros;
             $erros = array();
             foreach ($erros_aux as $e) {
-                if ($e_trim = trim($e)) {
+                $e_trim = trim($e);
+                if ($e !== '') {
                     $erros[] = $e_trim;
                 }
             }
@@ -507,30 +583,68 @@ final class util {
     //     Cria o diretorio de arquivos de um modulo
     //
     static public function criar_diretorio_recursos($diretorio, $permissao = 0700) {
-    // String $diretorio: nome do diretorio a ser criado
+    // String $diretorio: nome do diretorio a ser criado no diretorio de recursos
     // Int $permissao: permissao a ser definida
     //
         global $CFG;
-        $nome = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $CFG->dirarquivos.$diretorio);
+        $nome = $CFG->dirarquivos.$diretorio;
+        return self::criar_diretorio_recursivo($nome, $permissao);
+    }
+
+
+    //
+    //     Cria um diretorio recursivamente
+    //
+    static public function criar_diretorio_recursivo($diretorio, $permissao = 0700) {
+    // String $diretorio: nome do diretorio a ser criado
+    // Int $permissao: permissao a ser definida
+    //
+        $nome = texto::strip_char_adjacente($diretorio, DIRECTORY_SEPARATOR);
         if (file_exists($nome)) {
             return true;
         }
 
+        // Buscar ate' que ponto do caminho ja' existe diretorio criado
         $vt_nome = explode(DIRECTORY_SEPARATOR, $nome);
         $buf = array_shift($vt_nome).DIRECTORY_SEPARATOR;
-        foreach ($vt_nome as $n) {
-            $buf .= $n;
-            if (file_exists($buf)) {
-                chmod($buf, $permissao);
-            } else {
-                if (mkdir($buf)) {
-                    chmod($buf, $permissao);
-                } else {
-                    return false;
-                }
+        $count = count($vt_nome);
+        for ($i = 0; $i < $count; $i++) {
+            if ($vt_nome[$i] === '') {
+                continue;
             }
-            $buf .= DIRECTORY_SEPARATOR;
+            $nome_parcial = $buf.DIRECTORY_SEPARATOR.$vt_nome[$i];
+            if (!file_exists($nome_parcial)) {
+                break;
+
+            // Se o caminho existe, mas nao e' diretorio ou nao pode entrar nele
+            } elseif (!is_executable($nome_parcial) || !is_dir($nome_parcial)) {
+                return false;
+            }
+            $buf .= DIRECTORY_SEPARATOR.$vt_nome[$i];
         }
+
+        // Criar os diretorios que estao faltando
+        $vt_diretorios = array();
+        $buf2 = $buf;
+        for ($j = $i; $j < $count; $j++) {
+            if ($vt_nome[$j] === '') {
+                continue;
+            }
+            $novo_dir = $buf2.DIRECTORY_SEPARATOR.$vt_nome[$j];
+            if (mkdir($novo_dir)) {
+                array_unshift($vt_diretorios, $novo_dir);
+                chmod($novo_dir, 0700); // Colocar permissao total provisoriamente
+            } else {
+                return false;
+            }
+            $buf2 = $novo_dir;
+        }
+
+        // Colocar a permissao desejada
+        foreach ($vt_diretorios as $dir) {
+            chmod($dir, $permissao);
+        }
+
         return true;
     }
 
@@ -596,8 +710,13 @@ final class util {
                     $tipo = ' Est&aacute;tico';
                     $forma_chamada = $chamada['class'].'::'.$chamada['function'].'(';
                 } else {
-                    $tipo = '';
-                    $forma_chamada = '$'.$chamada['class'].'-&gt;'.$chamada['function'].'(';
+                    if (isset($chamada['object'])) {
+                        $tipo = '';
+                        $forma_chamada = '$'.get_class($chamada['object']).'-&gt;'.$chamada['function'].'(';
+                    } else {
+                        $tipo = '';
+                        $forma_chamada = '$'.$chamada['class'].'-&gt;'.$chamada['function'].'(';
+                    }
                 }
                 $str_chamada .= '<p>M&eacute;todo'.$tipo.': <code>'.$forma_chamada;
             } else {
@@ -718,9 +837,10 @@ final class util {
     //
     //     Retorna o valor da variavel na forma de uma string legivel
     //
-    static public function exibir_var($var, $tipo = UTIL_EXIBIR_PADRAO) {
+    static public function exibir_var($var, $tipo = UTIL_EXIBIR_PADRAO, $escapar = true) {
     // Mixed $var: variavel a ser convertida
     // Bool $tipo: codigo do tipo de exibicao
+    // Bool $escapar: escapar valores string
     //
         global $CFG;
         switch (self::get_tipo($var)) {
@@ -763,6 +883,9 @@ final class util {
             case UTIL_EXIBIR_TEXTO:
                 return $var;
             case UTIL_EXIBIR_PHP:
+                if ($escapar) {
+                    $var = str_replace("'", "\\'", $var);
+                }
                 return "'".htmlentities($var, ENT_QUOTES, $CFG->charset)."'";
             }
             break;

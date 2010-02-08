@@ -4,7 +4,7 @@
 // Descricao: Arquivo para vericar os logs do usuario
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
+// E-mail: rpmoreira@tecnolivre.com.br
 // Versao: 1.1.0.0
 // Data: 20/06/2007
 // Modificado: 30/04/2008

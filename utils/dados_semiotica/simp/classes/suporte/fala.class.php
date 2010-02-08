@@ -4,10 +4,10 @@
 // Descricao: Classe responsavel pela geracao de falas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.1
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.3
 // Data: 17/09/2009
-// Modificado: 18/09/2009
+// Modificado: 27/01/2010
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -42,7 +42,7 @@ final class fala {
         $arquivo = self::get_nome_arquivo($texto);
 
         // Criar diretorio onde ficam as falas
-        util::criar_diretorio_recursos('fala', 0700);
+        util::criar_diretorio_recursos('simp_fala', 0700);
 
         // Se o sistema e' utf-8, mas o programa nao
         if (FALA_SISTEMA_UTF8 && !FALA_PROGRAMA_UTF8) {
@@ -111,27 +111,27 @@ final class fala {
 
         switch ($tipo) {
         case FALA_PLAYER_BOTAO:
-            $link_playlist = urlencode($CFG->wwwroot.'webservice/playlist.xml.php?item[]='.$arquivo);
-            $link = $CFG->wwwroot.'webservice/player_button/musicplayer.swf?playlist_url='.$link_playlist.'&amp;autoplay=0&amp;autoload=0';
-            $obj = '<object type="application/x-shockwave-flash" width="18" height="18" data="'.$link.'">'.
-                   '<param name="movie" value="'.$link.'" />'.
-                   '</object>';
+            $player  = $CFG->wwwroot.'webservice/player_button/musicplayer.swf';
+            $largura = 18;
+            $altura  = 18;
             break;
         case FALA_PLAYER_FINO:
-            $link_playlist = urlencode($CFG->wwwroot.'webservice/playlist.xml.php?item[]='.$arquivo);
-            $link = $CFG->wwwroot.'webservice/player_slim/xspf_player_slim.swf?playlist_url='.$link_playlist.'&amp;autoplay=0&amp;autoload=0&amp;player_title=Ajuda';
-            $obj = '<object type="application/x-shockwave-flash" width="400" height="18" data="'.$link.'">'.
-                   '<param name="movie" value="'.$link.'" />'.
-                   '</object>';
+            $player  = $CFG->wwwroot.'webservice/player_slim/xsfp_player_slim.swf';
+            $largura = 400;
+            $altura  = 18;
             break;
         case FALA_PLAYER_COMPLETO:
-            $link_playlist = urlencode($CFG->wwwroot.'webservice/playlist.xml.php?item[]='.$arquivo);
-            $link = $CFG->wwwroot.'webservice/player/xspf_player.swf?playlist_url='.$link_playlist.'&amp;autoplay=0&amp;autoload=0&amp;player_title=Ajuda';
-            $obj = '<object type="application/x-shockwave-flash" width="400" height="170" data="'.$link.'">'.
-                   '<param name="movie" value="'.$link.'" />'.
-                   '</object>';
+            $player  = $CFG->wwwroot.'webservice/player_slim/xsfp_player.swf';
+            $largura = 400;
+            $altura  = 170;
             break;
         }
+        $song_url = urlencode($CFG->wwwroot.'webservice/fala.mp3.php?arq='.$arquivo);
+        $link = $player.'?song_url='.$song_url.'&amp;autoplay=0&amp;autoload=0';
+        $obj = '<object type="application/x-shockwave-flash" width="'.$largura.'" height="'.$altura.'" data="'.$link.'">'.
+               '<param name="movie" value="'.$link.'" />'.
+               '</object>';
+
         return $obj;
     }
 
@@ -144,7 +144,7 @@ final class fala {
     //
         global $CFG;
         $arquivo = basename($arquivo);
-        $conteudo = file_get_contents($CFG->dirarquivos.'fala/'.$arquivo);
+        $conteudo = file_get_contents($CFG->dirarquivos.'simp_fala/'.$arquivo);
 
         setlocale(LC_TIME, 'C');
         header("X-Framework: SIMP/".VERSAO_SIMP);
@@ -166,7 +166,7 @@ final class fala {
     // String $texto: texto a ser considerado
     //
         global $CFG;
-        return $CFG->dirarquivos.'fala/'.md5($texto);
+        return $CFG->dirarquivos.'simp_fala/'.md5($texto);
     }
 
 

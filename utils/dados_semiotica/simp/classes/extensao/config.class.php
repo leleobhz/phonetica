@@ -4,10 +4,10 @@
 // Descricao: Classe Configuracao do Sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.15
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.16
 // Data: 20/08/2007
-// Modificado: 30/06/2009
+// Modificado: 27/10/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -111,8 +111,15 @@ final class config extends config_base {
     //     Retorna um vetor com os possiveis tipos de envio de e-mail
     //
     public function get_vetor_tipo_email() {
-        return array(CONFIG_EMAIL_PADRAO => 'Padr&atilde;o (fun&ccedil;&atilde;o mail do PHP)',
-                     CONFIG_EMAIL_SMTP   => 'SMTP');
+        $vetor = array();
+        if (function_exists('mail')) {
+            $vetor[CONFIG_EMAIL_PADRAO] = 'Padr&atilde;o (fun&ccedil;&atilde;o mail do PHP)';
+        }
+        if (function_exists('imap_mail')) {
+            $vetor[CONFIG_EMAIL_IMAP] = 'IMAP (fun&ccedil;&atilde;o imap_mail do PHP)';
+        }
+        $vetor[CONFIG_EMAIL_SMTP] = 'SMTP';
+        return $vetor;
     }
 
 

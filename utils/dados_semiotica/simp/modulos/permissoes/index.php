@@ -4,10 +4,10 @@
 // Descricao: Lista de Permissoes por grupos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.12
 // Data: 25/09/2007
-// Modificado: 09/09/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -153,7 +153,7 @@ function listar_permissoes($condicoes, $modulo, $id_lista, $link) {
 
     // Dados para paginacao
     $classe       = 'permissao';
-    $campos       = array('posicao', 'visivel', 'arquivo:descricao');
+    $campos       = array('posicao', 'visivel', 'arquivo:descricao', 'arquivo:modulo');
     $ordem        = 'posicao';
     $index        = false;
     $itens_pagina = 50;
@@ -198,7 +198,7 @@ function listar_permissoes($condicoes, $modulo, $id_lista, $link) {
                       $opcoes .= implode("<span class=\"hide\">|</span>", $opcoes_posicao).
                                  "</div>";
 
-            $nome = "{$permissao->arquivo->descricao} [{$permissao->posicao}]";
+            $nome = $permissao->arquivo->exibir('descricao').' ['.$permissao->exibir('posicao').']';
             $class = $permissao->visivel ? 'label' : 'inativo';
 
             // Imprimir linha com uma permissao
@@ -222,7 +222,7 @@ function imprimir_links() {
     $links = array();
     if ($dados) {
         $links = array(link::arquivo_modulo($USUARIO, 'inserir.php?cod_grupo='.$dados->cod_grupo, $modulo, false, '', 'inserir', 1),
-                       link::arquivo_modulo($USUARIO, 'gerar_ini.php?cod_grupo='.$dados->cod_grupo, $modulo, false, '', 'ini', 1));
+                       link::arquivo_modulo($USUARIO, 'gerar_ini.php?cod_grupo='.$dados->cod_grupo, $modulo, false, '', 'ini', 1, true, true, false));
     }
 
     $pagina->listar_opcoes($links);

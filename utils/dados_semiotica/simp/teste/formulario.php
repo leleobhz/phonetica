@@ -1,5 +1,16 @@
 <?php
-//@ignoredoc
+//
+// SIMP
+// Descricao: Exemplo de campos de formulario
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../config.php');
 
 $dados    = formulario::get_dados();
@@ -86,14 +97,14 @@ function imprimir_form($dados) {
     $form->campo_select('select', 'select', $ve, $dados->select, 'Select', false, false, false, 'Cor favorita');
     $form->campo_select('select_agrupado', 'select_agrupado', $matriz, $dados->select_agrupado, 'Select Agrupado');
     $form->campo_hora('', $dados->hora, $dados->minuto, false, 'Hora', false, 'Hora em que chega no trabalho');
-    $form->campo_data('inicio', $dados->inicio_dia, $dados->inicio_mes, $dados->inicio_ano, 'Data in&iacute;cio', 50, 0, false, 'Data de nascimento');
+    $form->campo_data('inicio', $dados->inicio_dia, $dados->inicio_mes, $dados->inicio_ano, 'Data in&iacute;cio', 50, 0, false, false, 'Data de nascimento');
     $form->campo_data('termino', $dados->termino_dia, $dados->termino_mes, $dados->termino_ano, 'Data t&eacute;rmino');
-    $form->campo_relacionamento('rel[]', 'rel', 'usuario', 'cod_usuario', 'nome', condicao_sql::montar('cancelado', '=', '0'), '', 128, 30, 'Usu&aacute;rio', 1, false, false, false, 'Usu&aacute;rio principal');
+    $form->campo_relacionamento('rel[]', 'rel', 'usuario', 'cod_usuario', 'nome', condicao_sql::montar('cancelado', '=', false), '', 128, 30, 'Usu&aacute;rio', 1, false, false, false, 'Usu&aacute;rio principal');
     $form->campo_clone('document.getElementById("area_rel")', "Usu&aacute;rio", 3, false, 'Clique em Adicionar para abrir um novo campo');
     $form->campo_relacionamento('arquivo', 'arquivo', 'arquivo', 'arquivo', 'descricao', condicao_sql::montar('modulo', '=', 'ajuda'), $dados->arquivo, 128, 30, 'Arquivo');
     $form->campo_relacionamento_xml('cor_xml', 'cor_xml', $CFG->wwwroot.'teste/cores.xml.php', $dados->cor_xml, 128, 30, 'Cor', 0, 0, 0, 'uint');
     $form->campo_hierarquico('area_cnpq', 'area_cnpq', $CFG->wwwroot.'teste/areas.xml.php', $dados->area_cnpq, 128, 30, '&Aacute;rea CNPq', false, false, false, false, 'Preencha ou busque um valor ');
-    $form->campo_busca('busca', 'busca', 'usuario', 'login', $dados->busca, condicao_sql::montar('cancelado', '=', '0'), 50, 30, 'Login', false, false, array('link' => 'http://www.exemplo.com.br/', 'texto' => 'Login usado no sistema'));
+    $form->campo_busca('busca', 'busca', 'usuario', 'login', $dados->busca, condicao_sql::montar('cancelado', '=', false), 50, 30, 'Login', false, false, array('link' => 'http://www.exemplo.com.br/', 'texto' => 'Login usado no sistema'));
     $form->campo_bool('bool', 'bool', 'Booleano', $dados->bool, false, false, false);
     $form->campo_image('imagem', 'imagem', $CFG->wwwimgs.'logos/logo_tecnolivre.jpg', 'Imagem');
     $form->campo_captcha();
@@ -123,7 +134,9 @@ function tratar_dados($dados, $arquivos) {
     echo "{$fcdata}</pre>\n";
 
     // Com os arquivos submetidos podemos salva-lo em algum lugar:
-    //move_uploaded_file($arquivos->arq1->tmp_name, $CFG->dirarquivos);
+    //if (is_uploaded_file($arquivos->arq1->tmp_name)) {
+    //    move_uploaded_file($arquivos->arq1->tmp_name, $CFG->dirarquivos);
+    //}
 
     $nivel = 9; // Nivel de compressao
 

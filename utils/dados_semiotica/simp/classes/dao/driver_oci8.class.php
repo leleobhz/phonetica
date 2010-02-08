@@ -4,10 +4,10 @@
 // Descricao: Driver de conexao com o Oracle usando funcoes da extensao oci8 para PHP
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 09/09/2008
-// Modificado: 03/07/2009
+// Modificado: 04/11/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -244,7 +244,7 @@ class driver_oci8 extends driver_base {
         }
 
         // Conectar
-        if (!$this->conectar()) {
+        if (!$this->conectar(null, false)) {
             $this->adicionar_erro('Erro ao iniciar transa&ccedil;&atilde;o (conexao)');
             return false;
         }

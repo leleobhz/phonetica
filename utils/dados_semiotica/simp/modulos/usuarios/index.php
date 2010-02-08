@@ -4,10 +4,10 @@
 // Descricao: Lista de Usuarios
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.1.7
 // Data: 03/03/2007
-// Modificado: 09/09/2009
+// Modificado: 21/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -91,7 +91,7 @@ exit(0);
 function condicoes_consulta($dados, &$letra, &$busca) {
 // Object $dados: dados submetidos
 // String $letra: letra usada no filtro
-// String $busca: texto da busca
+// Object $busca: dados da busca
 //
     global $modulo, $id_lista;
 
@@ -99,13 +99,13 @@ function condicoes_consulta($dados, &$letra, &$busca) {
 
     // Se utilizou a busca
     if ($dados) {
-        $letra = false;
-        $busca = trim($dados->nome);
+        $letra = null;
+        $busca = $dados;
         $paginacao->salvar_pagina(1);
 
     // Se solicitou por uma letra
     } elseif (isset($_GET['letra'])) {
-        $busca = false;
+        $busca = null;
         $paginacao->salvar_pagina(1);
         if ($_GET['letra'] == TODAS_LETRAS) {
             $letra = TODAS_LETRAS;
@@ -119,18 +119,18 @@ function condicoes_consulta($dados, &$letra, &$busca) {
 
     // Se foi gravada uma busca na sessao
     } elseif (isset($_SESSION[$modulo]['busca']) && $_SESSION[$modulo]['busca']) {
-        $letra = false;
+        $letra = null;
         $busca = $_SESSION[$modulo]['busca'];
 
     // Se foi gravada uma letra na sessao
     } elseif (isset($_SESSION[$modulo]['letra']) && $_SESSION[$modulo]['letra']) {
-        $busca = false;
+        $busca = null;
         $letra = $_SESSION[$modulo]['letra'];
 
     // Se nao foi gravado nada e nao foi solicitado nada
     } else {
-        $busca = false;
-        $letra = false;
+        $busca = null;
+        $letra = null;
     }
 
     // Salvar dados na sessao
@@ -140,7 +140,14 @@ function condicoes_consulta($dados, &$letra, &$busca) {
     // Consultar pela busca, pela letra ou todos
     $condicao = condicao_sql::vazia();
     if ($busca) {
-        $condicao = condicao_sql::montar('nome', 'LIKE', '%'.$busca.'%');
+        $vt_condicoes = array();
+        if ($busca->nome) {
+            $vt_condicoes[] = condicao_sql::montar('nome', 'LIKE', '%'.$busca->nome.'%');
+        }
+        if ($busca->cod_grupo) {
+            $vt_condicoes[] = condicao_sql::montar('grupos:cod_grupo', '=', $busca->cod_grupo);
+        }
+        $condicao = condicao_sql::sql_and($vt_condicoes);
     } elseif ($letra) {
         if ($letra == TODAS_LETRAS) {
             $condicao = condicao_sql::vazia();
@@ -178,7 +185,7 @@ function imprimir_usuarios($condicoes, $modulo, $id_lista, $link) {
     // Dados para paginacao
     $classe       = 'usuario';
     $campos       = array('nome', 'cancelado');
-    $ordem        = 'nome';
+    $ordem        = array('nome' => true);
     $index        = false;
     $itens_pagina = false;
 
@@ -248,18 +255,25 @@ function imprimir_links() {
 //
 //     Imprime um formulario de busca
 //
-function imprimir_form($busca, $action) {
-// String $busca: nome enviado pelo formulario
+function imprimir_form($dados, $action) {
+// Object $dados: dados submetidos
 // String $action: endereco de destino dos dados
 //
     global $CFG, $modulo, $id_lista;
+
+    $padrao = array('nome' => '',
+                    'cod_grupo' => 0);
+    $dados = formulario::montar_dados($padrao, $dados);
+
+    $vt_grupos = array(0 => 'Todos') + objeto::get_objeto('grupo')->vetor_associativo();
 
     link::normalizar($action, array(paginacao::get_nome_sessao($modulo, $id_lista)));
 
     $form = new formulario($action, 'form_busca');
     $form->titulo_formulario('Op&ccedil;&otilde;es de Busca');
-    $form->campo_busca('nome', 'nome', 'usuario', 'nome', $busca ? $busca : '', null, 128, 30, 'Nome');
-    $form->campo_submit('enviar', 'enviar', 'Exibir');
+    $form->campo_busca('nome', 'nome', 'usuario', 'nome', $dados->nome, null, 128, 30, 'Nome');
+    $form->campo_select('cod_grupo', 'cod_grupo', $vt_grupos, $dados->cod_grupo, 'Grupo');
+    $form->campo_submit('enviar', 'enviar', 'Consultar');
     $form->imprimir();
 }
 

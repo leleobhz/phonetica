@@ -4,7 +4,7 @@
 // Descricao: Arquivo para gerar o arquivo INI de instalacao dos arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 22/01/2009
 // Modificado: 22/01/2009

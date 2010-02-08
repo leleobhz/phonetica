@@ -4,10 +4,10 @@
 // Descricao: Classe arquivos do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.7
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.9
 // Data: 10/09/2007
-// Modificado: 30/06/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -76,8 +76,7 @@ final class arquivo extends arquivo_base {
         $vt_condicoes[] = condicao_sql::montar('modulo', '=', $modulo);
         $condicoes = condicao_sql::sql_and($vt_condicoes);
 
-        $classe = $this->get_classe();
-        $obj = new $classe();
+        $obj = new self();
         if (!$obj->consultar_condicoes($condicoes, $campos)) {
             $this->erros[] = 'Erro ao consultar arquivo ('.$arquivo.') pelo m&oacute;dulo ('.$modulo.')';
         }
@@ -109,7 +108,7 @@ INI;
         foreach ($modulos as $modulo) {
             $ini .= "[{$modulo}]\n";
             if ($modulo == 'simp') { $modulo = ''; }
-            $condicao = condicao_sql::montar('modulo', '=', $modulo, false);
+            $condicao = condicao_sql::montar('modulo', '=', $modulo);
             $arquivos = $this->vetor_associativo('arquivo', 'descricao', $condicao, $ordem);
             if (count($arquivos)) {
                 $maior = max(array_map('strlen', array_keys($arquivos)));

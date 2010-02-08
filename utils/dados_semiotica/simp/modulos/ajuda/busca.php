@@ -4,10 +4,10 @@
 // Descricao: Busca entre as ajudas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.3
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.4
 // Data: 07/01/2008
-// Modificado: 24/03/2009
+// Modificado: 25/11/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -59,7 +59,7 @@ function imprimir_formulario($dados, $action) {
     $form = new formulario($action, 'busca_ajuda');
     $form->campo_informacao('Preencha as palavras-chave da busca separadas por espa&ccedil;o');
     $form->campo_text('busca', 'busca', $dados->busca, 40, 30, 'Palavras-chave');
-    $form->campo_submit('enviar', 'enviar', 'Buscar');
+    $form->campo_submit('enviar', 'enviar', 'Consultar');
     $form->imprimir();
 }
 
@@ -73,7 +73,7 @@ function imprimir_resultado_busca($dados) {
     global $CFG;
     $palavras = explode(' ', $dados->busca);
 
-    $condicoes = condicao_sql::montar('modulo', '<>', '', false);
+    $condicoes = condicao_sql::montar('modulo', '<>', '');
     $arquivos = objeto::get_objeto('arquivo')->consultar_varios($condicoes, true);
 
     // Para cada arquivo do sistema

@@ -4,7 +4,7 @@
 // Descricao: Arquivo para transformar o XML de uma lista de entidades hierarquicas em HTML
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.7
 // Data: 14/02/2008
 // Modificado: 23/10/2008

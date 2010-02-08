@@ -4,10 +4,10 @@
 // Descricao: Script de configuracoes pessoais
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.9
 // Data: 23/07/2007
-// Modificado: 03/06/2009
+// Modificado: 28/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -17,7 +17,7 @@ require_once($CFG->dirroot.'sessao.php');
 /// Dados do formulario
 $modulo = util::get_modulo(__FILE__);
 $dados  = formulario::get_dados();
-$campos = array('tema', 'ajax', 'fonte', 'tamanho', 'sem_imagens', 'sem_transparencia');
+$campos = array('tema', 'ajax', 'fonte', 'tamanho', 'sem_imagens', 'sem_transparencia', 'som');
 $action = $CFG->site;
 $ajuda  = <<<AJUDA
   <p>Este formul&aacute;rio apresenta algumas op&ccedil;&otilde;es espec&iacute;ficas de 
@@ -124,6 +124,9 @@ function imprimir_form($dados, $campos, $action) {
     $form->campo_select('tema', 'tema', $CFG->vt_temas, $dados->tema, 'Tema');
     $form->campo_bool('sem_imagens', 'sem_imagens', 'Omitir imagens do sistema', $dados->sem_imagens);
     $form->campo_bool('sem_transparencia', 'sem_transparencia', 'N&atilde;o usar transpar&ecirc;ncia', $dados->sem_transparencia);
+    if (MENSAGEM_SOM) {
+        $form->campo_bool('som', 'som', 'Utilizar som nas ajudas', $dados->som);
+    }
     $form->campo_submit('enviar', 'enviar', 'Alterar', true, true);
     $form->imprimir();
 }

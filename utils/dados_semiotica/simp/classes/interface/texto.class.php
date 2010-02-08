@@ -4,10 +4,10 @@
 // Descricao: Classe com funcoes uteis para manipulacao de texto
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.20
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.25
 // Data: 17/09/2007
-// Modificado: 20/07/2009
+// Modificado: 25/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -76,11 +76,16 @@ final class texto {
     //
     //     Imprime um numero
     //
-    static public function numero($numero, $casas_decimais = false, $fixo = false) {
+    static public function numero($numero, $casas_decimais = false, $fixo = false, $locale = null) {
     // Int || Float $numero: numero a ser impresso
     // Int || Bool $casas_decimais: numero de casas decimais ou false para um numero variavel
     // Bool $fixo: indica se deve ser usado um numero fixo de casas decimais
+    // String || Null $locale: localizacao a ser utilizada como base ou null para nao especificar
     //
+        if ($locale !== null) {
+            $locale_antigo = setlocale(LC_NUMERIC, '0');
+            setlocale(LC_NUMERIC, $locale);
+        }
         if (is_numeric($numero)) {
             $conv = localeconv();
 
@@ -93,9 +98,13 @@ final class texto {
                     $vt = explode($conv['decimal_point'], $numero);
                     if (count($vt) == 2) {
                         $p = strlen($vt[1]) - 1;
-                        while ($p && $vt[1][$p] == '0') { $p--; }
+                        while ($p >= 0 && $vt[1][$p] == '0') { $p--; }
                         $vt[1] = substr($vt[1], 0, $p + 1);
-                        $numero = implode($conv['decimal_point'], $vt);
+                        if (strlen($vt[1])) {
+                            $numero = implode($conv['decimal_point'], $vt);
+                        } else {
+                            $numero = $vt[0];
+                        }
                     }
                 }
 
@@ -111,6 +120,9 @@ final class texto {
                 $numero = number_format($numero, $casas_decimais, $conv['decimal_point'], $conv['thousands_sep']);
             }
         }
+        if ($locale !== null) {
+            setlocale(LC_NUMERIC, $locale_antigo);
+        }
         return self::codificar($numero);
     }
 
@@ -125,15 +137,38 @@ final class texto {
     //
         if (TEXTO_UTF8) {
             $len = self::strlen($str);
+
+            // Inicio negativo: comeca a contar do final
             if ($de < 0) {
                 $de = $len + $de;
+                if ($de < 0) {
+                    return '';
+                }
             }
+
+            // Tamanho false: considerar ate' o final
             if ($tam === false) {
                 $tam = $len - $de;
+
+            // Tamanho negativo: considerar o final menos a quantidade de caracteres do inicio e do tamanho
+            } elseif ($tam < 0) {
+                $tam = $len - ($de + abs($tam));
+
+            // Tamanho zero: nao obtem nada
+            } elseif ($tam == 0) {
+                return '';
             }
-            return preg_replace('#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$de.'}'.
-                                '((?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$tam.'}).*#s',
-                                '$1', $str);
+
+            $exp = "/^".                               // Inicio da expressao
+                   ($de ? "(?:\X){{$de}}" : '').       // Caracteres ignorados no inicio
+                   "((?:\X){0,{$tam}})".               // Caracteres a serem obtidos
+                   "/u";                               // Fim da expressao
+
+            if (preg_match($exp, $str, $match)) {
+                return $match[1];
+            } else {
+                return '';
+            }
         }
         return substr($str, $de, $tam);
     }
@@ -257,6 +292,7 @@ final class texto {
                    '/ç/'.$u         => 'c',
                    '/ĺ/'.$u         => 'l',
                    '/ń|ñ/'.$u       => 'n',
+                   '/ṕ/'.$u         => 'p',
                    '/ŕ/'.$u         => 'r',
                    '/ś/'.$u         => 's',
                    '/ý|ÿ/'.$u       => 'y',
@@ -271,20 +307,45 @@ final class texto {
     static public function strip_espacos($str) {
     // String $str: texto a ser filtrado
     //
-        $str = trim($str);
+        return self::strip_char_adjacente(trim($str), ' ');
+    }
+
+
+    //
+    //     Remove caracteres repetidos adjacentes do texto
+    //
+    static public function strip_char_adjacente($str, $char) {
+    // String $str: texto a ser filtrado
+    // Char || Array[Char] $char: caracter a ser analisado ou vetor de caracteres
+    //
         $str2 = '';
         $total = strlen($str);
         $i = 0;
-        while ($i < $total) {
-            if ($str[$i] == ' ') {
-                $str2 .= ' ';
-                $i++;
-                while ($i < $total && $str[$i] == ' ') {
+        if (is_array($char)) {
+            while ($i < $total) {
+                if (in_array($str[$i], $char)) {
+                    $str2 .= $str[$i];
+                    $i++;
+                    while ($i < $total && in_array($str[$i], $char)) {
+                        $i++;
+                    }
+                } else {
+                    $str2 .= $str[$i];
                     $i++;
                 }
-            } else {
-                $str2 .= $str[$i];
-                $i++;
+            }
+        } else {
+            while ($i < $total) {
+                if ($str[$i] == $char) {
+                    $str2 .= $char;
+                    $i++;
+                    while ($i < $total && $str[$i] == $char) {
+                        $i++;
+                    }
+                } else {
+                    $str2 .= $str[$i];
+                    $i++;
+                }
             }
         }
         return $str2;

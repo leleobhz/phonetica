@@ -4,10 +4,10 @@
 // Descricao: Consultas alto nivel ao banco de dados MySQL
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.3
 // Data: 14/10/2008
-// Modificado: 20/08/2009
+// Modificado: 25/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -28,6 +28,34 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
 
 
     //
+    //     Monta a funcao usada em uma condicao SQL
+    //
+    public function montar_funcao_condicao($funcao, $operando, $tipo_operando, $atributo) {
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // String $operando: valor do operando
+    // Int $tipo_operando: indica o que e' o operando (CONDICAO_SQL_TIPO_ATRIBUTO ou CONDICAO_SQL_TIPO_VALOR)
+    // atributo $atributo: definicao do atributo
+    //
+        $funcoes = array('dia'     => 'DAYOFMONTH',
+                         'mes'     => 'MONTH',
+                         'ano'     => 'YEAR',
+                         'hora'    => 'HOUR',
+                         'minuto'  => 'MINUTE',
+                         'segundo' => 'SECOND',
+                         'diaano'  => 'DAYOFYEAR');
+        if (isset($funcoes[$funcao])) {
+            switch ($tipo_operando) {
+            case CONDICAO_SQL_TIPO_ATRIBUTO:
+                return $this->delimitar_funcao($funcoes[$funcao]).'('.$operando.')';
+            case CONDICAO_SQL_TIPO_VALOR:
+                return $this->delimitar_funcao($funcoes[$funcao]).'('.$operando.')';
+            }
+        }
+        trigger_error('Driver MySQL nao suporte a funcao "'.$funcao.'"', E_USER_WARNING);
+    }
+
+
+    //
     //     Indica se o resultado e' valido ou nao
     //
     final public function resultado_valido($resultado) {
@@ -35,6 +63,28 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
     //
         $classe = 'PDOStatement';
         return ($resultado instanceof $classe);
+    }
+
+
+    //
+    //     Prepara para a criacao de tabelas
+    // 
+    public function preparar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        return $this->consultar('SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0') &&
+               $this->consultar('SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0');
+    }
+
+
+    //
+    //     Encerra a criacao de tabelas
+    //
+    public function encerrar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        return $this->consultar('SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS') &&
+               $this->consultar('SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS');
     }
 
 
@@ -65,7 +115,7 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
     //     CREATE TABLE: Gera uma SQL de criacao de uma nova tabela no BD
     //
     public function sql_create_table($objeto, $charset = 'UTF-8') {
-    // Object $objeto: instencia de uma entidade derivada da classe objeto
+    // Object $objeto: instancia de uma entidade derivada da classe objeto
     // String $charset: codificacao da tabela
     //
         $sql_tabela = $this->delimitar_tabela($objeto->get_tabela());
@@ -92,21 +142,33 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
                 $vt_constraint['index_'.$def_atributo->nome] = "  INDEX ({$sql_campo})";
             }
 
+            // Se nao e' a chave primaria
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = ' NOT NULL';
+
+                // Se e' um relacionamento
                 if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
                     $def_atributo_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
                     if ($def_atributo_rel->forte) {
+                        $sql_nulo = ' NOT NULL';
                         $sql_default = '';
                     } else {
+                        $sql_nulo = ' NULL';
                         $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                     }
-                } elseif (!preg_match('/^(TINY|MEDIUM|LONG)?TEXT$/', $sql_tipo)) {
-                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
-                } else {
+
+                // Se e' um campo texto
+                } elseif (preg_match('/^(TINY|MEDIUM|LONG)?TEXT$/', $sql_tipo)) {
+                    $sql_nulo = ' NOT NULL';
                     $sql_default = '';
+
+                // Demais campos
+                } else {
+                    $sql_nulo = ' NOT NULL';
+                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                 }
                 $vt_campos[] = "  {$sql_campo} {$sql_tipo}{$sql_nulo}{$sql_default}{$sql_comment}";
+
+            // Se e' a chave primaria
             } else {
                 $sql_constraint = 'pk_'.md5($objeto->get_tabela().':'.$def_atributo->nome);
                 $sql_nulo    = ' NOT NULL';
@@ -116,6 +178,8 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
                 $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} PRIMARY KEY ({$sql_campo})";
             }
         }
+
+        // Restricoes de relacionamentos externos
         foreach ($objeto->get_definicoes_rel_uu() as $atributo_rel => $def_atributo_rel) {
             $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo_rel);
             $sql_atributo_rel = $this->delimitar_campo($atributo_rel);
@@ -124,12 +188,25 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
             $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
             $vt_constraint['index_'.$def_atributo_rel->nome] = "  INDEX ({$sql_atributo_rel})";
 
-            // Se e' um relacionamento forte, adicionar constraint
+            // Forte
             if ($def_atributo_rel->forte) {
                 $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
                                                   "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
                                                   "      ON DELETE CASCADE\n".
                                                   "      ON UPDATE CASCADE";
+
+            // Fraco
+            } else {
+
+                // Se o relacionamento e' com a mesma tabela: ignorar constraint
+                if ($objeto->get_tabela() == $obj_ref->get_tabela()) {
+                    continue;
+                }
+
+                $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                                  "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                                  "      ON DELETE SET NULL\n".
+                                                  "      ON UPDATE SET NULL";
             }
         }
 
@@ -188,8 +265,28 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
         case DRIVER_OBJETO_ADICIONAR_ATRIBUTO:
             $def_atributo = $objeto->get_definicao_atributo($atributo);
             $sql_tipo     = $this->gerar_sql_tipo($def_atributo);
-            $sql_nulo     = ' NOT NULL';
-            $sql_default  = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+
+            // Se e' um relacionamento
+            if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
+                $def_atributo_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
+                if ($def_atributo_rel->forte) {
+                    $sql_nulo = ' NOT NULL';
+                    $sql_default = '';
+                } else {
+                    $sql_nulo = ' NULL';
+                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+                }
+
+            // Se e' um campo texto
+            } elseif (preg_match('/^(TINY|MEDIUM|LONG)?TEXT$/', $sql_tipo)) {
+                $sql_nulo = ' NOT NULL';
+                $sql_default = '';
+
+            // Demais campos
+            } else {
+                $sql_nulo = ' NOT NULL';
+                $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+            }
 
             $descricao   = texto::strip_acentos(texto::decodificar($def_atributo->descricao));
             if (strpos($descricao, '&') !== false) {
@@ -204,14 +301,13 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
                 $def_relacionamento = $objeto->get_definicao_rel_uu($atributo, false);
                 $obj_ref = $objeto->get_objeto_rel_uu($def_relacionamento->nome);
 
-                // Se o relacionamento e' fraco e nao possui registros na tabela
+                // Se o relacionamento e' forte e nao possui registros na tabela
+                $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
+                $sql_atributo_rel = $this->delimitar_campo($atributo);
+                $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
+                $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
                 if ($def_relacionamento->forte && !$objeto->possui_registros()) {
                     $sql_index = "ALTER TABLE {$sql_tabela} ADD INDEX ($sql_atributo)";
-
-                    $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
-                    $sql_atributo_rel = $this->delimitar_campo($atributo);
-                    $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
-                    $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
                     $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
                                       "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
                                       "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
@@ -220,7 +316,18 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
 
                     $sql = array($sql_alter, $sql_index, $sql_constraint);
                 } else {
-                    $sql = $sql_alter;
+                    $sql_index = "ALTER TABLE {$sql_tabela} ADD INDEX ($sql_atributo)";
+
+                    if ($objeto->get_tabela() != $obj_ref->get_tabela()) {
+                        $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
+                                          "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                          "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                          "      ON DELETE SET NULL\n".
+                                          "      ON UPDATE SET NULL";
+                        $sql = array($sql_alter, $sql_index, $sql_constraint);
+                    } else {
+                        $sql = array($sql_alter, $sql_index);
+                    }
                 }
             } else {
                 $sql = $sql_alter;
@@ -399,6 +506,5 @@ final class driver_pdo_mysql_objeto extends driver_objeto {
         }
         return 'use '.$bd;
     }
-
 
 }//class

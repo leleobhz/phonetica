@@ -4,10 +4,10 @@
 // Descricao: Grafico de numero de atividades por mes
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.1
 // Data: 03/03/2009
-// Modificado: 03/03/2009
+// Modificado: 18/11/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -46,7 +46,7 @@ foreach ($operacoes as $cod_operacao => $operacao) {
         $vt_condicoes = array();
         $vt_condicoes[] = condicao_sql::montar('data', '>=', $time);
         $vt_condicoes[] = condicao_sql::montar('data', '<', $proximo_time);
-        $vt_condicoes[] = condicao_sql::montar('erro', '=', 0);
+        $vt_condicoes[] = condicao_sql::montar('erro', '=', false);
         $vt_condicoes[] = condicao_sql::montar('operacao', '=', $cod_operacao);
         $condicoes = condicao_sql::sql_and($vt_condicoes);
         $valores[$cod_operacao][] = $log->quantidade_registros($condicoes);

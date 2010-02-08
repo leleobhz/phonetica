@@ -4,7 +4,7 @@
 // Descricao: testa a memoria para uma entidade
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.4
 // Data: 17/10/2007
 // Modificado: 15/07/2008

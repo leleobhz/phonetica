@@ -4,7 +4,7 @@
 // Descricao: Arquivo mostra e altera os eventos cadastrados para o dia
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
+// E-mail: rpmoreira@tecnolivre.com.br
 // Versao: 1.1.0.6
 // Data: 09/08/2007
 // Modificado: 23/03/2009

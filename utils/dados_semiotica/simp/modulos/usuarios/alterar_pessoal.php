@@ -4,10 +4,10 @@
 // Descricao: Altera os dados de um usuario
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.3
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.2
 // Data: 21/01/2007
-// Modificado: 09/07/2009
+// Modificado: 27/02/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //

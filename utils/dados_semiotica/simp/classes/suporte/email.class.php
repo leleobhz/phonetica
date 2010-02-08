@@ -4,10 +4,10 @@
 // Descricao: Classe que controla o envio de E-mail (simples e SMTP)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.20
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.24
 // Data: 16/08/2007
-// Modificado: 03/07/2009
+// Modificado: 14/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -25,6 +25,7 @@ define('EMAIL_TEMPO_LIMITE', 0.01);
 // Tipos de envio de e-mail
 define('EMAIL_TIPO_PADRAO',  1);
 define('EMAIL_TIPO_SMTP',    2);
+define('EMAIL_TIPO_IMAP',    3);
 
 // Niveis de prioridade
 define('EMAIL_PRIORIDADE_ALTISSIMA',  1);
@@ -51,6 +52,7 @@ final class email {
     private $assunto            = '';
     private $mensagem           = '';
     private $mensagem_html      = '';
+    private $tipo               = EMAIL_TIPO_PADRAO;
     private $prioridade         = EMAIL_PRIORIDADE_NORMAL;
     private $confirmacao        = false;
     private $copias;
@@ -58,7 +60,6 @@ final class email {
     private $anexos;
 
     // Atributos SMTP
-    private $usar_smtp     = false;
     private $smtp_conexao  = false;
     private $smtp_host     = false;
     private $smtp_porta    = 25;
@@ -91,6 +92,7 @@ final class email {
             $usuario = defined('EMAIL_SMTP_USUARIO') ? EMAIL_SMTP_USUARIO : false;
             $senha   = defined('EMAIL_SMTP_SENHA')   ? EMAIL_SMTP_SENHA   : false;
             $this->set_smtp(EMAIL_SMTP_HOST, $porta, $usuario, $senha);
+            $this->set_tipo_envio(EMAIL_TIPO_SMTP);
         }
     }
 
@@ -108,7 +110,24 @@ final class email {
         $this->smtp_porta   = $porta;
         $this->smtp_usuario = $usuario;
         $this->smtp_senha   = $senha;
-        $this->usar_smtp    = true;
+    }
+
+
+    //
+    //     Define o tipo de envio do e-mail
+    //
+    public function set_tipo_envio($tipo) {
+    // Int $tipo: uma das constantes de tipo de envio
+    //
+        switch ($tipo) {
+        case EMAIL_TIPO_PADRAO:
+        case EMAIL_TIPO_SMTP:
+        case EMAIL_TIPO_IMAP:
+            $this->tipo = EMAIL_TIPO_SMTP;
+            return true;
+        }
+        trigger_error('Tipo invalido de envio de e-mail: '.$tipo, E_USER_ERROR);
+        return false;
     }
 
 
@@ -301,10 +320,11 @@ final class email {
     //
     //     Anexa um arquivo do servidor ao e-mail
     //
-    public function adicionar_anexo($arquivo, $descricao = false, $tipo = false) {
+    public function adicionar_anexo($arquivo, $descricao = false, $tipo = false, $link_alternativo = false) {
     // String $arquivo: nome do arquivo no servidor
     // String $descricao: descricao do arquivo anexado
     // String || Bool $tipo: mime-type do arquivo (false para obter automaticamente)
+    // String $link_alternativo: endereco do link alternativo para a imagem a ser embutida
     //
         if (!file_exists($arquivo)) {
             $this->erros[] = "Arquivo {$arquivo} n&atilde;o existe";
@@ -316,33 +336,35 @@ final class email {
 
         $nome_arquivo = basename($arquivo);
         $conteudo     = file_get_contents($arquivo);
-        $this->adicionar_conteudo_anexo($conteudo, $nome_arquivo, $descricao, $tipo);
+        $this->adicionar_conteudo_anexo($conteudo, $nome_arquivo, $descricao, $tipo, $link_alternativo);
     }
 
 
     //
     //     Adicionar o conteudo de um arquivo como anexo do e-mail
     //
-    public function adicionar_conteudo_anexo($conteudo_arquivo, $arquivo, $descricao, $tipo = false) {
+    public function adicionar_conteudo_anexo($conteudo_arquivo, $arquivo, $descricao, $tipo = false, $link_alternativo = false) {
     // String $conteudo_arquivo: sequencia de bytes do arquivo
     // String $arquivo: nome do arquivo a ser anexado
     // String $descricao: descricao do arquivo anexado
     // String || Bool $tipo: mime-type do arquivo (false para obter automaticamente)
+    // String $link_alternativo: endereco do link alternativo para a imagem a ser embutida
     //
-        // Codificar em Base64 e quebrar linha a cada 68 caracteres
+        // Codificar em Base64 e quebrar linha a cada 76 caracteres
         $arquivo_codificado = base64_encode($conteudo_arquivo);
-        $arquivo_codificado = chunk_split($arquivo_codificado, 68, $this->eol);
+        $arquivo_codificado = chunk_split($arquivo_codificado, 76, $this->eol);
 
         // Gerar anexo
         $obj = new stdClass();
-        $obj->nome      = basename($arquivo);
+        $obj->nome = basename($arquivo);
         $obj->descricao = $descricao ? $descricao : $obj->nome;
+        $link_alternativo = $link_alternativo;
         if ($tipo) {
             $obj->tipo = $tipo;
         } else {
             $obj->tipo = util::get_mime($arquivo);
         }
-        $obj->conteudo  = trim($arquivo_codificado);
+        $obj->conteudo = trim($arquivo_codificado);
 
         // Se nao conseguiu obter o mime-type do arquivo
         if (!$obj->tipo) {
@@ -370,8 +392,31 @@ final class email {
         list($login, $dominio) = explode('@', $this->email_remetente);
         $id_mensagem = date('YmdHis').'.'.md5($login).'@'.$dominio;
 
+        // Montar o conteudo do email com a mensagem e os anexos
+        $partes = $this->montar_conteudo();
+
         // Gerar mime boudary
-        $mime_boundary = md5(time());
+        $vezes = 0;
+        do {
+            if ($vezes < 3) {
+                $mime_boundary = md5(microtime());
+            } elseif ($vezes < 6) {
+                $mime_boundary = md5(microtime()).md5(rand(1000, 10000000));
+            } elseif ($vezes < 10) {
+                $mime_boundary = str_repeat($vezes, md5(microtime()));
+            } else {
+                $this->erros[] = 'Erro eo enviar e-mail. Dificuldade em montar o separador de partes do e-mail (mime-boundary).';
+                return false;
+            }
+            $vezes += 1;
+            $aparece_no_conteudo = false;
+            foreach ($partes as $parte) {
+                if (strpos($parte, $mime_boundary) !== false) {
+                    $aparece_no_conteudo = true;
+                    break;
+                }
+            }
+        } while ($aparece_no_conteudo);
 
         // Montar enderecos
         $remetente    = $this->montar_email($this->nome_remetente, $this->email_remetente);
@@ -391,7 +436,17 @@ final class email {
         }
         $bcc = implode(', ', $vt_bcc);
 
+        // Montar assunto
         $assunto = $this->codificar($this->assunto);
+
+        // Preparar o cabecalho do e-mail
+        $content_type = 'multipart/alternative';
+        foreach ($this->anexos as $arquivo) {
+            if ($arquivo->link_alternativo) {
+                $content_type = 'multipart/related';
+                break;
+            }
+        }
 
         if ($this->confirmacao) {
             $confirmacao = 'Disposition-Notification-To: '.$remetente.$eol;
@@ -417,22 +472,42 @@ final class email {
                      'User-Agent: '.texto::strip_acentos(EMAIL_NOME_SITE).' Webmail'.$eol.
                      'MIME-Version: 1.0'.$eol.
                      $confirmacao.
-                     "Content-Type: multipart/alternative;".$eol.
+                     "Content-Type: {$content_type};".$eol.
                      "\tboundary=\"{$mime_boundary}\"".$eol.
                      'X-Mailer: PHP mail function'.$eol.
                      'X-Priority: '.$this->prioridade.' '.$descricoes_prioridade[$this->prioridade].$eol;
 
-        // Montar o conteudo do email com a mensagem e os anexos
-        $conteudo = $this->montar_conteudo($mime_boundary);
+        // Montar o conteudo do e-mail
+        $conteudo = "--{$mime_boundary}".$this->eol.
+                    implode($this->eol."--{$mime_boundary}".$this->eol, $partes).$eol.
+                    "--{$mime_boundary}--";
 
         $enviou = false;
-        if ($this->usar_smtp) {
-            $enviou = $this->enviar_smtp($destinatario, $this->assunto, $conteudo, $cabecalho);
-        } else {
-            $enviou = mail($destinatario, $this->assunto, $conteudo, $cabecalho);
-            if (!$enviou) {
-                $this->erros[] = 'Erro ao enviar o e-mail. Talvez o servidor de e-mail esteja sobrecarregado.';
+        switch ($this->tipo) {
+        case EMAIL_TIPO_PADRAO:
+            if (!function_exists('mail')) {
+                $this->erros[] = 'Erro ao enviar o e-mail. O servidor n&atilde;o suporte envio de e-mail nativo da plataforma PHP.';
+            } else {
+                $enviou = mail($destinatario, $this->assunto, $conteudo, $cabecalho);
+                if (!$enviou) {
+                    $this->erros[] = 'Erro ao enviar o e-mail. Talvez o servidor de e-mail esteja sobrecarregado.';
+                }
             }
+            break;
+        case EMAIL_TIPO_SMTP:
+            $enviou = $this->enviar_smtp($destinatario, $this->assunto, $conteudo, $cabecalho);
+            break;
+        case EMAIL_TIPO_IMAP:
+            if (!function_exists('imap_mail')) {
+                $this->erros[] = 'Erro ao enviar o e-mail. O servidor n&atilde;o suporta envio de e-mail do tipo IMAP.';
+            } else {
+                $enviou = imap_mail($destinatario, $assunto, $conteudo, $cabecalho, $cc, $bcc);
+                if (!$enviou) {
+                    $erro = imap_last_error();
+                    $this->erros[] = 'Erro ao enviar o e-mail'.($erro ? ' (Detalhes: '.$erro.')' : '');
+                }
+            }
+            break;
         }
         return $enviou;
     }
@@ -823,9 +898,7 @@ final class email {
     //
     //     Monta o conteudo do e-mail com os anexos
     //
-    private function montar_conteudo($mime_boundary) {
-    // String $mime_boundary: separador de partes do e-mail
-    //
+    private function montar_conteudo() {
         $eol = $this->eol;
 
         // Montar as partes do e-mail
@@ -840,13 +913,13 @@ final class email {
                             'Content-Transfer-Encoding: quoted-printable'.$eol.
                             'Content-Disposition: inline'.$eol.
                             $eol.
-                            chunk_split(call_user_func($funcao, $this->mensagem), 68, $eol).$eol;
+                            chunk_split(call_user_func($funcao, $this->mensagem), 76, $eol).$eol;
             } else {
                 $partes[] = 'Content-Type: text/plain; charset='.EMAIL_CHARSET.$eol.
                             'Content-Transfer-Encoding: base64'.$eol.
                             'Content-Disposition: inline'.$eol.
                             $eol.
-                            chunk_split(base64_encode($this->mensagem), 68, $eol).$eol;
+                            chunk_split(base64_encode($this->mensagem), 76, $eol).$eol;
             }
         }
 
@@ -859,30 +932,36 @@ final class email {
                             'Content-Transfer-Encoding: quoted-printable'.$eol.
                             'Content-Disposition: inline'.$eol.
                             $eol.
-                            chunk_split(call_user_func($funcao, $this->mensagem_html), 68, $eol).$eol;
+                            chunk_split(call_user_func($funcao, $this->mensagem_html), 76, $eol).$eol;
             } else {
                 $partes[] = 'Content-Type: text/html; charset='.EMAIL_CHARSET.$eol.
                             'Content-Transfer-Encoding: base64'.$eol.
                             'Content-Disposition: inline'.$eol.
                             $eol.
-                            chunk_split(base64_encode($this->mensagem_html), 68, $eol).$eol;
+                            chunk_split(base64_encode($this->mensagem_html), 76, $eol).$eol;
             }
         }
 
         // Anexos
         foreach ($this->anexos as $arquivo) {
-            $partes[] = "Content-Type: {$arquivo->tipo}; name=\"{$arquivo->nome}\"".$eol.
-                        "Content-Transfer-Encoding: base64".$eol.
-                        "Content-Description: \"{$arquivo->descricao}\"".$eol.
-                        "Content-Disposition: attachment; filename=\"{$arquivo->nome}\"".$eol.
-                        $eol.
-                        $arquivo->conteudo;
+            if ($arquivo->link_alternativo) {
+                $partes[] = "Content-Type: {$arquivo->tipo}; name=\"{$arquivo->nome}\"".$eol.
+                            "Content-Transfer-Encoding: base64".$eol.
+                            "Content-Description: \"{$arquivo->descricao}\"".$eol.
+                            "Content-Location: \"{$link_alternativo}\"".$eol.
+                            $eol.
+                            $arquivo->conteudo;
+            } else {
+                $partes[] = "Content-Type: {$arquivo->tipo}; name=\"{$arquivo->nome}\"".$eol.
+                            "Content-Transfer-Encoding: base64".$eol.
+                            "Content-Description: \"{$arquivo->descricao}\"".$eol.
+                            "Content-Disposition: attachment; filename=\"{$arquivo->nome}\"".$eol.
+                            $eol.
+                            $arquivo->conteudo;
+            }
         }
 
-        // Retornar o conteudo do e-mail
-        return "--{$mime_boundary}".$eol.
-               implode($eol."--{$mime_boundary}".$eol, $partes).$eol.
-               "--{$mime_boundary}--";
+        return $partes;
     }
 
 
@@ -965,7 +1044,7 @@ final class email {
         if (empty($nome)) {
             $this->erros[] = "Faltou preencher o campo \"{$descricao}\"";
             $ok = false;
-        } elseif (!$validacao->validar_campo('NOME', $nome, $erro)) {
+        } elseif (!$validacao->validar_campo('TEXTO_LINHA', $nome, $erro)) {
             $this->erros[] = "Campo \"{$descricao}\" possui caracteres inv&aacute;lidos ou n&atilde;o est&aacute; no padr&atilde;o";
             $ok = false;
         }

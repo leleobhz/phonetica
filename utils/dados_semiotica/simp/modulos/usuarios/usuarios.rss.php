@@ -4,10 +4,10 @@
 // Descricao: Feed de usuarios em formato RSS 2.0
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.3
 // Data: 09/11/2007
-// Modificado: 13/01/2009
+// Modificado: 18/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -20,7 +20,7 @@ $limite = 10;
 $vt_condicoes = array();
 $vt_condicoes[] = condicao_sql::montar('operacao', '=', LOG_INSERT);
 $vt_condicoes[] = condicao_sql::montar('entidade', '=', 'usuario');
-$vt_condicoes[] = condicao_sql::montar('erro', '=', '0');
+$vt_condicoes[] = condicao_sql::montar('erro', '=', false);
 $condicoes = condicao_sql::sql_and($vt_condicoes);
 $log = new log_sistema();
 $total = $log->quantidade_registros($condicoes);

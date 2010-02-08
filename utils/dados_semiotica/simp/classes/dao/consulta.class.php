@@ -4,10 +4,10 @@
 // Descricao: Classe que estrutura uma consulta em SQL de forma generica e portavel (usar apenas o metodo estruturar)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.1
 // Data: 02/06/2008
-// Modificado: 29/07/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -64,16 +64,20 @@ final class consulta {
     // que varia de acordo com o tipo:
     private $condicao;
     // CONDICAO_SQL_VAZIA: consulta incondicional
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
     //
     // CONDICAO_SQL_SIMPLES: %operando1 %operador %operando2
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
-    // - &campo $operando1           // Operando da esquerda (um atributo)
-    // - &campo || String $operando2 // Operando da direita (um atributo ou um valor)
-    // - String $operador            // Operador: < <= > >= = <> LIKE
-    // - Bool $entre_atributos       // Flag indicando se o segundo operando e' um atributo (true) ou um valor (false)
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
+    // - &campo || String $operando1   // Operando da esquerda (um atributo ou um valor)
+    // - &campo || String $operando2   // Operando da direita (um atributo ou um valor)
+    // - String $operador              // Operador: < <= > >= = <> LIKE
+    // - Array[String => Mixed] $flag  // Flag com caracteristicas dos operandos
+    //   - Int tipo1                   // Indica o que e' o primeiro operando (padrao CONDICAO_SQL_TIPO_ATRIBUTO)
+    //   - Int tipo2                   // Indica o que e' o segundo operando (CONDICAO_SQL_TIPO_VALOR)
+    //   - String funcao1              // Funcao aplicada sobre o primeiro operando (dia, mes, ano, hora, minuto, segundo)
+    //   - String funcao2              // Funcao aplicada sobre o segundo operando (dia, mes, ano, hora, minuto, segundo)
     //
     // CONDICAO_SQL_COMPOSTA: ( %condicao{1} [ %operador %condicao{2} ... ] )
     // - Int $tipo                   // Tipo de condicao
@@ -180,7 +184,7 @@ final class consulta {
 
 
     //
-    //     Checa se a tabela ja' foi adicionada
+    //     Checa se a tabela ja' foi adicionada e obtem seu apelido
     //
     private function possui_tabela($nome, $atributo, &$apelido_tabela = '') {
     // String $nome: nome da tabela a ser procurada
@@ -208,27 +212,27 @@ final class consulta {
     // Bool $consultar: indica se o campo deve ser consultado
     //
         if (!isset($this->tabelas[$apelido_tabela])) {
-            trigger_error('A tabela com apelido "'.$apelido_tabela.'" nao foi adicionada');
+            trigger_error('A tabela com apelido "'.$apelido_tabela.'" nao foi adicionada', E_USER_ERROR);
             return false;
         }
 
         $obj = new stdClass();
-        $obj->nome      = $nome;
-        $obj->atributo  = $atributo;
+        $obj->nome     = $nome;
+        $obj->atributo = $atributo;
         if (is_null($consultar)) {
             $obj->consultar = $this->contexto == CONSULTA_CONTEXTO_ATRIBUTOS;
         } else {
             $obj->consultar = (bool)$consultar;
         }
-        $obj->apelido   = 'c'.base_convert(++$this->contador_campos, 10, 36);
-        $obj->tabela    = &$this->tabelas[$apelido_tabela];
+        $obj->apelido = 'c'.base_convert(++$this->contador_campos, 10, 36);
+        $obj->tabela  = &$this->tabelas[$apelido_tabela];
         $this->campos[$obj->apelido] = $obj;
         return $obj->apelido;
     }
 
 
     //
-    //     Checa se o campo ja' foi adicionado em alguma tabela
+    //     Checa se o campo ja' foi adicionado em alguma tabela e retorna seu apelido
     //
     private function possui_campo($nome, $apelido_tabela = false, &$apelido_campo = '') {
     // String $nome: nome do campo a ser procurado
@@ -258,11 +262,11 @@ final class consulta {
     // String $tipo_join: tipo de juncao (INNER ou LEFT)
     //
         if (!isset($this->tabelas[$apelido_tabela1])) {
-            trigger_error('A tabela com apelido "'.$apelido_tabela1.'" nao foi adicionada');
+            trigger_error('A tabela com apelido "'.$apelido_tabela1.'" nao foi adicionada', E_USER_ERROR);
             return false;
         }
         if (!isset($this->tabelas[$apelido_tabela2])) {
-            trigger_error('A tabela com apelido "'.$apelido_tabela2.'" nao foi adicionada');
+            trigger_error('A tabela com apelido "'.$apelido_tabela2.'" nao foi adicionada', E_USER_ERROR);
             return false;
         }
 
@@ -284,7 +288,7 @@ final class consulta {
     // Bool $tipo_ordem: ordem crescente (true) ou decrescente (false)
     //
         if (!isset($this->campos[$apelido_campo])) {
-            trigger_error('O campo com apelido "'.$apelido_campo.'" nao foi incluido');
+            trigger_error('O campo com apelido "'.$apelido_campo.'" nao foi incluido', E_USER_ERROR);
             return false;
         }
         $obj = new stdClass();
@@ -350,7 +354,7 @@ final class consulta {
     // String $atributo: nome do atributo simples do objeto informado
     //
         if (!$obj->possui_atributo($atributo)) {
-            trigger_error('A classe "'.$obj->get_classe().'" nao possui o atributo "'.$atributo.'"');
+            trigger_error('A classe "'.$obj->get_classe().'" nao possui o atributo "'.$atributo.'"', E_USER_ERROR);
             return false;
         }
 
@@ -401,8 +405,7 @@ final class consulta {
             } elseif ($obj1->possui_rel_un($filho)) {
                 if ($this->contexto == CONSULTA_CONTEXTO_CONDICOES) {
                     $dados = $obj1->get_definicao_rel_un($filho);
-                    $classe = $dados->classe;
-                    $obj2 = new $classe();
+                    $obj2 = objeto::get_objeto($dados->classe);
                     $tipo_juncao = $this->adicionar_join_vetor($obj1, $obj2, $filho, $caminho_relativo, $usou_left_join ? 'LEFT' : false);
                     if ($tipo_juncao == 'LEFT') {
                         $usou_left_join = true;
@@ -487,12 +490,13 @@ final class consulta {
 
         // Montar condicao de juncao
         $condicao = new stdClass();
-        $condicao->id              = 'join'.(++$this->contador_condicoes);
-        $condicao->tipo            = CONDICAO_SQL_SIMPLES;
-        $condicao->operando1       = &$this->campos[$apelido_chave1];
-        $condicao->operador        = '=';
-        $condicao->operando2       = &$this->campos[$apelido_chave2];
-        $condicao->entre_atributos = true;
+        $condicao->id        = 'join'.(++$this->contador_condicoes);
+        $condicao->tipo      = CONDICAO_SQL_SIMPLES;
+        $condicao->operando1 = &$this->campos[$apelido_chave1];
+        $condicao->operador  = '=';
+        $condicao->operando2 = &$this->campos[$apelido_chave2];
+        $condicao->flags     = array('tipo1' => CONDICAO_SQL_TIPO_ATRIBUTO,
+                                     'tipo2' => CONDICAO_SQL_TIPO_ATRIBUTO);
 
         // Incluir juncao
         if (!$tipo_join) {
@@ -552,12 +556,13 @@ final class consulta {
 
         // Montar condicao de juncao
         $condicao = new stdClass();
-        $condicao->id              = 'join'.(++$this->contador_condicoes);
-        $condicao->tipo            = CONDICAO_SQL_SIMPLES;
-        $condicao->operando1       = &$this->campos[$apelido_chave1];
-        $condicao->operador        = '=';
-        $condicao->operando2       = &$this->campos[$apelido_chave2];
-        $condicao->entre_atributos = true;
+        $condicao->id        = 'join'.(++$this->contador_condicoes);
+        $condicao->tipo      = CONDICAO_SQL_SIMPLES;
+        $condicao->operando1 = &$this->campos[$apelido_chave1];
+        $condicao->operador  = '=';
+        $condicao->operando2 = &$this->campos[$apelido_chave2];
+        $condicao->flags     = array('tipo1' => CONDICAO_SQL_TIPO_ATRIBUTO,
+                                     'tipo2' => CONDICAO_SQL_TIPO_ATRIBUTO);
 
         // Incluir juncao
         if (!$tipo_join) {
@@ -596,10 +601,12 @@ final class consulta {
         case CONDICAO_SQL_SIMPLES:
 
             // Atributo do operando 1
-            $vt_atributos[] = $condicao->operando1;
+            if (condicao_sql::get_flag($condicao, 'tipo1') == CONDICAO_SQL_TIPO_ATRIBUTO) {
+                $vt_atributos[] = $condicao->operando1;
+            }
 
             // Atributo do operando 2, caso seja uma condicao entre atributos
-            if ($condicao->entre_atributos) {
+            if (condicao_sql::get_flag($condicao, 'tipo2') == CONDICAO_SQL_TIPO_ATRIBUTO) {
                 $vt_atributos[] = $condicao->operando2;
             }
             break;
@@ -644,14 +651,14 @@ final class consulta {
             if ($apelido1) {
                 $condicao->operando1 = &$this->campos[$apelido1];
             } else {
-                trigger_error('Nao foi encontrado o campo relacionado ao atributo "'.$condicao->operando1.'"');
+                trigger_error('Nao foi encontrado o campo relacionado ao atributo "'.$condicao->operando1.'"', E_USER_ERROR);
             }
-            if ($condicao->entre_atributos) {
+            if (condicao_sql::get_flag($condicao, 'tipo2') == CONDICAO_SQL_TIPO_ATRIBUTO) {
                 $apelido2 = $this->get_apelido_campo_por_atributo($condicao->operando2);
                 if ($apelido2) {
                     $condicao->operando2 = &$this->campos[$apelido2];
                 } else {
-                    trigger_error('Nao foi encontrado o campo relacionado ao atributo2 "'.$condicao->operando2.'"');
+                    trigger_error('Nao foi encontrado o campo relacionado ao atributo2 "'.$condicao->operando2.'"', E_USER_ERROR);
                 }
             }
             break;
@@ -729,8 +736,7 @@ final class consulta {
     // Int $inicio: obtem elementos a partir do N'esimo elemento consultado
     //
         $entidade = $obj->get_classe();
-        $classe = __CLASS__;
-        $consulta = new $classe($entidade);
+        $consulta = new self($entidade);
         $atributos = array_unique($atributos);
         if (is_null($condicoes)) {
             $condicoes = condicao_sql::vazia();

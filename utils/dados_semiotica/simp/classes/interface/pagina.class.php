@@ -4,10 +4,10 @@
 // Descricao: Classe que controla o layout da pagina
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.47
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.51
 // Data: 21/05/2007
-// Modificado: 24/08/2009
+// Modificado: 14/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -45,6 +45,9 @@ final class pagina {
     //     Destrutor padrao
     //
     public function __destruct() {
+        while (self::$contador_abas) {
+            self::fechar_abas();
+        }
         if (self::$imprimiu_cabecalho && !self::$imprimiu_rodape) {
             $e = "Erro ao imprimir rodap&eacute;: Rodap&eacute; omitido";
             mensagem::erro($e);
@@ -169,7 +172,7 @@ final class pagina {
         setlocale(LC_TIME, 'C');
         header("X-Framework: SIMP/".VERSAO_SIMP);
         header("Content-Type: {$CFG->content}; charset={$CFG->charset}");
-        header("Content-Scrypt-Type: text/javascript; charset={$CFG->charset}");
+        header("Content-Script-Type: text/javascript; charset={$CFG->charset}");
         header("Content-Style-Type: text/css; charset={$CFG->charset}");
         header("Content-Base: {$CFG->wwwroot}");
         header("Content-Disposition: inline; filename={$nome}");
@@ -443,7 +446,6 @@ final class pagina {
             $buf .= "  <ul>\n";
             foreach ($grupo->permissoes as $permissao) {
                 if (!$permissao->visivel) { continue; }
-                $permissao->arquivo->consultar_campos(array('descricao', 'arquivo', 'modulo'));
                 $descricao = $permissao->arquivo->exibir('descricao');
                 $link      = $permissao->arquivo->link;
 
@@ -773,7 +775,7 @@ final class pagina {
             $abas .= "<span>Abas:</span>\n";
             foreach ($vt_abas as $id_aba => $dados) {
                 $class = ($ativa == $id_aba) ? 'ativa' : '';
-                $aba = link::texto($dados->link, $dados->nome, '', 'aba_'.$id_aba, $class, 1, 'document.getElementById("'.$id_conteudo.'")');
+                $aba = link::texto($dados->link, $dados->nome, '', 'aba_'.$id_aba, $class, 1, 'document.getElementById("'.$id_conteudo.'")', isset($dados->foco) ? $dados->foco : true, isset($dados->ajax) ? $dados->ajax : true);
                 $abas .= (isset($imprimiu_primeiro) ? $span : '').$aba."\n";
                 $imprimiu_primeiro = true;
             }
@@ -882,13 +884,12 @@ final class pagina {
     // String $conteudo_pagina: conteudo a ser exibido na pagina
     //
         global $CFG;
-        $classe = __CLASS__;
         $titulo = 'Erro Inesperado';
         $nav = array($CFG->wwwroot => 'P&aacute;gina Principal',
                      ''            => 'Erro Inesperado');
         $estilos = false;
 
-        $p = new $classe();
+        $p = new self();
         $p->cabecalho($titulo, $nav, $estilos);
         if ($usuario) {
             $p->imprimir_menu($usuario);

@@ -4,7 +4,7 @@
 // Descricao: Folha de estilos para dispositivos moveis
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.13
 // Data: 06/06/2007
 // Modificado: 23/10/2008

@@ -4,10 +4,10 @@
 // Descricao: Script que lista as funcoes de cada arquivo do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.15
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.17
 // Data: 31/07/2007
-// Modificado: 27/08/2009
+// Modificado: 03/02/2010
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -57,7 +57,7 @@ function imprimir_form($action, $dados) {
     $form->titulo_formulario('Busca por Fun&ccedil;&otilde;es/M&eacute;todos');
     $form->campo_text('nome', 'nome', $dados->nome, 100, 30, 'Nome');
     $form->campo_text('descricao', 'descricao', $dados->descricao, 300, 30, 'Descri&ccedil;&atilde;o');
-    $form->campo_submit('enviar', 'enviar', 'Enviar');
+    $form->campo_submit('enviar', 'enviar', 'Consultar');
     $form->imprimir();
 }
 
@@ -111,7 +111,7 @@ function imprimir_funcoes($dados) {
             foreach ($estatisticas->funcoes_invalidas as $arq => $funcoes) {
                 $dados_arquivo = parser_simp::get_cabecalho_arquivo($arq);
                 echo '<li>';
-                echo '<strong>'.$arq.'</strong> ('.$dados_arquivo->autor.')';
+                echo '<strong>'.$arq.'</strong> ('.texto::codificar($dados_arquivo->autor).')';
                 echo '<ul>';
                 foreach ($funcoes as $funcao => $erro) {
                     echo '<li><em>'.$funcao.':</em> '.texto::codificar($erro).'</li>';
@@ -207,10 +207,13 @@ function get_funcoes_arquivo($arquivo, $arq_rel) {
     $site = $CFG->site;
     link::normalizar($site, true);
     $tokens = token_get_all(file_get_contents($arquivo));
+
+    $ignore_doc = (isset($tokens[1]) && substr($tokens[1][1], 0, 12) == '//@ignoredoc') || is_file(dirname($arquivo).'/.ignoredoc');
+
     $funcoes = array();
     foreach ($tokens as $i => $token) {
         if ($token[0] == T_FUNCTION) {
-            $dados = get_dados_funcao($tokens, $i, $arq_rel);
+            $dados = get_dados_funcao($tokens, $i, $arq_rel, $ignore_doc);
             $funcoes[$dados->nome] = $dados;
         }
     }
@@ -259,10 +262,11 @@ function get_funcoes_arquivo($arquivo, $arq_rel) {
 //
 //     Obtem os dados de uma funcao
 //
-function get_dados_funcao($tokens, $i, $arq_rel) {
+function get_dados_funcao($tokens, $i, $arq_rel, $ignore_doc) {
 // Array[Mixed] $tokens: vetor de tokens
 // Int $i: posicao onde foi encontrada a funcao
 // String $arq_rel: caminho relativo ao arquivo
+// Bool $ignore_doc: Flag indicando se a documentacao invalida deve ser ignorada
 //
     $obj = new stdClass();
     $obj->nome = '';
@@ -307,7 +311,9 @@ function get_dados_funcao($tokens, $i, $arq_rel) {
     if (!empty($obj->descricao)) {
         $obj->descricao = texto::codificar(trim($obj->descricao));
     } else {
-        $obj->erro = 'Fun&ccedil;&atilde;o sem descri&ccedil;&atilde;o';
+        if (!$ignore_doc) {
+            $obj->erro = 'Fun&ccedil;&atilde;o sem descri&ccedil;&atilde;o';
+        }
         return $obj;
     }
 
@@ -376,37 +382,49 @@ function get_dados_funcao($tokens, $i, $arq_rel) {
                 $comentario = substr(trim($tokens[$j][1]), 3);
                 $pos = strpos($comentario, ':');
                 if ($pos === false) {
-                    $obj->erro = 'Faltou o dois-pontos no par&acirc;metro: "'.$comentario.'"';
+                    if (!$ignore_doc) {
+                        $obj->erro = 'Faltou o dois-pontos no par&acirc;metro: "'.$comentario.'"';
+                    }
                     return $obj;
                 }
                 $campo = substr($comentario, 0, $pos);
                 $descricao = trim(substr($comentario, $pos + 1));
                 $pos = strrpos($campo, ' ');
                 if ($pos === false) {
-                    $obj->erro = 'Faltou espa&ccedil;o separando o tipo do nome no par&acirc;metro: "'.$comentario.'"';
+                    if (!$ignore_doc) {
+                        $obj->erro = 'Faltou espa&ccedil;o separando o tipo do nome no par&acirc;metro: "'.$comentario.'"';
+                    }
                     return $obj;
                 }
                 $tipo = trim(substr($campo, 0, $pos));
                 $parametro = trim(substr($campo, $pos + 1));
                 if (!isset($obj->parametros[$parametro])) {
-                    $obj->erro = 'N&atilde;o existe o par&acirc;metro "'.$parametro.'" na fun&ccedil;&atilde;o';
+                    if (!$ignore_doc) {
+                        $obj->erro = 'N&atilde;o existe o par&acirc;metro "'.$parametro.'" na fun&ccedil;&atilde;o';
+                    }
                     return $obj;
                 }
                 $obj->parametros[$parametro]->tipo = $tipo;
                 if (!parser_simp::validar_tipo($tipo)) {
-                    $obj->erro = "Tipo desconhecido \"{$p->tipo}\" para o par&acirc;metro {$p->nome}";
+                    if (!$ignore_doc) {
+                        $obj->erro = "Tipo desconhecido \"{$p->tipo}\" para o par&acirc;metro {$p->nome}";
+                    }
                     return $obj;
                 }
                 $obj->parametros[$parametro]->descricao = $descricao;
                 if (empty($descricao)) {
-                    $obj->erro = "O par&acirc;metro {$p->nome} n&atilde;o tem descri&ccedil;&atilde;o";
+                    if (!$ignore_doc) {
+                        $obj->erro = "O par&acirc;metro {$p->nome} n&atilde;o tem descri&ccedil;&atilde;o";
+                    }
                     return $obj;
                 }
                 break;
             case T_WHITESPACE:
                 break;
             default:
-                $obj->erro = 'Token inv&aacute;lido na checagem dos par&acirc;metros: '.token_name($tokens[$j][0]).' ('.$tokens[$j][0].')';
+                if (!$ignore_doc) {
+                    $obj->erro = 'Token inv&aacute;lido na checagem dos par&acirc;metros: '.token_name($tokens[$j][0]).' ('.$tokens[$j][0].')';
+                }
                 return $obj;
             }
             $j++;

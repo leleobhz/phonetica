@@ -4,7 +4,7 @@
 // Descricao: Classe de geracao de feeds RSS 2.0 (Consulte http://validator.w3.org/feed/docs/rss2.html)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.6
 // Data: 01/11/2007
 // Modificado: 22/06/2009

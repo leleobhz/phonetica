@@ -4,7 +4,7 @@
 // Descricao: Classe Grupo
 // Autor: Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
+// E-mail: rpmoreira@tecnolivre.com.br
 // Versao: 1.0.0.7
 // Data: 13/08/2007
 // Modificado: 06/11/2008

@@ -4,10 +4,10 @@
 // Descricao: Classe base para os drivers de comunicacao com a classe objeto (extende um driver base especifico) seguindo os padroes da SQL92 (http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.26
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.2.0.4
 // Data: 17/04/2008
-// Modificado: 20/08/2009
+// Modificado: 26/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -21,6 +21,19 @@ abstract class driver_objeto {
     private   $driver_base      = null;  // Driver com os metodos basicos do SGBD especificado
     private   $nome_driver_base = '';    // Nome do driver base
     private   $exibicao_usuario = false; // Monta as SQLs de forma mais elegante para o usuario
+
+/// @ METODOS ABSTRATOS
+
+
+    //
+    //     Monta a funcao usada em uma condicao SQL
+    //
+    abstract public function montar_funcao_condicao($funcao, $operando, $tipo_operando, $atributo);
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // String $operando: valor do operando
+    // Int $tipo_operando: indica o que e' o operando (CONDICAO_SQL_TIPO_ATRIBUTO ou CONDICAO_SQL_TIPO_VALOR)
+    // atributo $atributo: definicao do atributo
+    //
 
 
 /// @ METODOS ESPECIFICOS DA CLASSE
@@ -262,7 +275,7 @@ abstract class driver_objeto {
             $valor = (bool)$valor;
             break;
         case 'data':
-            $valor = $this->desformatar_data($valor);
+            $valor = $this->desformatar_data($valor, $atributo->campo_formulario);
             break;
         }
         return $valor;
@@ -278,7 +291,7 @@ abstract class driver_objeto {
     // Bool $delimitar: delimitar o valor (caso seja necessario)
     //
         if (is_null($valor)) {
-            return null;
+            return 'NULL';
         }
 
         $retorno = null;
@@ -334,11 +347,12 @@ abstract class driver_objeto {
             } else {
                 $data = $valor;
             }
-            $retorno = $this->formatar_data($valor);
+            $retorno = $this->formatar_data($valor, $atributo->campo_formulario);
             if ($delimitar) {
                 $retorno = $this->delimitar_valor($retorno);
             }
             break;
+
         default:
             trigger_error('Tipo invalido "'.$atributo->tipo.'"', E_USER_ERROR);
             return false;
@@ -400,6 +414,112 @@ abstract class driver_objeto {
     }
 
 
+    //
+    //     Retorna uma lista de funcoes desejaveis para utilizacao em condicoes de consultas (e suas respectivas descricoes)
+    //
+    public static function get_funcoes($agrupado = false) {
+    // Bool $agrupado: agrupa as funcoes em grupos semelhantes
+    //
+        if ($agrupado) {
+            return array(
+                'Data' => array(
+                    'dia'     => 'Dia do M&ecirc;s',
+                    'mes'     => 'M&ecirc;s',
+                    'ano'     => 'Ano',
+                    'hora'    => 'Hora',
+                    'minuto'  => 'Minuto',
+                    'segundo' => 'Segundo',
+                    'diaano'  => 'Dia do Ano'
+                )
+            );
+        }
+        return array(
+            'dia'     => 'Dia do M&ecirc;s',
+            'mes'     => 'M&ecirc;s',
+            'ano'     => 'Ano',
+            'hora'    => 'Hora',
+            'minuto'  => 'Minuto',
+            'segundo' => 'Segundo',
+            'diaano'  => 'Dia do Ano'
+        );
+    }
+
+
+    //
+    //     Devolve a definicao do valor retornado por uma funcao
+    //
+    public function get_definicao_retorno_funcao($funcao, $atributo) {
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // atributo $atributo: definicao do atributo usado como parametro para funcao
+    //
+        switch ($funcao) {
+        case 'dia':
+            $atributo = new atributo('dia', 'Dia', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(1, 31);
+            break;
+        case 'mes':
+            $atributo = new atributo('mes', 'M&ecirc;s', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(1, 12);
+            break;
+        case 'ano':
+            $atributo = new atributo('ano', 'Ano', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(0, 10000);
+            break;
+        case 'hora':
+            $atributo = new atributo('hora', 'Hora', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(0, 23);
+            break;
+        case 'minuto':
+            $atributo = new atributo('minuto', 'Minuto', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(0, 59);
+            break;
+        case 'segundo':
+            $atributo = new atributo('segundo', 'Segundo', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(0, 59);
+            break;
+        case 'diaano':
+            $atributo = new atributo('diaano', 'Dia do ano', 0);
+            $atributo->set_tipo('int', false);
+            $atributo->set_intervalo(1, 366);
+            break;
+        default:
+            return false;
+        }
+        return $atributo;
+    }
+
+
+    //
+    //     Devolve a definicao do valor passado por parametro para uma funcao
+    //
+    public function get_definicao_parametro_funcao($funcao, $numero) {
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // Int $numero: numero do parametro
+    //
+        switch ($funcao) {
+        case 'dia':
+        case 'mes':
+        case 'ano':
+        case 'hora':
+        case 'minuto':
+        case 'segundo':
+        case 'diaano':
+            $atributo = new atributo($funcao, 'Parametro', 0);
+            $atributo->set_tipo('data', false);
+            break;
+        default:
+            return false;
+        }
+        return $atributo;
+    }
+
+
 /// @ METODOS BASICOS DE CONSULTA BASEADOS NA SQL92
 
 
@@ -415,19 +535,54 @@ abstract class driver_objeto {
     // Int $limite: numero maximo de elementos retornados
     // Int $inicio: obtem elementos a partir do N'esimo elemento consultado
     //
-        self::filtrar_condicao($condicoes);
-
-        // Sempre consultar a chave primaria
-        $atributos[] = $objeto->get_chave();
-
         // Consultar campo de indexacao, caso seja especificado
         if ($index) {
             $atributos[] = $index;
         }
 
+        $iterador = $this->select_iterador($objeto, $atributos, $condicoes, $ordem, $limite, $inicio);
+        if (!$iterador) {
+            return false;
+        }
+
+        // Converter resultado para uma notacao hierarquica de objetos
+        $vt_retorno = array();
+
+        // Indexar com um atributo
+        if ($index && $objeto->possui_atributo($index)) {
+            $php = '$vt_retorno[$obj->'.str_replace(':', '->', $index).'] = $obj;';
+
+        // Indexar numericamente (vetor simples e sequencial)
+        } else {
+            $php = '$vt_retorno[] = $obj;';
+        }
+        foreach ($iterador as $obj) {
+            eval($php);
+        }
+
+        return $vt_retorno;
+    }
+
+
+    //
+    //     SELECT: Realiza uma consulta ao BD retornando um iterador de objetos
+    //
+    public function select_iterador($objeto, $atributos, $condicoes = null, $ordem = null, $limite = null, $inicio = 0) {
+    // Object $objeto: instancia de uma entidade derivada da classe objeto
+    // Array[String] $atributos: vetor de atributos desejados
+    // condicao_sql $condicoes: condicoes da consulta
+    // Array[String => Bool] $ordem: campos usados para ordenar e especificacao se a ordem e' crescente (true) ou decrescente (false)
+    // Int $limite: numero maximo de elementos retornados
+    // Int $inicio: obtem elementos a partir do N'esimo elemento consultado
+    //
+        self::filtrar_condicao($condicoes);
+
+        // Sempre consultar a chave primaria
+        $atributos[] = $objeto->get_chave();
+
         // Obter SQL
         $classe = $objeto->get_classe();
-        $sql = $this->sql_select($objeto, $atributos, $condicoes, $ordem, $index, $limite, $inicio, $estrutura_consulta);
+        $sql = $this->sql_select($objeto, $atributos, $condicoes, $ordem, null, $limite, $inicio, $estrutura_consulta);
         if (!$sql) {
             return false;
         }
@@ -438,25 +593,7 @@ abstract class driver_objeto {
             return false;
         }
 
-        // Converter resultado para uma notacao hierarquica de objetos
-        $vt_retorno = array();
-
-        // Indexar com um atributo
-        if ($index && $objeto->possui_atributo($index)) {
-            $php = '$vt_retorno[$novo_obj->'.str_replace(':', '->', $index).'] = $novo_obj;';
-            while ($obj = $this->fetch_object($resultado)) {
-                $novo_obj = $this->gerar_objeto($objeto, $obj, $estrutura_consulta[0]);
-                eval($php);
-            }
-
-        // Indexar numericamente (vetor simples e sequencial)
-        } else {
-            while ($obj = $this->fetch_object($resultado)) {
-                $vt_retorno[] = $this->gerar_objeto($objeto, $obj, $estrutura_consulta[0]);
-            }
-        }
-        $this->liberar_resultado($resultado);
-        return $vt_retorno;
+        return new iterador_dao($this, $objeto, $resultado, $estrutura_consulta[0]);
     }
 
 
@@ -485,7 +622,9 @@ abstract class driver_objeto {
 
         $obj = $this->fetch_object($resultado);
         $this->liberar_resultado($resultado);
-        return (int)$obj->$apelido;
+
+        $def_atributo = $objeto->get_definicao_atributo($atributo);
+        return $this->filtrar_atributo_bd($def_atributo, $obj->$apelido);
     }
 
 
@@ -514,7 +653,9 @@ abstract class driver_objeto {
 
         $obj = $this->fetch_object($resultado);
         $this->liberar_resultado($resultado);
-        return (int)$obj->$apelido;
+
+        $def_atributo = $objeto->get_definicao_atributo($atributo);
+        return $this->filtrar_atributo_bd($def_atributo, $obj->$apelido);
     }
 
 
@@ -543,6 +684,44 @@ abstract class driver_objeto {
         $obj = $this->fetch_object($resultado);
         $this->liberar_resultado($resultado);
         return (int)$obj->$apelido;
+    }
+
+
+    //
+    //     SELECT SUM: Realiza uma consulta a soma de um atributo de registros de uma tabela
+    //
+    public function select_soma($objeto, $atributo, $condicoes = null) {
+    // Object $objeto: instancia de uma entidade derivada da classe objeto
+    // String $atributo: nome do atributo a ser somado
+    // condicao_sql $condicoes: condicoes da consulta
+    //
+        self::filtrar_condicao($condicoes);
+
+        // Obter SQL
+        $apelido = 'soma';
+        $sql = $this->sql_select_soma($objeto, $atributo, $apelido, $condicoes);
+        if (!$sql) {
+            return false;
+        }
+
+        // Consultar
+        $resultado = $this->consultar($sql);
+        if (!$this->resultado_valido($resultado)) {
+            return false;
+        }
+
+        $obj = $this->fetch_object($resultado);
+        $this->liberar_resultado($resultado);
+        $valor = $obj->$apelido;
+
+        $def_atributo = $objeto->get_definicao_atributo($atributo);
+        switch ($def_atributo->tipo) {
+        case 'int':
+            return (int)$valor;
+        case 'float':
+            return (float)$valor;
+        }
+        return false;
     }
 
 
@@ -631,6 +810,26 @@ abstract class driver_objeto {
 
         // Consultar
         return (bool)$this->consultar($sql) && $this->reiniciar_contagem($objeto->get_tabela(), $objeto->get_chave(), 1);
+    }
+
+
+    //
+    //     Prepara para a criacao de tabelas
+    //
+    public function preparar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        return true;
+    }
+
+
+    //
+    //     Encerra a criacao de tabelas
+    //
+    public function encerrar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        return true;
     }
 
 
@@ -810,6 +1009,19 @@ abstract class driver_objeto {
 
 
     //
+    //     SELECT SUM: gera uma SQL de uma consulta SELECT SUM
+    //
+    public function sql_select_soma($objeto, $atributo, $apelido = 'soma', $condicoes = null) {
+    // Object $objeto: instancia de uma entidade derivada da classe objeto
+    // String $atributo: nome do atributo a ser somado
+    // String $apelido: apelido do campo a ser retornado
+    // condicao_sql $condicoes: condicoes da consulta
+    //
+        return $this->sql_funcao($objeto, 'SUM', $atributo, $apelido, $condicoes);
+    }
+
+
+    //
     //     INSERT: Gera uma SQL de uma consulta INSERT
     //
     public function sql_insert($objeto, $dados) {
@@ -828,13 +1040,31 @@ abstract class driver_objeto {
         $vt_sql_valores = array();
         $possui_campo = false;
         foreach ($dados as $chave => $valor) {
-            if ($objeto->possui_atributo($chave)) {
-                $vt_sql_campos[] = $this->delimitar_campo($chave);
-                $def = $objeto->get_definicao_atributo($chave);
-                $valor = $this->filtrar_atributo_php($def, $valor, true);
-                $vt_sql_valores[] = $valor;
-                $possui_campo = true;
+
+            // Se o atributo nao existe
+            if (!$objeto->possui_atributo($chave)) {
+                continue;
             }
+
+            // Se e' uma chave fraca
+            if ($objeto->possui_rel_uu($chave, false)) {
+                $def_rel = $objeto->get_definicao_rel_uu($chave, false);
+                if (!$def_rel->forte) {
+                    $vt_sql_campos[] = $this->delimitar_campo($chave);
+                    $def = $objeto->get_definicao_atributo($chave);
+                    $valor = $this->filtrar_atributo_php($def, $valor ? $valor : null, true);
+                    $vt_sql_valores[] = $valor;
+                    $possui_campo = true;
+                    continue;
+                }
+            }
+
+            // Se e' um campo ou chave convencional
+            $vt_sql_campos[] = $this->delimitar_campo($chave);
+            $def = $objeto->get_definicao_atributo($chave);
+            $valor = $this->filtrar_atributo_php($def, $valor, true);
+            $vt_sql_valores[] = $valor;
+            $possui_campo = true;
         }
         if (!$possui_campo) {
             trigger_error('Nenhum atributo real foi definido para insercao', E_USER_WARNING);
@@ -873,17 +1103,40 @@ abstract class driver_objeto {
         $vt_sql_atribuicoes = array();
         $possui_campo = false;
         foreach ($dados as $chave => $valor) {
-            if ($objeto->possui_atributo($chave)) {
-                $sql_chave = $this->delimitar_campo($chave);
-                if (strpos($valor, 'sql:') === 0) {
-                    $sql_valor = substr($valor, strlen('sql:'));
-                } else {
-                    $def = $objeto->get_definicao_atributo($chave);
-                    $sql_valor = $this->filtrar_atributo_php($def, $valor, true);
-                }
-                $vt_sql_atribuicoes[] = $sql_chave.' = '.$sql_valor;
-                $possui_campo = true;
+
+            // Se o atributo nao existe
+            if (!$objeto->possui_atributo($chave)) {
+                continue;
             }
+
+            // Se e' uma chave fraca
+            if ($objeto->possui_rel_uu($chave, false)) {
+                $def_rel = $objeto->get_definicao_rel_uu($chave, false);
+                if (!$def_rel->forte) {
+                    $sql_chave = $this->delimitar_campo($chave);
+                    if (strpos($valor, 'sql:') === 0) {
+                        $sql_valor = substr($valor, strlen('sql:'));
+                    } else {
+                        $def = $objeto->get_definicao_atributo($chave);
+                        $sql_valor = $this->filtrar_atributo_php($def, $valor ? $valor : null, true);
+                    }
+                    $vt_sql_atribuicoes[] = $sql_chave.' = '.$sql_valor;
+                    $possui_campo = true;
+                    continue;
+                }
+            }
+
+            // Se e' um campo ou chave convencional
+            $sql_chave = $this->delimitar_campo($chave);
+            if (strpos($valor, 'sql:') === 0) {
+                $sql_valor = substr($valor, strlen('sql:'));
+            } else {
+                $def = $objeto->get_definicao_atributo($chave);
+                $sql_valor = $this->filtrar_atributo_php($def, $valor, true);
+            }
+            $vt_sql_atribuicoes[] = $sql_chave.' = '.$sql_valor;
+            $possui_campo = true;
+
         }
         if (!$possui_campo) {
             trigger_error('Nenhum atributo real foi definido para atualizacao', E_USER_WARNING);
@@ -979,11 +1232,22 @@ abstract class driver_objeto {
 
             // Se nao e' a chave primaria
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = ' NOT NULL';
-                if (!$objeto->possui_rel_uu($def_atributo->nome, false)) {
-                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+
+                // Se e' um relacionamento
+                if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
+                    $def_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
+                    if ($def_rel->forte) {
+                        $sql_nulo = ' NOT NULL';
+                        $sql_default = '';
+                    } else {
+                        $sql_nulo = ' NULL';
+                        $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+                    }
+
+                // Se nao e' um relacionamento
                 } else {
-                    $sql_default = '';
+                    $sql_nulo = ' NOT NULL';
+                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                 }
                 $vt_campos[] = "  {$sql_campo} {$sql_tipo}{$sql_nulo}{$sql_default}";
 
@@ -999,21 +1263,24 @@ abstract class driver_objeto {
 
         // Restricoes de relacionamentos externos
         foreach ($objeto->get_definicoes_rel_uu() as $atributo_rel => $def_atributo_rel) {
-
-            // Se e' um relacionamento fraco, nao e' constraint
-            if (!$def_atributo_rel->forte) {
-                continue;
-            }
-
             $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo_rel);
             $sql_atributo_rel = $this->delimitar_campo($atributo_rel);
             $obj_ref = $objeto->__get($def_atributo_rel->nome);
             $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
             $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
-            $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
-                                              "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
-                                              "      ON DELETE CASCADE\n".
-                                              "      ON UPDATE CASCADE";
+
+            // Se e' um relacionamento forte
+            if ($def_atributo_rel->forte) {
+                $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                                  "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                                  "      ON DELETE CASCADE\n".
+                                                  "      ON UPDATE CASCADE";
+            } else {
+                $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                                  "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                                  "      ON DELETE SET NULL\n".
+                                                  "      ON UPDATE SET NULL";
+            }
         }
 
         // Definir restricoes de chaves unicas compostas
@@ -1068,8 +1335,29 @@ abstract class driver_objeto {
         case DRIVER_OBJETO_ADICIONAR_ATRIBUTO:
             $def_atributo = $objeto->get_definicao_atributo($atributo);
             $sql_tipo     = $this->gerar_sql_tipo($def_atributo);
-            $sql_nulo     = ' NOT NULL';
-            $sql_default  = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+
+            // Se e' um relacionamento
+            if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
+                $def_atributo_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
+                if ($def_atributo_rel->forte) {
+                    $sql_nulo = ' NOT NULL';
+                    $sql_default = '';
+                } else {
+                    $sql_nulo = ' NULL';
+                    $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+                }
+
+            // Se e' um campo texto
+            } elseif (preg_match('/^(TINY|MEDIUM|LONG)?TEXT$/', $sql_tipo)) {
+                $sql_nulo = ' NOT NULL';
+                $sql_default = '';
+
+            // Demais campos
+            } else {
+                $sql_nulo = ' NOT NULL';
+                $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
+            }
+
             $sql_alter = "ALTER TABLE {$sql_tabela} ADD COLUMN {$sql_atributo} {$sql_tipo}{$sql_nulo}{$sql_default}";
 
             // Se e' uma chave estrangeira
@@ -1077,12 +1365,12 @@ abstract class driver_objeto {
                 $def_relacionamento = $objeto->get_definicao_rel_uu($atributo, false);
                 $obj_ref = $objeto->get_objeto_rel_uu($def_relacionamento->nome);
 
-                // Se o relacionamento e' fraco e nao possui registros na tabela relacionada
+                // Se o relacionamento e' forte e nao possui registros na tabela relacionada
+                $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
+                $sql_atributo_rel = $this->delimitar_campo($atributo);
+                $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
+                $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
                 if ($def_relacionamento->forte && !$objeto->possui_registros()) {
-                    $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo);
-                    $sql_atributo_rel = $this->delimitar_campo($atributo);
-                    $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
-                    $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
                     $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
                                       "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
                                       "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
@@ -1091,7 +1379,13 @@ abstract class driver_objeto {
 
                     $sql = array($sql_alter, $sql_constraint);
                 } else {
-                    $sql = $sql_alter;
+                    $sql_constraint = "ALTER TABLE {$sql_tabela}\n".
+                                      "  ADD CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                      "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                      "      ON DELETE SET NULL\n".
+                                      "      ON UPDATE SET NULL";
+
+                    $sql = array($sql_alter, $sql_constraint);
                 }
             } else {
                 $sql = $sql_alter;
@@ -1154,51 +1448,89 @@ abstract class driver_objeto {
             trigger_error('Condicao invalida', E_USER_NOTICE);
             return '';
         }
+        simp_autoload('condicao_sql');
 
         switch ($condicao->tipo) {
         case CONDICAO_SQL_VAZIA:
-            $sql = '';
+            return '';
             break;
 
         case CONDICAO_SQL_SIMPLES:
+
+            // Comparacao com NULL
             if (is_null($condicao->operando2)) {
                 switch ($condicao->operador) {
                 case '=':
-                    $sql = $this->gerar_sql_isnull($objeto, $condicao, $usar_apelido);
-                    break;
+                    return $this->gerar_sql_isnull($objeto, $condicao, $usar_apelido);
                 case '<>':
-                    $sql = $this->gerar_sql_isnotnull($objeto, $condicao, $usar_apelido);
-                    break;
+                    return $this->gerar_sql_isnotnull($objeto, $condicao, $usar_apelido);
                 default:
                     trigger_error('O operador "'.$condicao->operador.'" nao aceita operando com valor "null"', E_USER_ERROR);
                     return false;
                 }
-            } else {
+            }
+
+            // Operando 1
+            $def1 = false;
+            $def_retorno1 = false;
+            $tipo1 = condicao_sql::get_flag($condicao, 'tipo1');
+            $funcao1 = condicao_sql::get_flag($condicao, 'funcao1');
+            if ($tipo1 == CONDICAO_SQL_TIPO_ATRIBUTO) {
+                $def1 = $objeto->get_definicao_atributo($condicao->operando1->atributo);
                 if ($usar_apelido) {
                     $sql_operando1 = $this->montar_nome_campo($condicao->operando1->tabela->apelido, $condicao->operando1->nome);
                 } else {
                     $sql_operando1 = $this->montar_nome_campo($condicao->operando1->tabela->nome, $condicao->operando1->nome);
                 }
-                $sql_operador  = $this->gerar_sql_operador($condicao->operador);
-
-                if ($condicao->entre_atributos) {
-                    if ($usar_apelido) {
-                        $sql_operando2 = $this->montar_nome_campo($condicao->operando2->tabela->apelido, $condicao->operando2->nome);
-                    } else {
-                        $sql_operando2 = $this->montar_nome_campo($condicao->operando2->tabela->nome, $condicao->operando2->nome);
-                    }
-                } else {
-                    $def = $objeto->get_definicao_atributo($condicao->operando1->atributo);
-                    if ($def) {
-                        $sql_operando2 = $this->filtrar_atributo_php($def, $condicao->operando2, true);
-                    } else {
-                        trigger_error('O atributo "'.$condicao->operando1->atributo.'" nao eh um atributo valido', E_USER_ERROR);
-                    }
-                }
-
-                $sql = $sql_operando1.' '.$sql_operador.' '.$sql_operando2;
+            } elseif ($tipo1 == CONDICAO_SQL_TIPO_VALOR) {
+                trigger_error('O primeiro operando nao pode ser um valor', E_USER_ERROR);
             }
-            break;
+            if ($funcao1) {
+                $sql_operando1 = $this->montar_funcao_condicao($funcao1, $sql_operando1, $tipo1, $def1);
+                $def_retorno1 = $this->get_definicao_retorno_funcao($funcao1, $def1);
+            } else {
+                $def_retorno1 = $def1;
+            }
+
+            // Operador
+            $sql_operador = $this->gerar_sql_operador($condicao->operador);
+
+            // Operando 2
+            $tipo2 = condicao_sql::get_flag($condicao, 'tipo2');
+            $funcao2 = condicao_sql::get_flag($condicao, 'funcao2');
+            if ($tipo2 == CONDICAO_SQL_TIPO_ATRIBUTO) {
+                $def2 = $objeto->get_definicao_atributo($condicao->operando1->atributo);
+                if ($usar_apelido) {
+                    $sql_operando2 = $this->montar_nome_campo($condicao->operando2->tabela->apelido, $condicao->operando2->nome);
+                } else {
+                    $sql_operando2 = $this->montar_nome_campo($condicao->operando2->tabela->nome, $condicao->operando2->nome);
+                }
+                if ($funcao2) {
+                    $sql_operando2 = $this->montar_funcao_condicao($funcao2, $sql_operando2, $tipo2, $def2);
+                }
+            } elseif ($tipo2 == CONDICAO_SQL_TIPO_VALOR) {
+                if ($funcao2) {
+                    $def_parametro2 = $this->get_definicao_parametro_funcao($funcao2, 0);
+
+                    $sql_operando2 = $this->filtrar_atributo_php($def_parametro2, $condicao->operando2, true);
+                    $sql_operando2 = $this->montar_funcao_condicao($funcao2, $sql_operando2, $tipo2, $def_parametro2);
+                } else {
+                    $sql_operando2 = $this->filtrar_atributo_php($def_retorno1, $condicao->operando2, true);
+                }
+            }
+
+            // Com chave fraca e valor vazio: comparacao com null
+            if ($def1 && $def1->chave == 'OFK' && $tipo2 == CONDICAO_SQL_TIPO_VALOR && !$condicao->operando2) {
+                switch ($condicao->operador) {
+                case '=':
+                    return $this->gerar_sql_isnull($objeto, $condicao, $usar_apelido);
+                case '<>':
+                    return $this->gerar_sql_isnotnull($objeto, $condicao, $usar_apelido);
+                }
+            }
+
+            // Com uma atributo e um valor
+            return $sql_operando1.' '.$sql_operador.' '.$sql_operando2;
 
         case CONDICAO_SQL_COMPOSTA:
             $sql_operador = $this->gerar_sql_operador($condicao->operador);
@@ -1217,7 +1549,7 @@ abstract class driver_objeto {
                 $condicao = array_pop($vt_condicoes);
                 $sql = $condicao;
             }
-            break;
+            return $sql;
 
         case CONDICAO_SQL_UNITARIA:
             $sql_operador = $this->gerar_sql_operador($condicao->operador);
@@ -1226,9 +1558,10 @@ abstract class driver_objeto {
                 return false;
             }
             $sql = $sql_operador.' ('.$sql_condicao.')';
-            break;
+            return $sql;
         }
-        return $sql;
+        trigger_error('Tipo de condicao invalido: '.$condicao->tipo, E_USER_ERROR);
+        return false;
     }
 
 
@@ -1532,7 +1865,7 @@ abstract class driver_objeto {
     protected function gerar_sql_tipo($atributo) {
     // atributo $atributo: objeto com as caracteristicas do atributo de uma entidade
     //
-        // Tipos: CHARACTER, CHARACTER VARYING, BIT VARYING, INTEGER, SMALLINT, FLOAT, DOUBLE PRECISION, DATE, TIMESTAMP
+        // Tipos: CHARACTER, CHARACTER VARYING, BIT VARYING, INTEGER, SMALLINT, FLOAT, DOUBLE PRECISION, DATE, TIME, TIMESTAMP
         switch ($atributo->tipo) {
         case 'int':
             if (!$atributo->maximo || $atributo->maximo > 255) {
@@ -1563,7 +1896,15 @@ abstract class driver_objeto {
                 return "CHARACTER VARYING ({$atributo->maximo})";
             }
         case 'data':
-            return 'TIMESTAMP';
+            switch ($atributo->campo_formulario) {
+            case 'data':
+                return 'DATE';
+            case 'hora':
+                return 'TIME';
+            case 'data_hora':
+            default:
+                return 'TIMESTAMP';
+            }
         }
         trigger_error('Tipo desconhecido ('.util::exibir_var($atributo->tipo).')', E_USER_WARNING);
         return false;
@@ -1582,6 +1923,10 @@ abstract class driver_objeto {
                 $atributo->padrao = false;
                 break;
             case 'int':
+                if ($atributo->chave == 'OFK') {
+                    return 'NULL';
+                }
+                //nobreak
             case 'float':
                 $atributo->padrao = 0;
                 break;
@@ -1593,7 +1938,18 @@ abstract class driver_objeto {
                 $atributo->padrao = '';
                 break;
             case 'data':
-                $atributo->padrao = '00-00-0000-00-00-00';
+                switch ($atributo->campo_formulario) {
+                case 'data':
+                    $atributo->padrao = '00-00-0000';
+                    break;
+                case 'hora':
+                    $atributo->padrao = '00-00-00';
+                    break;
+                case 'data_hora':
+                default:
+                    $atributo->padrao = '00-00-0000-00-00-00';
+                    break;
+                }
                 break;
             }
         }
@@ -1629,47 +1985,85 @@ abstract class driver_objeto {
     //
     //     Formata uma data para ser inserida no BD
     //
-    public function formatar_data($data) {
+    public function formatar_data($data, $tipo = 'data_hora') {
     // String $data: data no formato dd-mm-aaaa-HH-MM-SS
+    // String $tipo: 'data_hora', 'data' ou 'hora'
     //
         $vt_data = explode('-', $data);
-        return sprintf('%04d-%02d-%02d %02d:%02d:%02d',
-                       isset($vt_data[2]) ? $vt_data[2] : 0,
-                       isset($vt_data[1]) ? $vt_data[1] : 0,
-                       isset($vt_data[0]) ? $vt_data[0] : 0,
-                       isset($vt_data[3]) ? $vt_data[3] : 0,
-                       isset($vt_data[4]) ? $vt_data[4] : 0,
-                       isset($vt_data[5]) ? $vt_data[5] : 0
-                      );
+        switch ($tipo) {
+        case 'data':
+            return sprintf('%04d-%02d-%02d',
+                           isset($vt_data[2]) ? $vt_data[2] : 0,
+                           isset($vt_data[1]) ? $vt_data[1] : 0,
+                           isset($vt_data[0]) ? $vt_data[0] : 0
+                          );
+
+        case 'hora':
+            return sprintf('%02d:%02d:%02d',
+                           isset($vt_data[3]) ? $vt_data[3] : 0,
+                           isset($vt_data[4]) ? $vt_data[4] : 0,
+                           isset($vt_data[5]) ? $vt_data[5] : 0
+                          );
+
+        case 'data_hora':
+        default:
+            return sprintf('%04d-%02d-%02d %02d:%02d:%02d',
+                           isset($vt_data[2]) ? $vt_data[2] : 0,
+                           isset($vt_data[1]) ? $vt_data[1] : 0,
+                           isset($vt_data[0]) ? $vt_data[0] : 0,
+                           isset($vt_data[3]) ? $vt_data[3] : 0,
+                           isset($vt_data[4]) ? $vt_data[4] : 0,
+                           isset($vt_data[5]) ? $vt_data[5] : 0
+                          );
+        }
     }
 
 
     //
     //     Desformata uma data obtida do BD
     //
-    public function desformatar_data($data_bd) {
+    public function desformatar_data($data_bd, $tipo = 'data_hora') {
     // String $data_bd: data no formato do BD
+    // String $tipo: 'data_hora', 'data' ou 'hora'
     //
-        sscanf($data_bd, '%d-%d-%d %d:%d:%d',
-                         $ano, $mes, $dia,
-                         $hora, $minuto, $segundo);
-        return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
-                       $dia, $mes, $ano,
-                       $hora, $minuto, $segundo);
+        switch ($tipo) {
+        case 'data':
+            sscanf($data_bd, '%d-%d-%d',
+                             $ano, $mes, $dia);
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           $dia, $mes, $ano,
+                           0, 0, 0);
+
+        case 'hora':
+            sscanf($data_bd, '%d:%d:%d',
+                             $hora, $minuto, $segundo);
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           0, 0, 0,
+                           $hora, $minuto, $segundo);
+
+        case 'data_hora':
+        default:
+            sscanf($data_bd, '%d-%d-%d %d:%d:%d',
+                             $ano, $mes, $dia,
+                             $hora, $minuto, $segundo);
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           $dia, $mes, $ano,
+                           $hora, $minuto, $segundo);
+        }
     }
 
 
     //
     //     Converte um objeto consultado para um objeto real (stdClass)
     //
-    private function gerar_objeto($objeto, &$obj, &$dados) {
+    public function gerar_objeto($objeto, $obj, $dados) {
     // Object $objeto: objeto derivado da classe objeto
     // Object $obj: objeto advindo de uma consulta
     // consulta $dados: dados estrutrados da consulta
     //
         $novo = new stdClass();
         foreach ($dados->identicos as $campo => $vetor) {
-            if (isset($obj->$campo)) {
+            if (property_exists($obj, $campo)) {
                 $dados_campo = $dados->campos[$campo];
                 foreach (array_keys($vetor) as $campo2) {
                     $dados_campo2 = $dados->campos[$campo2];
@@ -1690,7 +2084,7 @@ abstract class driver_objeto {
             }
         }
         foreach ($dados->campos as $campo) {
-            if (isset($obj->{$campo->apelido})) {
+            if (property_exists($obj, $campo->apelido)) {
                 $def = $objeto->get_definicao_atributo($campo->atributo);
                 $valor = $obj->{$campo->apelido};
                 $valor = $this->filtrar_atributo_bd($def, $valor);
@@ -1715,7 +2109,7 @@ abstract class driver_objeto {
         } else {
             $sub   = substr($atributo, 0, $pos);
             $resto = substr($atributo, $pos + 1);
-            if (!isset($obj->$sub)) {
+            if (!property_exists($obj, $sub)) {
                 $obj->$sub = new stdClass();
             }
             $this->set_atributo_objeto($obj->$sub, $resto, $valor);

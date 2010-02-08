@@ -4,10 +4,10 @@
 // Descricao: Arquivo que lista utilidades para Desenvolvimento
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.15
 // Data: 30/07/2007
-// Modificado: 11/08/2009
+// Modificado: 03/10/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -61,6 +61,7 @@ function listar_opcoes_devel() {
     // Informacoes do BD
     $info_bd = array('tabelas_bd.php' => 'Tabelas do BD',
                      'sqls.php'       => 'SQLs de Instala&ccedil;&atilde;o',
+                     'atributos.php'  => 'Atributos Comuns',
                      'consulta.php'   => 'Consulta',
                      'insercao.php'   => 'Inser&ccedil;&atilde;o');
 
@@ -70,7 +71,8 @@ function listar_opcoes_devel() {
                   'unicode.php'          => 'Caracteres Unicode',
                   'funcoes_php.php'      => 'Buscar Fun&ccedil;&atilde;o PHP',
                   'testar_expressao.php' => 'Testar Express&atilde;o Regular',
-                  'testar_memoria.php'   => 'Testar Mem&oacute;ria');
+                  'testar_memoria.php'   => 'Testar Mem&oacute;ria',
+                  'useragent.php'        => 'Dados do User-Agent');
 
 
     echo "<div class=\"bloco_opcoes\" id=\"bloco_info\">\n";

@@ -4,10 +4,10 @@
 // Descricao: Arquivo que lista as abas de configuracoes
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.6
 // Data: 10/07/2007
-// Modificado: 16/03/2009
+// Modificado: 11/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -25,7 +25,7 @@ $titulo  = 'Configura&ccedil;&otilde;es';
 $nav[]   = '#index.php';
 $nav[]   = $modulo.'#'.basename(__FILE__);
 $estilos = array($CFG->wwwmods.$modulo.'/estilos.css.php');
-
+$scripts = array($CFG->wwwmods.$modulo.'/script.js.php');
 
 /// Recuperar a entidade desejada
 $entidade = new $classe('', 1);

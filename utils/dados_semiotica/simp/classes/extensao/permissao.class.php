@@ -4,10 +4,10 @@
 // Descricao: Classe Permissoes dos Arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.7
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.9
 // Data: 10/09/2007
-// Modificado: 30/06/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -106,8 +106,7 @@ final class permissao extends permissao_base {
         }
 
         // Obter proxima posicao
-        $classe = $this->get_classe();
-        $proxima_permissao = new $classe();
+        $proxima_permissao = new self();
         $vt_condicoes = array();
         $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->get_atributo('cod_grupo'));
         $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->get_atributo('posicao') + 1);
@@ -146,8 +145,7 @@ final class permissao extends permissao_base {
         }
 
         // Obter proxima posicao
-        $classe = $this->get_classe();
-        $permissao_anterior = new $classe();
+        $permissao_anterior = new self();
         $vt_condicoes = array();
         $vt_condicoes[] = condicao_sql::montar('cod_grupo', '=', $this->get_atributo('cod_grupo'));
         $vt_condicoes[] = condicao_sql::montar('posicao', '=', $this->get_atributo('posicao') - 1);
@@ -244,7 +242,7 @@ cod_grupo = {$grupo->cod_grupo}
 INI;
 
         $ordem = array('posicao' => true);
-        $condicao = condicao_sql::montar('cod_grupo', '=', $grupo->cod_grupo, false);
+        $condicao = condicao_sql::montar('cod_grupo', '=', $grupo->cod_grupo);
         $modulos = $this->vetor_associativo('cod_permissao', 'arquivo:modulo', $condicao, $ordem);
         $modulos = array_unique(array_values($modulos));
 
@@ -254,7 +252,7 @@ INI;
             } else {
                 $ini .= "[simp]\n";
             }
-            $condicao2 = condicao_sql::montar('arquivo:modulo', '=', $modulo, false);
+            $condicao2 = condicao_sql::montar('arquivo:modulo', '=', $modulo);
             $condicao3 = condicao_sql::sql_and(array($condicao, $condicao2));
             $permissoes = $this->vetor_associativo('arquivo:arquivo', 'visivel', $condicao3, $ordem);
             if (count($permissoes)) {

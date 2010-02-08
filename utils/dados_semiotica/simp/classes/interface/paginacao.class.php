@@ -4,10 +4,10 @@
 // Descricao: Classe que controla a paginacao de listas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.6
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.8
 // Data: 22/10/2007
-// Modificado: 20/08/2009
+// Modificado: 21/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -30,6 +30,7 @@ final class paginacao {
 
     private $objeto;        // Objeto auxiliar
     private $flag_inicio;   // Indica que o inicio da lista foi impresso
+    private $mudou_pagina;  // Flag que indica se a pagina foi alterada
 
 
     //
@@ -40,12 +41,14 @@ final class paginacao {
     // String $id_lista: identificador da lista
     // String $link: link do site que possui a lista
     //
+        $nome = self::get_nome_sessao($modulo, $id_lista);
+        $this->iniciar_sessao($nome);
+
         $this->link     = $link;
         $this->modulo   = $modulo;
         $this->id_lista = $id_lista;
-        $this->nome     = self::get_nome_sessao($modulo, $id_lista);
+        $this->nome     = $nome;
         $this->pagina   = $this->consultar_pagina();
-
         $this->objeto   = null;
 
         $this->set_itens_pagina(PAGINACAO_ITENS_PAGINA);
@@ -54,6 +57,22 @@ final class paginacao {
         if ($this->link) {
             link::normalizar($this->link, array($this->nome));
         }
+    }
+
+
+    //
+    //     Inicializa a sessao
+    //
+    private function iniciar_sessao($nome) {
+    // String $nome: nome da chave de sessao
+    //
+        if (isset($_SESSION[__CLASS__][$nome])) {
+            return;
+        }
+        $_SESSION[__CLASS__][$nome] = array(
+            'pagina'      => null,
+            'total_itens' => null
+        );
     }
 
 
@@ -80,12 +99,18 @@ final class paginacao {
     //     Obtem a pagina atual de uma determinada lista
     //
     public function consultar_pagina() {
+        $this->mudou_pagina = false;
+
+        // Se informou uma nova pagina
         if (isset($_GET[$this->nome])) {
+            $this->mudou_pagina = true;
             $this->salvar_pagina((int)$_GET[$this->nome]);
-        } elseif (!isset($_SESSION[__CLASS__][$this->nome])) {
+
+        // Se nao informou uma nova pagina
+        } elseif (!isset($_SESSION[__CLASS__][$this->nome]['pagina'])) {
             $this->salvar_pagina(1);
         }
-        return (int)$_SESSION[__CLASS__][$this->nome];
+        return (int)$_SESSION[__CLASS__][$this->nome]['pagina'];
     }
 
 
@@ -97,7 +122,7 @@ final class paginacao {
     //
         if ($pagina > 0) {
             $p = (int)$pagina;
-            $_SESSION[__CLASS__][$this->nome] = $p;
+            $_SESSION[__CLASS__][$this->nome]['pagina'] = $p;
             $this->pagina = $p;
         }
     }
@@ -227,56 +252,68 @@ final class paginacao {
         $this->set_itens_pagina($itens_pagina);
 
         // Tenta consultar os registros
-        try {
-            simp_autoload($classe);
-            $this->objeto = new $classe();
+        $this->objeto = objeto::get_objeto($classe);
+
+        // Se nao calculou o total de itens
+        if (!isset($_SESSION[__CLASS__][$this->nome]['total_itens'])) {
             $total = $this->objeto->quantidade_registros($condicoes);
-            $this->set_total_itens($total);
+            $_SESSION[__CLASS__][$this->nome]['total_itens'] = $total;
 
-            $campos_consulta = array();
-            if (is_array($campos)) {
-                $campos_consulta = array_merge($campos_consulta, $campos);
-            } elseif (is_string($campos)) {
-                $campos_consulta[] = $campos;
-            }
-            if (is_array($campos_consultar)) {
-                $campos_consulta = array_merge($campos_consulta, $campos_consultar);
-            } elseif (is_string($campos_consultar)) {
-                $campos_consulta[] = $campos_consultar;
-            }
-            $campos_consulta = array_unique($campos_consulta);
+        // Se ja calculou o total de itens
+        } else {
 
-            $resultado = $this->objeto->consultar_varios($condicoes, $campos_consulta, $ordem, $index,
-                                                         $this->itens_pagina,
-                                                         ($this->pagina - 1) * $this->itens_pagina);
+            // Se apenas mudou de pagina
+            if ($this->mudou_pagina) {
+                $total = (int)$_SESSION[__CLASS__][$this->nome]['total_itens'];
 
-            // Imprimir o inicio da lista
-            if ($resultado !== false) {
-                $this->flag_inicio = true;
-                lista::inicio($this->titulo(), $this->id_lista);
-
-                // Caso nao tenha obtido nenhum resultado
-                if (!count($resultado)) {
-                    switch ($this->get_genero()) {
-                    case 'M':
-                        echo '<p>Nenhum '.$this->get_singular()."</p>\n";
-                        break;
-                    case 'F':
-                        echo '<p>Nenhuma '.$this->get_singular()."</p>\n";
-                        break;
-                    case 'I':
-                        echo '<p>Nenhum(a) '.$this->get_singular()."</p>\n";
-                        break;
-                    }
-                }
-
-            // Caso tenha ocorrido um erro
+            // Se voltou para a lista de outro lugar (pode ter inserido ou removido um item
             } else {
-                mensagem::erro('Erro ao consultar '.$this->get_plural());
-                return false;
+                $total = $this->objeto->quantidade_registros($condicoes);
+                $_SESSION[__CLASS__][$this->nome]['total_itens'] = $total;
+            }
+        }
+        $this->set_total_itens($total);
+
+        $campos_consulta = array();
+        if (is_array($campos)) {
+            $campos_consulta = $campos;
+        } elseif (is_string($campos)) {
+            $campos_consulta[] = $campos;
+        }
+        if (is_array($campos_consultar)) {
+            $campos_consulta = array_merge($campos_consulta, $campos_consultar);
+        } elseif (is_string($campos_consultar)) {
+            $campos_consulta[] = $campos_consultar;
+        }
+        $campos_consulta = array_unique($campos_consulta);
+
+        $resultado = $this->objeto->consultar_varios($condicoes, $campos_consulta, $ordem, $index,
+                                                     $this->itens_pagina,
+                                                     ($this->pagina - 1) * $this->itens_pagina);
+
+        // Imprimir o inicio da lista
+        if ($resultado !== false) {
+            $this->flag_inicio = true;
+            lista::inicio($this->titulo(), $this->id_lista);
+
+            // Caso nao tenha obtido nenhum resultado
+            if (!count($resultado)) {
+                switch ($this->get_genero()) {
+                case 'M':
+                    echo '<p>Nenhum '.$this->get_singular()."</p>\n";
+                    break;
+                case 'F':
+                    echo '<p>Nenhuma '.$this->get_singular()."</p>\n";
+                    break;
+                case 'I':
+                    echo '<p>Nenhum(a) '.$this->get_singular()."</p>\n";
+                    break;
+                }
             }
 
-        } catch (Exception $e) {
+        // Caso tenha ocorrido um erro
+        } else {
+            mensagem::erro('Erro ao consultar '.$this->get_plural());
             return false;
         }
         return $resultado;
@@ -353,6 +390,8 @@ final class paginacao {
         global $CFG;
         if ($CFG->agent->mozfamily && $CFG->utf8) {
             return '&#x21E6;';
+        } elseif ($CFG->agent->ie) {
+            return '&#x25C4;';
         }
         return '&larr;';
     }
@@ -365,6 +404,8 @@ final class paginacao {
         global $CFG;
         if ($CFG->agent->mozfamily && $CFG->utf8) {
             return '&#x21E8;';
+        } elseif ($CFG->agent->ie) {
+            return '&#x25BA;';
         }
         return '&rarr;';
     }

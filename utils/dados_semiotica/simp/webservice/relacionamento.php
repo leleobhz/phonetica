@@ -4,10 +4,10 @@
 // Descricao: Arquivo para listar entidades e codigos de maneira acessivel
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.1
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.2
 // Data: 11/04/2008
-// Modificado: 29/07/2008
+// Modificado: 28/10/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -18,7 +18,7 @@ require_once('../config.php');
 $link  = util::get_dado('link', 'string');
 
 // Consultar o XML
-$xml_str = file_get_contents($link);
+$xml_str = http::get_conteudo_link($link);
 $xml = simplexml_load_string($xml_str);
 if (!$xml) {
     pagina::erro(null, 'Erro ao listar entidades');

@@ -4,10 +4,10 @@
 // Descricao: Classe Usuario
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.16
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.19
 // Data: 03/03/2007
-// Modificado: 06/08/2009
+// Modificado: 03/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -73,12 +73,7 @@ abstract class usuario_base extends objeto_formulario {
         unset($atributo);
 
         // CAMPO: email
-        $atributo = new atributo('email', 'E-mail', '');
-        $atributo->set_tipo('string', false);
-        $atributo->set_intervalo(3, 128);
-        $atributo->set_validacao('EMAIL', false, true);
-        $this->adicionar_atributo($atributo);
-        unset($atributo);
+        $this->adicionar_atributo(atributo_email::get_instancia('email'));
 
         // CAMPO: senha
         $atributo = new atributo('senha', 'Senha', '');
@@ -90,11 +85,7 @@ abstract class usuario_base extends objeto_formulario {
         unset($atributo);
 
         // CAMPO: cancelado
-        $atributo = new atributo('cancelado', 'Cancelado', 0);
-        $atributo->set_tipo('bool', false);
-        $atributo->set_validacao(false, false, false);
-        $this->adicionar_atributo($atributo);
-        unset($atributo);
+        $this->adicionar_atributo(atributo_cancelado::get_instancia());
 
         // CAMPO: grupos
         $this->adicionar_rel_un(

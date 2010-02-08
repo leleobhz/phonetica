@@ -4,7 +4,7 @@
 // Descricao: Importa usuarios de um arquivo CSV
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.2
 // Data: 27/06/2007
 // Modificado: 27/02/2009

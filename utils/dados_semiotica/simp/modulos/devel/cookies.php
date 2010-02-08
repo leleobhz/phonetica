@@ -4,7 +4,7 @@
 // Descricao: Arquivo que lista os cookies do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.6
 // Data: 30/07/2007
 // Modificado: 10/03/2008

@@ -1,6 +1,18 @@
 <?php
-//@ignoredoc
+//
+// SIMP
+// Descricao: Arquivo que monta um arquivo XML de cores (usado no arquivo formulario.php)
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../config.php');
+
 /*
 Este arquivo apresenta uma lista de entidades para ser usado em um
 campo_relacionamento_xml (definido pela classe formulario).

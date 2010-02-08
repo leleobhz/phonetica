@@ -4,15 +4,17 @@
 // Descricao: Consultas alto nivel ao banco de dados PostgreSQL
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.15
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.3
 // Data: 01/08/2008
-// Modificado: 29/07/2009
+// Modificado: 26/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 final class driver_pgsql_objeto extends driver_objeto {
     private $ultimo_insert;
+    private $constraint;
+
 
     //
     //     Construtor padrao
@@ -26,6 +28,96 @@ final class driver_pgsql_objeto extends driver_objeto {
     //
         $this->ultimo_insert = array();
         parent::__construct('pgsql', $servidor, $porta, $usuario, $senha, $base);
+    }
+
+
+    //
+    //     Monta a funcao usada em uma condicao SQL
+    //
+    public function montar_funcao_condicao($funcao, $operando, $tipo_operando, $atributo) {
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // String $operando: valor do operando
+    // Int $tipo_operando: indica o que e' o operando (CONDICAO_SQL_TIPO_ATRIBUTO ou CONDICAO_SQL_TIPO_VALOR)
+    // atributo $atributo: definicao do atributo
+    //
+        $funcoes = array('dia'     => 'day',
+                         'mes'     => 'month',
+                         'ano'     => 'year',
+                         'hora'    => 'hour',
+                         'minuto'  => 'minute',
+                         'segundo' => 'second',
+                         'diaano'  => 'doy');
+        if (isset($funcoes[$funcao])) {
+            switch ($tipo_operando) {
+            case CONDICAO_SQL_TIPO_ATRIBUTO:
+                return $this->delimitar_funcao('extract').'('.$funcoes[$funcao].' from '.$operando.')';
+            case CONDICAO_SQL_TIPO_VALOR:
+                return $this->delimitar_funcao('extract').'('.$funcoes[$funcao].' from timestamp '.$operando.')';
+            }
+        }
+        trigger_error('Driver PostgreSQL nao suporte a funcao "'.$funcao.'"', E_USER_WARNING);
+    }
+
+
+    // 
+    //     Prepara para a criacao de tabelas
+    //
+    public function preparar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        $this->constraint = array();
+        
+        foreach ($vt_objetos as $objeto) {
+            $sql_tabela = $this->delimitar_tabela($objeto->get_tabela());
+
+            // Restricoes de relacionamentos externos
+            foreach ($objeto->get_definicoes_rel_uu() as $atributo_rel => $def_atributo_rel) {
+                $sql_constraint = 'fk_'.md5($objeto->get_tabela().':'.$atributo_rel);
+                $sql_atributo_rel = $this->delimitar_campo($atributo_rel);
+                $obj_ref = $objeto->__get($def_atributo_rel->nome);
+                $sql_tabela_ref = $this->delimitar_tabela($obj_ref->get_tabela());
+                $sql_atributo_ref = $this->delimitar_campo($obj_ref->get_chave());
+                $sql_id = 'id_'.md5($sql_tabela.'.'.$sql_atributo_rel);
+
+                // Forte
+                if ($def_atributo_rel->forte) {
+                    $this->constraint[$sql_constraint] = "ALTER TABLE {$sql_tabela} ADD\n".
+                                                         "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                                         "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                                         "      ON DELETE CASCADE\n".
+                                                         "      ON UPDATE CASCADE";
+
+                // Fraco
+                } else {
+
+                    // Se o relacionamento e' com a mesma tabela: ignorar constraint
+                    if ($objeto->get_tabela() == $obj_ref->get_tabela()) {
+                        continue;
+                    }
+
+                    $this->constraint[$sql_constraint] = "ALTER TABLE {$sql_tabela} ADD\n".
+                                                         "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
+                                                         "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
+                                                         "      ON DELETE SET NULL\n".
+                                                         "      ON UPDATE SET NULL";
+                }
+            }
+        }
+        return true;
+    }
+
+
+    //
+    //     Encerra a criacao de tabelas
+    // 
+    public function encerrar_criacao_tabelas($vt_objetos) {
+    // Array[Objeto] $vt_objetos: vetor de objetos de entidades
+    //
+        $r = true;
+        foreach ($this->constraint as $sql) {
+            $r = $r && $this->consultar($sql);
+        }
+        return $r;
     }
 
 
@@ -101,7 +193,6 @@ final class driver_pgsql_objeto extends driver_objeto {
     }
 
 
-
     //
     //     CREATE TABLE: Gera uma SQL de criacao de uma nova tabela no BD
     //
@@ -135,19 +226,26 @@ final class driver_pgsql_objeto extends driver_objeto {
                 $extras[] = "CREATE INDEX {$sql_id} ON {$sql_tabela} ({$sql_campo})";
             }
 
+            // Se nao e' a chave primaria
             if ($def_atributo->chave != 'PK') {
-                $sql_nulo = ' NOT NULL';
+
+                // Se e' um relacionamento
                 if ($objeto->possui_rel_uu($def_atributo->nome, false)) {
                     $def_atributo_rel = $objeto->get_definicao_rel_uu($def_atributo->nome, false);
                     if ($def_atributo_rel->forte) {
+                        $sql_nulo = ' NOT NULL';
                         $sql_default = '';
                     } else {
+                        $sql_nulo = ' NULL';
                         $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                     }
                 } else {
+                    $sql_nulo = ' NOT NULL';
                     $sql_default = ' DEFAULT '.$this->gerar_sql_default($def_atributo);
                 }
                 $vt_campos[] = "  {$sql_campo} {$sql_tipo}{$sql_nulo}{$sql_default}";
+
+            // Se e' a chave primaria
             } else {
                 $sql_constraint = 'pk_'.md5($objeto->get_tabela().':'.$def_atributo->nome);
                 $vt_campos[] = "  {$sql_campo} {$sql_tipo}";
@@ -173,13 +271,7 @@ final class driver_pgsql_objeto extends driver_objeto {
 
             $extras[] = "CREATE INDEX {$sql_id} ON {$sql_tabela} ({$sql_atributo_rel})";
 
-            // Se e' um relacionamento forte, adicionar constraint
-            if ($def_atributo_rel->forte) {
-                $vt_constraint[$sql_constraint] = "  CONSTRAINT {$sql_constraint} FOREIGN KEY ({$sql_atributo_rel})\n".
-                                                  "    REFERENCES {$sql_tabela_ref} ({$sql_atributo_ref})\n".
-                                                  "      ON DELETE CASCADE\n".
-                                                  "      ON UPDATE CASCADE";
-            }
+            // Definir constraints de relacionamentos depois
         }
 
         // Definir restricoes de chaves unicas compostas
@@ -255,7 +347,15 @@ final class driver_pgsql_objeto extends driver_objeto {
         case 'binario':
             return 'BYTEA';
         case 'data':
-            return 'TIMESTAMP';
+            switch ($atributo->campo_formulario) {
+            case 'data':
+                return 'DATE';
+            case 'hora':
+                return 'TIME';
+            case 'data_hora':
+            default:
+                return 'TIMESTAMP';
+            }
         }
         trigger_error('Tipo desconhecido ('.util::exibir_var($atributo->tipo).')', E_USER_WARNING);
         return false;
@@ -280,37 +380,80 @@ final class driver_pgsql_objeto extends driver_objeto {
     //
     //     Formata uma data para ser inserida no BD
     //
-    public function formatar_data($data) {
+    public function formatar_data($data, $tipo = 'data_hora') {
     // String $data: data no formato dd-mm-aaaa-HH-MM-SS
+    // String $tipo: 'data_hora', 'data', 'hora'
     //
         $vt_data = explode('-', $data);
-        return sprintf('%04d-%02d-%02d %02d:%02d:%02d',
-                       isset($vt_data[2]) ? $vt_data[2] : 0,
-                       isset($vt_data[1]) ? max((int)$vt_data[1], 1) : 1,
-                       isset($vt_data[0]) ? max((int)$vt_data[0], 1) : 1,
-                       isset($vt_data[3]) ? $vt_data[3] : 0,
-                       isset($vt_data[4]) ? $vt_data[4] : 0,
-                       isset($vt_data[5]) ? $vt_data[5] : 0
-                      );
+        switch ($tipo) {
+        case 'data':
+            return sprintf('%04d-%02d-%02d',
+                           isset($vt_data[2]) ? $vt_data[2] : 0,
+                           isset($vt_data[1]) ? max((int)$vt_data[1], 1) : 1,
+                           isset($vt_data[0]) ? max((int)$vt_data[0], 1) : 1
+                          );
+
+        case 'hora':
+            return sprintf('%02d:%02d:%02d',
+                           isset($vt_data[3]) ? $vt_data[3] : 0,
+                           isset($vt_data[4]) ? $vt_data[4] : 0,
+                           isset($vt_data[5]) ? $vt_data[5] : 0
+                          );
+
+        case 'data_hora':
+        default:
+            return sprintf('%04d-%02d-%02d %02d:%02d:%02d',
+                           isset($vt_data[2]) ? $vt_data[2] : 0,
+                           isset($vt_data[1]) ? max((int)$vt_data[1], 1) : 1,
+                           isset($vt_data[0]) ? max((int)$vt_data[0], 1) : 1,
+                           isset($vt_data[3]) ? $vt_data[3] : 0,
+                           isset($vt_data[4]) ? $vt_data[4] : 0,
+                           isset($vt_data[5]) ? $vt_data[5] : 0
+                          );
+        }
     }
 
 
     //
     //     Desformata uma data obtida do BD
     //
-    public function desformatar_data($data_bd) {
+    public function desformatar_data($data_bd, $tipo = 'data_hora') {
     // String $data_bd: data no formato do BD
+    // String $tipo: 'data_hora', 'data', 'hora'
     //
-        sscanf($data_bd, '%d-%d-%d %d:%d:%d',
-                         $ano, $mes, $dia,
-                         $hora, $minuto, $segundo);
-        if ((int)$ano == 0) {
-            return sprintf('00-00-0000-%02d-%02d-%02d',
+        switch ($tipo) {
+        case 'data':
+            sscanf($data_bd, '%d-%d-%d',
+                             $ano, $mes, $dia);
+
+            if ((int)$ano == 0) {
+                return '00-00-0000-00-00-00';
+            }
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           $dia, $mes, $ano,
+                           0, 0, 0);
+
+        case 'hora':
+            sscanf($data_bd, '%d:%d:%d',
+                             $hora, $minuto, $segundo);
+
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           0, 0, 0,
+                           $hora, $minuto, $segundo);
+
+        case 'data_hora':
+        default:
+            sscanf($data_bd, '%d-%d-%d %d:%d:%d',
+                             $ano, $mes, $dia,
+                             $hora, $minuto, $segundo);
+            if ((int)$ano == 0) {
+                return sprintf('00-00-0000-%02d-%02d-%02d',
+                               $hora, $minuto, $segundo);
+            }
+            return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
+                           $dia, $mes, $ano,
                            $hora, $minuto, $segundo);
         }
-        return sprintf('%02d-%02d-%04d-%02d-%02d-%02d',
-                       $dia, $mes, $ano,
-                       $hora, $minuto, $segundo);
     }
 
 

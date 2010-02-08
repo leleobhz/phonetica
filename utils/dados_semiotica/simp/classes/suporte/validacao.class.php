@@ -4,10 +4,10 @@
 // Descricao: Classe singleton que realiza validacoes comuns
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.51
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.61
 // Data: 09/08/2007
-// Modificado: 26/08/2009
+// Modificado: 02/02/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -24,10 +24,9 @@ final class validacao {
     //
     //     Gera um objeto da classe validacao
     //
-    public static function get_instancia() {
-        if (!self::$instancia) {
-            $classe = __CLASS__;
-            self::$instancia = new $classe();
+    public static function &get_instancia() {
+        if (self::$instancia === null) {
+            self::$instancia = new self();
         }
         return self::$instancia;
     }
@@ -143,7 +142,6 @@ final class validacao {
             break;
 
         case 'float':
-        case 'string':
             settype($novo_valor, $atributo->tipo);
             if ($novo_valor == $valor)  {
                 $valor = $novo_valor;
@@ -152,6 +150,21 @@ final class validacao {
                 $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o &eacute; do tipo '.$tipos[$atributo->tipo];
             }
             break;
+
+        case 'string':
+            settype($novo_valor, $atributo->tipo);
+            if ($novo_valor == $valor)  {
+                $valor = $novo_valor;
+            } else {
+                $valido = false;
+                $erros[] = 'Campo "'.$atributo->descricao.'" n&atilde;o &eacute; do tipo '.$tipos[$atributo->tipo];
+            }
+            if (VALIDACAO_UTF8 && !texto::is_utf8($valor)) {
+                $valido = false;
+                $erros[] = 'Voc&ecirc; est&aacute; utilizando caracteres n&atilde;o permitidos';
+            }
+            break;
+
         case 'data':
             $data = objeto::parse_data($valor, false);
             if (!checkdate($data['mes'], $data['dia'], $data['ano'])) {
@@ -200,6 +213,7 @@ final class validacao {
                 }
             }
             break;
+
         case 'string';
             $valor_decode = utf8_decode($valor);
             if (is_numeric($atributo->minimo) && ($atributo->minimo > 0) && (!isset($valor_decode[$atributo->minimo - 1]))) {
@@ -211,6 +225,7 @@ final class validacao {
                 $erros[] = "Campo \"{$atributo->descricao}\" ultrapassa o tamanho m&aacute;ximo de caracteres (m&aacute;ximo: {$atributo->maximo})";
             }
             break;
+
         case 'data':
             if ($atributo->minimo && objeto::comparar_datas($valor, $atributo->minimo) < 0) {
                 $valido = false;
@@ -234,7 +249,7 @@ final class validacao {
     //
     static public function get_tipos() {
         return array('ARQUIVO', 'BD', 'CEP', 'CNPJ', 'CPF', 'DN', 'DOMINIO', 'EMAIL', 'FONE', 'HOST',
-                     'IP', 'LETRAS', 'LOGIN', 'MODULO', 'NOME', 'NOME_ARQUIVO', 'NOME_INCOMPLETO',
+                     'IDENTIFICADOR', 'IP', 'LETRAS', 'LOGIN', 'MODULO', 'NOME', 'NOME_ARQUIVO', 'NOME_INCOMPLETO',
                      'NUMERICO', 'NUMERICO_PONTO', 'PLACA_VEICULO', 'RG', 'SENHA', 'SITE', 'TEXTO',
                      'TEXTO_LINHA');
     }
@@ -300,9 +315,9 @@ final class validacao {
             $definicao->exemplo = 'exemplo.com.br';
             break;
         case 'EMAIL':
-            $definicao->padrao = '/^[A-Za-z0-9]+[\.A-Za-z0-9-_]*@(([A-Za-z0-9-_]+)(\.[A-Za-z0-9-_]+)+)$/'.$u;
+            $definicao->padrao = '/^[A-Za-z0-9](\.?[A-Za-z0-9-_]+)*@(([A-Za-z0-9-_]+)(\.[A-Za-z0-9-_]+)+)$/'.$u;
             $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'.-_@';
-            $definicao->instrucoes = 'Preencha com um e-mail v&aacute;lido, composto por um prefixo, um sinal arroba (@) e um sufixo';
+            $definicao->instrucoes = 'Preencha com um e-mail v&aacute;lido, composto por um prefixo, um sinal arroba (@) e um sufixo.';
             $definicao->exemplo = 'exemplo@dominio.com.br';
             break;
         case 'FONE':
@@ -316,6 +331,12 @@ final class validacao {
             $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'-_.';
             $definicao->instrucoes = 'Preencha com um host completo. Use palavras com letras, n&uacute;meros, menos ou underscore separadas por ponto.';
             $definicao->exemplo = 'exemplo.com.br';
+            break;
+        case 'IDENTIFICADOR':
+            $definicao->padrao = '/^[A-Za-z0-9_]*$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.$numeros.'_';
+            $definicao->instrucoes = 'Preenchar com letras, n&uacute;meros ou underscore';
+            $definicao->exemplo = 'ALUNO_MATRICULADO';
             break;
         case 'IP':
             $definicao->padrao = '/^[0-9]{3}(\.[0-9]{3}){3}$/'.$u;
@@ -342,8 +363,8 @@ final class validacao {
             $definicao->exemplo = 'servidores/docentes';
             break;
         case 'NOME':
-            $definicao->padrao = '/^[A-Za-z-'.$acentos.$espaco.'\']+$/'.$u;
-            $definicao->permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'";
+            $definicao->padrao = '/^[A-Za-z-'.$acentos.$espaco.'\'`]+$/'.$u;
+            $definicao->permite = $letras_maiusculas.$letras_minusculas.'-'.$letras_acentuadas.$str_espaco."'`";
             $definicao->instrucoes = 'Preencha com um nome completo usando letras, acentos, espa&ccedil;os, h&iacute;fen ou ap&oacute;strofo';
             $definicao->exemplo = 'Jos&eacute; Sim&atilde;o McDonald\'s';
             break;
@@ -443,7 +464,7 @@ final class validacao {
     //     * TEXTO: o texto deve ser valido (permite-se quebra de linha)
     //     * TEXTO_LINHA: o texto deve ser valido (nao permite-se quebra de linha)
     //
-    public function validar_campo($tipo, $valor, &$erro_campo) {
+    public function validar_campo($tipo, $valor, &$erro_campo = '') {
     // String $tipo: tipo de campo
     // String $valor: valor do campo
     // String $erro_campo: string que guarda o erro ocorrido caso consiga identificar
@@ -499,14 +520,26 @@ final class validacao {
 
         // Checando os caracteres que nao podiam ser usados
         if (isset($definicao->permite)) {
+            $caracteres_controle = listas::get_caracteres_controle();
             $len = texto::strlen($valor);
             $caracteres_invalidos = array();
             $posicoes = array();
+            $sugestao = '';
             for ($i = 0; $i < $len; $i++) {
                 $char = texto::get_char($valor, $i);
+
+                // Se o caractere nao e' permitido
                 if (strpos($definicao->permite, $char) === false) {
-                    $caracteres_invalidos[] = htmlspecialchars("\"{$char}\"");
+                    if (strlen($char) == 1 && isset($caracteres_controle[ord($char)])) {
+                        $caracteres_invalidos[] = 'caractere de controle "'.$caracteres_controle[ord($char)].'"';
+                    } else {
+                        $caracteres_invalidos[] = htmlspecialchars("\"{$char}\"");
+                    }
                     $posicoes[] = $i + 1;
+
+                // Se o caractere e' permitido
+                } else {
+                    $sugestao .= $char;
                 }
             }
 
@@ -514,6 +547,10 @@ final class validacao {
                 $erro_campo = "os seguintes caracteres n&atilde;o s&atilde;o permitidos para este tipo de campo: ".
                               implode(', ', array_unique($caracteres_invalidos)).'. Est&atilde;o localizados nas seguintes '.
                               'posi&ccedil;&otilde;es: '.implode(', ', $posicoes).'.';
+                $sugestao = trim($sugestao);
+                if ($this->validar_campo($tipo, $sugestao)) {
+                    $erro_campo .= ' Sugest&atilde;o de preenchimento: "'.texto::codificar($sugestao).'".';
+                }
             }
         }
         return false;
@@ -528,20 +565,8 @@ final class validacao {
     // String $erro_campo: erro ocorrido na validacao, caso consiga identificar
     //
         // Se informou o CNPJ no formato completo (com pontos e tracos): converter para numeros
-        if (preg_match('/^([0-9]{2})\.([0-9]{3})\.([0-9]{3})\/([0-9]{4})-([0-9]{2})$/', $cnpj, $match)) {
-            $cnpj = implode(array_slice($match, 1));
-        }
-
-        // Se nao informou apenas numeros
-        if (!is_numeric($cnpj)) {
-            $erro_campo = 'Formato inv&aacute;lido';
-            return false;
-        }
-
-        // Checar o tamanho
-        $tamanho = strlen($cnpj);
-        if ($tamanho != 14) {
-            $erro_campo = 'Tamanho inv&aacute;lido (esperado tamanho 14)';
+        if (strlen($cnpj) != 14) {
+            $erro_campo = 'CNPJ n&atilde;o possui 14 d&iacute;gitos';
             return false;
         }
 
@@ -553,7 +578,7 @@ final class validacao {
         $dv = $soma % 11;
         if ($dv == 10) { $dv = 0; }
         if ($dv != $cnpj[12]) {
-            $erro_campo = 'Primeiro d&iacute;gito verificador n&atilde;o confere';
+            $erro_campo = 'D&iacute;gito verificador n&atilde;o confere';
             return false;
         }
 
@@ -565,7 +590,7 @@ final class validacao {
         $dv = $soma % 11;
         if ($dv == 10) { $dv = 0; }
         if ($dv != $cnpj[13]) {
-            $erro_campo = 'Segundo d&iacute;gito verificador n&atilde;o confere';
+            $erro_campo = 'D&iacute;gito verificador n&atilde;o confere';
             return false;
         }
 
@@ -666,7 +691,7 @@ final class validacao {
         if (VALIDACAO_CHECAR_DOMINIO_EMAIL && function_exists('checkdnsrr')) {
             $dominio = substr($email, strpos($email, '@') + 1);
             if (!checkdnsrr($dominio)) {
-                $dominio = texto::codificar($match[1]);
+                $dominio = texto::codificar($dominio);
                 $erro_campo = "O dom&iacute;nio \"{$dominio}\" parece n&atilde;o ser v&aacute;lido.";
                 return false;
             }

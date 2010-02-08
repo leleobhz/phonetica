@@ -41,3 +41,25 @@ div.condicoes span.operando {
 input.ativo {
   border-color: #0000FF;
 }
+
+table#insercao_condicao {
+  width: 100%;
+}
+table#insercao_condicao thead th {
+  background-color: #FFFFFF;
+  border: 1px inset #CCCCCC;
+  color: #000000;
+  text-align: center;
+}
+
+table#insercao_condicao tbody td,
+table#insercao_condicao tbody th {
+  border: 1px solid #CCCCCC;
+  vertical-align: top;
+}
+table#insercao_condicao tbody td {
+  text-align: center;
+}
+table#insercao_condicao tbody th {
+  text-align: right;
+}

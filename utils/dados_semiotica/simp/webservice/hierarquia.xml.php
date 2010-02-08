@@ -4,10 +4,10 @@
 // Descricao: Arquivo para listar entidades e codigos de maneira hierarquica
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.9
 // Data: 14/02/2008
-// Modificado: 23/10/2008
+// Modificado: 28/10/2008
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -24,7 +24,7 @@ $itens_abertos = util::get_dado('a', 'array', false, array());
 array_multisort(array_keys($itens_abertos), SORT_ASC, SORT_NUMERIC, $itens_abertos);
 
 // Consultar o XML
-$xml_str = file_get_contents($link);
+$xml_str = http::get_conteudo_link($link);
 $pos = strrpos($xml_str, '?'.'>');
 if ($pos !== false) {
     $xml_str = substr($xml_str, $pos + 2);

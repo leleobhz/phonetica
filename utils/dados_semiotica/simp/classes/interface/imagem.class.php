@@ -4,10 +4,10 @@
 // Descricao: Classe para manipulacao de Imagens
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.7
 // Data: 28/02/2008
-// Modificado: 10/06/2009
+// Modificado: 07/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -167,9 +167,22 @@ final class imagem {
 
 
     //
-    //     Retorna a imagem em formato binario
+    //     Exibe a imagem em formato binario
     //
-    public function get_imagem($mimetype, $qualidade = 100, $interlace = 0) {
+    public function get_imagem($mimetype, $qualidade = 100, $interlace = false) {
+    // String $mimetype: formato a ser exibido ou false para usar o mesmo da imagem
+    // Int $qualidade: qualidade da imagem (apenas para JPG)
+    // Bool $interlace: cria um JPEG progressivo ou nao
+    //
+        return $this->salvar(null, $mimetype, $qualidade, $interlace);
+    }
+
+
+    //
+    //     Salva a imagem em um arquivo
+    //
+    public function salvar($arquivo, $mimetype, $qualidade = 100, $interlace = false) {
+    // String $arquivo: nome do arquivo que recebera a imagem
     // String $mimetype: formato a ser exibido ou false para usar o mesmo da imagem
     // Int $qualidade: qualidade da imagem (apenas para JPG)
     // Bool $interlace: cria um JPEG progressivo ou nao
@@ -178,18 +191,18 @@ final class imagem {
         switch (strtolower($mimetype)) {
         case 'image/gif':
             if (imagetypes() & IMG_GIF) {
-                return imagegif($this->img);
+                return imagegif($this->img, $arquivo);
             }
             break;
         case 'image/png':
             if (imagetypes() & IMG_PNG) {
-                return imagepng($this->img);
+                return imagepng($this->img, $arquivo);
             }
             break;
         case 'image/jpeg':
             if (imagetypes() & IMG_JPEG) {
                 imageinterlace($this->img, ($interlace ? 1 : 0));
-                return imagejpeg($this->img, '', $qualidade);
+                return imagejpeg($this->img, $arquivo, $qualidade);
             }
             break;
         }

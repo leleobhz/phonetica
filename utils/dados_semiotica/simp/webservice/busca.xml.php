@@ -4,7 +4,7 @@
 // Descricao: Script de busca de um campo semelhante
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.1.1.3
 // Data: 30/04/2008
 // Modificado: 13/01/2009

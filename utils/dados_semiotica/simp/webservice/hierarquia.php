@@ -4,7 +4,7 @@
 // Descricao: Arquivo para listar entidades e codigos no formato HTML (acessivel para navegadores modo texto)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 11/04/2008
 // Modificado: 29/07/2008

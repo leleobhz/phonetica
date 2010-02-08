@@ -4,17 +4,18 @@
 // Descricao: Classe de Congiguracoes do Sistema
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.17
+// E-mail: rpmoreira@tecnolivre.com.br
+// Versao: 1.0.0.18
 // Data: 20/08/2007
-// Modificado: 13/07/2009
+// Modificado: 27/10/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
 
 // Tipo de Email
-define('CONFIG_EMAIL_PADRAO',  1);
-define('CONFIG_EMAIL_SMTP',    2);
+define('CONFIG_EMAIL_PADRAO', 1);
+define('CONFIG_EMAIL_SMTP',   2);
+define('CONFIG_EMAIL_IMAP',   3);
 
 abstract class config_base extends objeto_formulario {
 
@@ -165,7 +166,7 @@ abstract class config_base extends objeto_formulario {
         unset($atributo);
 
         // CAMPO: titulo
-        $atributo = new atributo('titulo', 'Titulo', '');
+        $atributo = new atributo('titulo', 'T&iacute;tulo', '');
         $atributo->set_tipo('string', false);
         $atributo->set_intervalo(1, 128);
         $atributo->set_validacao('TEXTO_LINHA', false, false);

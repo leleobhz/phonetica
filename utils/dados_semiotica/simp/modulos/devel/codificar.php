@@ -4,7 +4,7 @@
 // Descricao: codifica/decodifica um texto usando algum mecanismo
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 03/09/2008
 // Modificado: 23/12/2008

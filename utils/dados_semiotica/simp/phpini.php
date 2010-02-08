@@ -4,36 +4,38 @@
 // Descricao: Arquivo de sobreposicao das configuracoes do php.ini
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.12
 // Data: 30/01/2008
-// Modificado: 27/07/2009
+// Modificado: 25/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
 // Modificar estas configuracoes com cautela!                    // Valor padrao
-ini_set('display_errors',                  0);                   // 0
-ini_set('display_startup_errors',          0);                   // 0
-ini_set('log_errors',                      1);                   // 1
-ini_set('report_memleaks',                 1);                   // 1
+ini_set('display_errors',                  '0');                 // 0
+ini_set('display_startup_errors',          '0');                 // 0
+ini_set('log_errors',                      '1');                 // 1
+ini_set('report_memleaks',                 '1');                 // 1
 ini_set('default_mimetype',                'text/html');         // text/html
 ini_set('default_charset',                 'utf-8');             // utf-8
-ini_set('zend.ze1_compatibility_mode',     0);                   // 0
-ini_set('register_globals',                0);                   // 0
-ini_set('auto_detect_line_endings',        0);                   // 0
-ini_set('magic_quotes_runtime',            0);                   // 0 (nao mudar)
+ini_set('short_open_tag',                  '0');                 // 0
+ini_set('asp_tags',                        '0');                 // 0
+ini_set('zend.ze1_compatibility_mode',     '0');                 // 0
+ini_set('register_globals',                '0');                 // 0
+ini_set('auto_detect_line_endings',        '0');                 // 0
+ini_set('magic_quotes_runtime',            '0');                 // 0 (nao mudar)
 ini_set('memory_limit',                    '128M');              // 128M
-ini_set('max_execution_time',              30);                  // 30
+ini_set('max_execution_time',              '30');                // 30
 ini_set('arg_separator.output',            '&amp;');             // &amp; (nao mudar)
-ini_set('session.use_cookies',             1);                   // 1 (nao mudar)
-ini_set('session.use_trans_sid',           0);                   // 0
-ini_set('session.use_only_cookies',        1);                   // 1 (nao mudar)
-ini_set('session.hash_bits_per_character', 6);                   // 6
-ini_set('session.gc_probability',          1);                   // 1
-ini_set('session.gc_divisor',              100);                 // 100
-ini_set('precision',                       14);                  // 14
-ini_set('y2k_compliance',                  1);                   // 1 (nao mudar)
+ini_set('session.use_cookies',             '1');                 // 1 (nao mudar)
+ini_set('session.use_trans_sid',           '0');                 // 0
+ini_set('session.use_only_cookies',        '1');                 // 1 (nao mudar)
+ini_set('session.hash_bits_per_character', '6');                 // 6
+ini_set('session.gc_probability',          '1');                 // 1
+ini_set('session.gc_divisor',              '100');               // 100
+ini_set('precision',                       '14');                // 14
+ini_set('y2k_compliance',                  '1');                 // 1 (nao mudar)
 ini_set('date.timezone',                   'America/Sao_Paulo'); // America/Sao_Paulo
 
 // Configuracoes para SGBD Oracle (descomentar caso necessario)

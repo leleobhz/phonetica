@@ -4,10 +4,10 @@
 // Descricao: Classe que gera paginas de modulos (exibir, alterar, inserir, listar e importar entidades)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.15
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.2.8
 // Data: 01/02/2008
-// Modificado: 28/07/2009
+// Modificado: 22/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -29,15 +29,26 @@ final class modulo {
     //     - Array[String => Bool] $ordem: campos usados para ordenar a lista apontando para o tipo de ordenacao (crescente = true / decrescente = false)
     //     - String $index: campo usado para indexacao dos registros da lista
     //     - Int $itens_pagina: Numero maximo de registros por pagina
+    //     - Array[String => String] $nomes: vetor associativo com a descricao dos elementos listados. O vetor possui os seguintes indices:
+    //       - String 'singular': indica o nome do elemento no singular
+    //       - String 'plural': indica o nome do elemento no plural
+    //       - String 'genero': indica o genero do elemento (M - masculino, F - feminino, I - indefinido)
     //     - String $ajuda: descricao da ajuda da pagina
     //     - String $texto_antes: bloco HTML que deve aparecer antes do quadro
     //     - String $texto_depois: bloco HTML que deve aparecer depois do quadro
-    //     - Array[String => String] $links: vetor de links a serem exibidos no rodape da lista (indexados pela descricao do link)
+    //     - Array[String => String || Array[String => Mixed]] $links: vetor de links a serem exibidos no rodape da lista (indexados pela descricao do link) ou com pacotes de dados dos links na forma de array (abaixo os possiveis indices)
+    //       - String 'link': URL do link ou nome do arquivo no mesmo modulo
+    //       - String 'modulo': Nome do modulo (usado em conjunto com $arquivo)
+    //       - String 'arquivo': Nome do arquivo (usado em conjunto com o $modulo)
+    //       - Bool 'ajax': Usar ajax no link
     //     - condicao_sql $condicoes: condicao base para filtrar os elementos da lista (e' unida 'as condicoes do formulario de filtragem, caso ele exista)
+    //     - objeto $entidade: entidade responsavel por gerar a lista
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav e as $condicoes, caso nao sejam preenchidos)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -55,8 +66,8 @@ final class modulo {
     //
     static public function listar_entidades($classe, $dados_lista = false, $dados_pagina = false, $dados_form = false) {
     // String $classe: nome da classe
-    // Object $dados_lista: dados opcionais ($id_lista, $opcoes, $campos, $campos_consultar, $index, $itens_pagina, $ordem, $ajuda, $texto_antes, $texto_depois, $links, $condicao)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_lista: dados opcionais ($id_lista, $opcoes, $campos, $campos_consultar, $index, $itens_pagina, $nomes, $ordem, $ajuda, $texto_antes, $texto_depois, $links, $condicao, $entidade)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     // Object $dados_form: dados opcionais ($funcao_form, $funcao_condicoes, $funcao_ordem)
     //
         global $CFG, $USUARIO;
@@ -65,7 +76,12 @@ final class modulo {
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
         if (!$dados_form)   { $dados_form   = new stdClass(); }
 
-        $entidade = &self::criar_entidade($classe);
+        if (isset($dados_lista->entidade)) {
+            $entidade = &$dados_form->entidade;
+        } else {
+            $entidade = &self::criar_entidade($classe);
+        }
+        self::checar_classe($entidade, 'objeto');
 
         // Dados da lista
         $arquivo          = util::get_arquivo();
@@ -77,6 +93,7 @@ final class modulo {
         $campos_consultar = isset($dados_lista->campos_consultar) ? $dados_lista->campos_consultar : false;
         $index            = isset($dados_lista->index)            ? $dados_lista->index            : false;
         $itens_pagina     = isset($dados_lista->itens_pagina)     ? $dados_lista->itens_pagina     : false;
+        $nomes            = isset($dados_lista->nomes)            ? $dados_lista->nomes            : false;
         $ordem            = isset($dados_lista->ordem)            ? $dados_lista->ordem            : false;
         $id_lista         = isset($dados_lista->id_lista)         ? $dados_lista->id_lista         : 'lista_'.$classe;
 
@@ -94,28 +111,71 @@ final class modulo {
         if (is_array($dados_lista->links)) {
             $i = 1;
             foreach ($dados_lista->links as $descricao => $l) {
-                if (strpos($l, 'http://') !== false) {
-                    $class = 'op'.($i++);
-                    $links[] = link::texto($l, $descricao, false, false, $class, true);
-                } else {
-                    switch ($l) {
-                    case 'inserir.php':
-                        $class = 'inserir';
-                        break;
-                    case 'importar.php':
-                    case 'importar_csv.php':
-                    case 'importar_xml.php':
-                        $class = 'importar';
-                        break;
-                    default:
-                        $class = '';
-                        break;
+
+                // Tipo de link (absoluto 1 / relativo 0)
+                $tipo = 0;
+
+                // Se passou um pacote de dados
+                if (is_array($l)) {
+                    $usar_ajax = isset($l['ajax']) ? $l['ajax'] : true;
+
+                    // Se informou 'link'
+                    if (isset($l['link'])) {
+
+                         // Absoluto
+                         if (strpos($l['link'], 'http://') !== false) {
+                             $tipo = 1;
+                             $link_absoluto = $l['link'];
+
+                         // Relativo
+                         } else {
+                             $tipo = 0;
+                             $class = self::get_class_link($l['link']);
+                             $arquivo_link = $l['link'];
+                             $modulo_link = isset($l['modulo']) ? $l['modulo'] : $modulo;
+                         }
+
+                    // Se informou 'arquivo' e 'modulo'
+                    } elseif (isset($l['arquivo']) && isset($l['modulo'])) {
+                         $tipo = 0;
+                         $class = self::get_class_link($l['arquivo']);
+                         $arquivo_link = $l['arquivo'];
+                         $modulo_link = $l['modulo'];
                     }
-                    $l = link::arquivo_modulo($USUARIO, $l, $modulo, false, '', $class, 1);
+
+                // Se passou uma string
+                } else {
+
+                    // Absoluto
+                    if (strpos($l, 'http://') !== false) {
+                        $tipo = 1;
+                        $link_absoluto = $l;
+                        $class = 'op'.$i;
+                        $usar_ajax = true;
+
+                    // Relativo
+                    } else {
+                        $tipo = 0;
+                        $class = self::get_class_link($l);
+                        $arquivo_link = $l;
+                        $modulo_link = $modulo;
+                        $usar_ajax = true;
+                    }
+                }
+
+                // Link absoluto
+                if ($tipo == 1) {
+                    $links[] = link::texto($link_absoluto, $descricao, false, false, $class, true, false, false, $usar_ajax);
+
+                // Link relativo
+                } else {
+                    $class = self::get_class_link($l);
+                    $l = link::arquivo_modulo($USUARIO, $arquivo_link, $modulo_link, false, '', $class, true, true, true, $usar_ajax);
                     if ($l) {
                         $links[] = $l;
                     }
                 }
+                $i++;
             }
         }
         if (isset($dados_lista->ajuda)) {
@@ -178,10 +238,11 @@ final class modulo {
                 header('Location: '.$CFG->wwwroot);
                 exit(1);
             }
-            $dados_lista->condicoes = condicao_sql::montar($chave_pai, '=', $valor_chave_pai, false);
+            $dados_lista->condicoes = condicao_sql::montar($chave_pai, '=', $valor_chave_pai);
         }
 
         // Dados da pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -190,6 +251,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -212,8 +278,8 @@ final class modulo {
         }
 
         // Exibir a pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -249,7 +315,7 @@ final class modulo {
                 if ($texto_antes) {
                     echo $texto_antes;
                 }
-                $entidade->imprimir_lista($condicoes, $modulo, $id_lista, $link, $opcoes, $campos, $ordem, $index, $itens_pagina, $campos_consultar);
+                $entidade->imprimir_lista($condicoes, $modulo, $id_lista, $link, $opcoes, $campos, $ordem, $index, $itens_pagina, $campos_consultar, $nomes);
                 if ($texto_depois) {
                     echo $texto_depois;
                 }
@@ -290,13 +356,16 @@ final class modulo {
     //     - String $ajuda: ajuda do formulario
     //     - String $class: classe CSS do formulario
     //     - Bool $ajax: usar ajax no formulario
-    //     - objeto $entidade: entidade envolvida na insercao
+    //     - objeto_formulario $entidade: entidade envolvida na insercao
     //     - Bool $outro: incluir link para cadastrar outro
     //     - String $nome_botao: nome do botao do formulario
+    //     - Int $modo_transacao: tipo de transacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido, e o vetor $opcoes com a chave da sessao)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -305,8 +374,8 @@ final class modulo {
     //
     static public function inserir($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $dados, $prefixo, $funcao_operacoes, $opcoes, $ajuda, $class, $ajax, $entidade, $outro, $nome_botao)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $dados_pagina, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $dados, $prefixo, $funcao_operacoes, $opcoes, $ajuda, $class, $ajax, $entidade, $outro, $nome_botao, $modo_transacao)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $dados_pagina, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
@@ -328,12 +397,13 @@ final class modulo {
         if (!$dados && isset($dados_form->dados)) {
             $dados = $dados_form->dados;
         }
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : true;
-        $opcoes     = isset($dados_form->opcoes)     ? $dados_form->opcoes     : array();
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $ajax       = isset($dados_form->ajax)       ? $dados_form->ajax       : true;
-        $outro      = isset($dados_form->outro)      ? $dados_form->outro      : true;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : true;
+        $opcoes         = isset($dados_form->opcoes)         ? $dados_form->opcoes         : array();
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $ajax           = isset($dados_form->ajax)           ? $dados_form->ajax           : true;
+        $outro          = isset($dados_form->outro)          ? $dados_form->outro          : true;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
         // Incluir chave FK em opcoes, caso nao tenha preenchido opcoes
         if (isset($dados_pagina->submodulo) && !isset($dados_form->opcoes)) {
@@ -381,6 +451,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -389,6 +460,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -418,8 +494,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -428,7 +504,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_inserir($dados, $campos, $action, $prefixo, $opcoes, $class, $ajax, $outro, $nome_botao);
+        $entidade->formulario_inserir($dados, $campos, $action, $prefixo, $opcoes, $class, $ajax, $outro, $nome_botao, $modo_transacao);
         $pagina->fim_conteudo();
         $pagina->rodape();
         exit(0);
@@ -447,11 +523,14 @@ final class modulo {
     //     - String $class: classe CSS do formulario
     //     - Bool $ajax: usar ajax no formulario
     //     - String $nome_botao: nome do botao do formulario
-    //     - objeto $entidade: entidade envolvida na alteracao
+    //     - objeto_formulario $entidade: entidade envolvida na alteracao
+    //     - Int $modo_transacao: tipo de transacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -460,29 +539,31 @@ final class modulo {
     //
     static public function alterar($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $opcoes, $class, $ajax, $nome_botao, $entidade)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $opcoes, $class, $ajax, $nome_botao, $entidade, $modo_transacao)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
         // Dados do formulario
-        $arquivo    = util::get_arquivo();
-        $modulo     = util::get_modulo($arquivo);
-        $modulo_pai = util::get_modulo_pai($modulo);
-        $modulo_rel = util::get_modulo($arquivo, false);
-        $dados      = formulario::get_dados();
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : true;
-        $opcoes     = isset($dados_form->opcoes)     ? $dados_form->opcoes     : array();
-        $prefixo    = isset($dados_form->prefixo)    ? $dados_form->prefixo    : '';
-        $action     = isset($dados_form->action)     ? $dados_form->action     : $CFG->site;
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $ajax       = isset($dados_form->ajax)       ? $dados_form->ajax       : true;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : true;
+        $opcoes         = isset($dados_form->opcoes)         ? $dados_form->opcoes         : array();
+        $prefixo        = isset($dados_form->prefixo)        ? $dados_form->prefixo        : '';
+        $action         = isset($dados_form->action)         ? $dados_form->action         : $CFG->site;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $ajax           = isset($dados_form->ajax)           ? $dados_form->ajax           : true;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
-        if (isset($dados_form->entidade) && $dados_form->entidade instanceof objeto) {
-            $entidade = $dados_form->entidade;
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+            $entidade->consultar_campos($campos);
         } else {
             $entidade = util::get_entidade($classe, $campos);
         }
@@ -495,6 +576,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -503,6 +585,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -532,8 +619,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -542,7 +629,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_alterar($dados, $campos, $action, $prefixo, $opcoes, $class, $ajax, $nome_botao);
+        $entidade->formulario_alterar($dados, $campos, $action, $prefixo, $opcoes, $class, $ajax, $nome_botao, $modo_transacao);
         if ($usar_abas) {
             $pagina->fechar_abas();
         }
@@ -563,11 +650,15 @@ final class modulo {
     //     - String $funcao_operacoes: nome da funcao que recebe a entidade e realiza operacoes antes de exibir o formulario
     //       A funcao deve receber um objeto da classe especificada pelo primeiro parametro deste metodo e realizar operacoes.
     //       Ela pode ser util para atribuir valores ao objeto antes de ser apresentado o formulario de exclusao.
+    //     - objeto_formulario $entidade: entidade envolvida na exclusao
     //     - String $ajuda: ajuda do formulario
+    //     - Int $modo_transacao: tipo de transacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -576,27 +667,35 @@ final class modulo {
     //
     static public function excluir($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $ajax, $nome_botao, $funcao_operacoes, $ajuda)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $ajax, $nome_botao, $funcao_operacoes, $ajuda, $modo_transacao, $entidade)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
         // Dados do formulario
-        $arquivo    = util::get_arquivo();
-        $modulo     = util::get_modulo($arquivo);
-        $modulo_pai = util::get_modulo_pai($modulo);
-        $modulo_rel = util::get_modulo($arquivo, false);
-        $dados      = formulario::get_dados();
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : true;
-        $prefixo    = isset($dados_form->prefixo)    ? $dados_form->prefixo    : '';
-        $action     = isset($dados_form->action)     ? $dados_form->action     : $CFG->site;
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $ajax       = isset($dados_form->ajax)       ? $dados_form->ajax       : true;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : true;
+        $prefixo        = isset($dados_form->prefixo)        ? $dados_form->prefixo        : '';
+        $action         = isset($dados_form->action)         ? $dados_form->action         : $CFG->site;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $ajax           = isset($dados_form->ajax)           ? $dados_form->ajax           : true;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
-        $entidade = util::get_entidade($classe, $campos);
+        $flag = OBJETO_ADICIONAR_NOMES | OBJETO_ADICIONAR_CHAVES;
+        $campos_reais = objeto::get_objeto($classe)->get_campos_reais($campos, $objetos, $vetores, $flag);
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+            $entidade->consultar_campos($campos_reais);
+        } else {
+            $entidade = util::get_entidade($classe, $campos_reais);
+        }
         self::checar_classe($entidade);
 
         if (isset($dados_form->ajuda)) {
@@ -607,6 +706,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -615,6 +715,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -637,8 +742,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -647,7 +752,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_excluir($dados, $campos, $action, $prefixo, $class, $ajax, $nome_botao);
+        $entidade->formulario_excluir($dados, $campos, $action, $prefixo, $class, $ajax, $nome_botao, $modo_transacao);
         if ($usar_abas) {
             $pagina->fechar_abas();
         }
@@ -673,11 +778,14 @@ final class modulo {
     //       A funcao deve receber um objeto da classe especificada pelo primeiro parametro deste metodo e realizar operacoes.
     //       Ela pode ser util para atribuir valores ao objeto antes de ser apresentado o formulario de relacionamento.
     //     - String $ajuda: ajuda do formulario
-    //     - objeto $entidade: entidade envolvida na alteracao
+    //     - objeto_formulario $entidade: entidade envolvida na alteracao
+    //     - Int $modo_transacao: tipo de transacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -686,30 +794,32 @@ final class modulo {
     //
     static public function relacionamento($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($nome_vetor, $classe_relacionada, $prefixo, $condicoes, $disable, $class, $ajax, $nome_botao, $funcao_operacoes, $ajuda, $entidade)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($nome_vetor, $classe_relacionada, $prefixo, $condicoes, $disable, $class, $ajax, $nome_botao, $funcao_operacoes, $ajuda, $entidade, $modo_transacao)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
         // Dados do formulario
-        $arquivo    = util::get_arquivo();
-        $modulo     = util::get_modulo($arquivo);
-        $modulo_pai = util::get_modulo_pai($modulo);
-        $modulo_rel = util::get_modulo($arquivo, false);
-        $dados      = formulario::get_dados();
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : true;
-        $condicoes  = isset($dados_form->condicoes)  ? $dados_form->condicoes  : condicao_sql::vazia();
-        $disable    = isset($dados_form->disable)    ? $dados_form->disable    : array();
-        $prefixo    = isset($dados_form->prefixo)    ? $dados_form->prefixo    : '';
-        $action     = isset($dados_form->action)     ? $dados_form->action     : $CFG->site;
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $ajax       = isset($dados_form->ajax)       ? $dados_form->ajax       : true;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : true;
+        $condicoes      = isset($dados_form->condicoes)      ? $dados_form->condicoes      : condicao_sql::vazia();
+        $disable        = isset($dados_form->disable)        ? $dados_form->disable        : array();
+        $prefixo        = isset($dados_form->prefixo)        ? $dados_form->prefixo        : '';
+        $action         = isset($dados_form->action)         ? $dados_form->action         : $CFG->site;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $ajax           = isset($dados_form->ajax)           ? $dados_form->ajax           : true;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
-        if (isset($dados_form->entidade) && $dados_form->entidade instanceof objeto) {
-            $entidade = $dados_form->entidade;
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+            $entidade->consultar_campos($campos);
         } else {
             $entidade = util::get_entidade($classe, $campos);
         }
@@ -755,6 +865,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -763,6 +874,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -785,8 +901,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -795,7 +911,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_relacionamento($dados, $action, $nome_vetor, $classe_relacionada, $prefixo, $condicoes, $disable, $class, $ajax, $nome_botao);
+        $entidade->formulario_relacionamento($dados, $action, $nome_vetor, $classe_relacionada, $prefixo, $condicoes, $disable, $class, $ajax, $nome_botao, $modo_transacao);
         if ($usar_abas) {
             $pagina->fechar_abas();
         }
@@ -819,11 +935,14 @@ final class modulo {
     //     - String $class: classe CSS do formulario
     //     - Bool $ajax: usar ajax no formulario
     //     - String $nome_botao: nome do botao do formulario
-    //     - objeto $entidade: entidade envolvida na alteracao
+    //     - objeto_formulario_confirmacao $entidade: entidade envolvida na alteracao
+    //     - Int $modo_transacao: tipo de transacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -832,35 +951,36 @@ final class modulo {
     //
     static public function confirmar($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $mensagem, $opcoes, $campos_exibir, $class, $ajax, $nome_botao, $entidade)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $mensagem, $opcoes, $campos_exibir, $class, $ajax, $nome_botao, $entidade, $modo_transacao)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
         // Dados do formulario
-        $arquivo       = util::get_arquivo();
-        $modulo        = util::get_modulo($arquivo);
-        $modulo_pai    = util::get_modulo_pai($modulo);
-        $modulo_rel    = util::get_modulo($arquivo, false);
-        $dados         = formulario::get_dados();
-        $mensagem      = isset($dados_form->mensagem)   ? $dados_form->mensagem   : 'Marque para confirmar';
-        $campos        = isset($dados_form->campos)     ? $dados_form->campos     : array();
-        $campos_exibir = isset($dados_form->campos_exibir) ? $dados_form->campos_exibir : null;
-        $opcoes        = isset($dados_form->opcoes)     ? $dados_form->opcoes     : array();
-        $prefixo       = isset($dados_form->prefixo)    ? $dados_form->prefixo    : '';
-        $action        = isset($dados_form->action)     ? $dados_form->action     : $CFG->site;
-        $class         = isset($dados_form->class)      ? $dados_form->class      : false;
-        $ajax          = isset($dados_form->ajax)       ? $dados_form->ajax       : true;
-        $nome_botao    = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $mensagem       = isset($dados_form->mensagem)       ? $dados_form->mensagem       : 'Marque para confirmar';
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : array();
+        $campos_exibir  = isset($dados_form->campos_exibir)  ? $dados_form->campos_exibir  : null;
+        $opcoes         = isset($dados_form->opcoes)         ? $dados_form->opcoes         : array();
+        $prefixo        = isset($dados_form->prefixo)        ? $dados_form->prefixo        : '';
+        $action         = isset($dados_form->action)         ? $dados_form->action         : $CFG->site;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $ajax           = isset($dados_form->ajax)           ? $dados_form->ajax           : true;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
-        if (isset($dados_form->entidade) && $dados_form->entidade instanceof objeto) {
-            $entidade = $dados_form->entidade;
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
         } else {
             $entidade = util::get_entidade($classe, $campos);
         }
-        self::checar_classe($entidade);
+        self::checar_classe($entidade, 'objeto_formulario_confirmacao');
 
         if (isset($dados_form->ajuda)) {
             $ajuda = &$dados_form->ajuda;
@@ -869,6 +989,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -877,6 +998,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -899,8 +1025,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -909,7 +1035,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_confirmar($dados, $mensagem, $campos, $opcoes, $action, $prefixo, $class, $ajax, $nome_botao);
+        $entidade->formulario_confirmar($dados, $mensagem, $campos, $opcoes, $action, $prefixo, $class, $ajax, $nome_botao, $modo_transacao);
         if ($campos_exibir) {
             $entidade->imprimir_dados($campos_exibir);
         }
@@ -934,10 +1060,14 @@ final class modulo {
     //       A funcao deve receber um objeto da classe especificada pelo primeiro parametro deste metodo e realizar operacoes.
     //       Ela pode ser util para atribuir valores ao objeto antes de ser apresentado o formulario de importacao.
     //     - String $ajuda: ajuda do formulario
+    //     - Int $modo_transacao: tipo de transacao
+    //     - objeto_formulario $entidade: entidade responsavel por realizar a importacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -946,27 +1076,32 @@ final class modulo {
     //
     static public function importar_csv($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $nome_botao, $funcao_operacoes, $ajuda)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $nome_botao, $funcao_operacoes, $ajuda, $modo_transacao, $entidade)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
-        $entidade = &self::criar_entidade($classe);
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+        } else {
+            $entidade = &self::criar_entidade($classe);
+        }
         self::checar_classe($entidade);
 
         // Dados do formulario
-        $arquivo    = util::get_arquivo();
-        $modulo     = util::get_modulo($arquivo);
-        $modulo_pai = util::get_modulo_pai($modulo);
-        $modulo_rel = util::get_modulo($arquivo, false);
-        $dados      = formulario::get_dados();
-        $arquivos   = formulario::get_arquivos();
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : false;
-        $opcoes     = isset($dados_form->opcoes)     ? $dados_form->opcoes     : false;
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $arquivos       = formulario::get_arquivos();
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : false;
+        $opcoes         = isset($dados_form->opcoes)         ? $dados_form->opcoes         : false;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
         // Incluir chave FK em opcoes, caso nao tenha preenchido opcoes
         if (isset($dados_pagina->submodulo) && !isset($dados_form->opcoes)) {
@@ -1021,6 +1156,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -1029,6 +1165,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -1045,8 +1186,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -1055,7 +1196,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_importar_csv($dados, $arquivos, $action, $prefixo, $campos, $opcoes, $class, $nome_botao);
+        $entidade->formulario_importar_csv($dados, $arquivos, $action, $prefixo, $campos, $opcoes, $class, $nome_botao, $modo_transacao);
         if ($usar_abas) {
             $pagina->fechar_abas();
         }
@@ -1077,10 +1218,14 @@ final class modulo {
     //       A funcao deve receber um objeto da classe especificada pelo primeiro parametro deste metodo e realizar operacoes.
     //       Ela pode ser util para atribuir valores ao objeto antes de ser apresentado o formulario de importacao.
     //     - String $ajuda: ajuda do formulario
+    //     - Int $modo_transacao: tipo de transacao
+    //     - objeto_formulario $entidade: entidade responsavel por realizar a importacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -1089,27 +1234,32 @@ final class modulo {
     //
     static public function importar_xml($classe, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $nome_botao, $funcao_operacoes, $ajuda)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $class, $nome_botao, $funcao_operacoes, $ajuda, $modo_transacao, $entidade)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
         if (!$dados_pagina) { $dados_pagina = new stdClass(); }
 
-        $entidade = &self::criar_entidade($classe);
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+        } else {
+            $entidade = &self::criar_entidade($classe);
+        }
         self::checar_classe($entidade);
 
         // Dados do formulario
-        $arquivo    = util::get_arquivo();
-        $modulo     = util::get_modulo($arquivo);
-        $modulo_pai = util::get_modulo_pai($modulo);
-        $modulo_rel = util::get_modulo($arquivo, false);
-        $dados      = formulario::get_dados();
-        $arquivos   = formulario::get_arquivos();
-        $campos     = isset($dados_form->campos)     ? $dados_form->campos     : false;
-        $opcoes     = isset($dados_form->opcoes)     ? $dados_form->opcoes     : false;
-        $class      = isset($dados_form->class)      ? $dados_form->class      : false;
-        $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : false;
+        $arquivo        = util::get_arquivo();
+        $modulo         = util::get_modulo($arquivo);
+        $modulo_pai     = util::get_modulo_pai($modulo);
+        $modulo_rel     = util::get_modulo($arquivo, false);
+        $dados          = formulario::get_dados();
+        $arquivos       = formulario::get_arquivos();
+        $campos         = isset($dados_form->campos)         ? $dados_form->campos         : false;
+        $opcoes         = isset($dados_form->opcoes)         ? $dados_form->opcoes         : false;
+        $class          = isset($dados_form->class)          ? $dados_form->class          : false;
+        $nome_botao     = isset($dados_form->nome_botao)     ? $dados_form->nome_botao     : false;
+        $modo_transacao = isset($dados_form->modo_transacao) ? $dados_form->modo_transacao : DRIVER_BASE_MODO_PADRAO;
 
         // Incluir chave FK em opcoes, caso nao tenha preenchido opcoes
         if (isset($dados_pagina->submodulo) && !isset($dados_form->opcoes)) {
@@ -1169,6 +1319,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -1177,6 +1328,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -1193,8 +1349,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -1203,7 +1359,7 @@ final class modulo {
         if ($ajuda) {
             mensagem::comentario($CFG->site, $ajuda);
         }
-        $entidade->formulario_importar_xml($dados, $arquivos, $action, $prefixo, $campos, $opcoes, $class, $nome_botao);
+        $entidade->formulario_importar_xml($dados, $arquivos, $action, $prefixo, $campos, $opcoes, $class, $nome_botao, $modo_transacao);
         if ($usar_abas) {
             $pagina->fechar_abas();
         }
@@ -1222,12 +1378,14 @@ final class modulo {
     //       Ela pode ser util para atribuir valores ao objeto antes de ser apresentado o quadro.
     //     - String $texto_antes: bloco HTML que deve aparecer antes do quadro
     //     - String $texto_depois: bloco HTML que deve aparecer depois do quadro
-    //     - objeto $entidade: entidade envolvida na insercao
+    //     - objeto $entidade: entidade envolvida na exibicao dos dados
     //     - String $ajuda: ajuda do quadro
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -1236,8 +1394,8 @@ final class modulo {
     //
     static public function exibir($classe, $dados_quadro = false, $dados_pagina = false) {
     // String $classe: nome da classe
-    // Object $dados_quadro: dados opcionais ($campos, $funcao_operacoes, $texto_antes, $texto_depois, $ajuda)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_quadro: dados opcionais ($campos, $funcao_operacoes, $texto_antes, $texto_depois, $entidade, $ajuda)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_quadro) { $dados_quadro = new stdClass(); }
@@ -1252,7 +1410,16 @@ final class modulo {
         $texto_antes  = isset($dados_quadro->texto_antes) ? $dados_quadro->texto_antes : '';
         $texto_depois = isset($dados_quadro->texto_depois) ? $dados_quadro->texto_depois : '';
 
-        $entidade = isset($dados_quadro->entidade) ? $dados_quadro->entidade : util::get_entidade($classe, $campos);
+        $flag = OBJETO_ADICIONAR_NOMES | OBJETO_ADICIONAR_CHAVES;
+        $campos_reais = objeto::get_objeto($classe)->get_campos_reais($campos, $objetos, $vetores, $flag);
+        if (isset($dados_quadro->entidade)) {
+            $entidade = $dados_quadro->entidade;
+            $entidade->consultar_campos($campos_reais);
+        } else {
+            $entidade = util::get_entidade($classe, $campos_reais);
+        }
+        self::checar_classe($entidade, 'objeto');
+
         if (isset($dados_quadro->ajuda)) {
             $ajuda = &$dados_quadro->ajuda;
         } else {
@@ -1260,6 +1427,7 @@ final class modulo {
         }
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -1268,6 +1436,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css.php';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -1290,8 +1463,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -1334,10 +1507,13 @@ final class modulo {
     //     - String $nome_botao: nome do botao de submeter os dados
     //     - String $destino_formulario: destino do formulario ('imprimir_dados' ou 'imprimir_formulario')
     //     - String $ajuda: ajuda do formulario
+    //     - objeto_formulario $entidade: entidade envolvida na operacao
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -1347,8 +1523,8 @@ final class modulo {
     static public function formulario($classe, $metodo, $dados_form = false, $dados_pagina = false) {
     // String $classe: nome da classe
     // String $metodo: nome do metodo que processara os dados enviados (recebe por parametro $dados, $vt_campos e $opcoes)
-    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $opcoes, $class, $ajax, $nome_botao, $destino_formulario, $ajuda)
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_form: dados opcionais ($campos, $prefixo, $funcao_operacoes, $opcoes, $class, $ajax, $nome_botao, $destino_formulario, $ajuda, $entidade)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     //
         global $CFG, $USUARIO;
         if (!$dados_form)   { $dados_form   = new stdClass(); }
@@ -1369,10 +1545,16 @@ final class modulo {
         $nome_botao = isset($dados_form->nome_botao) ? $dados_form->nome_botao : 'Enviar';
         $destino_formulario = isset($dados_form->destino_formulario) ? $dados_form->destino_formulario : false;
 
-        $entidade = util::get_entidade($classe, $campos);
+        if (isset($dados_form->entidade)) {
+            $entidade = &$dados_form->entidade;
+            $entidade->consultar_campos($campos);
+        } else {
+            $entidade = util::get_entidade($classe, $campos);
+        }
         self::checar_classe($entidade);
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo, $entidade);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -1383,6 +1565,11 @@ final class modulo {
             $estilos = $CFG->wwwmods.$modulo.'/estilos.css';
         } else {
             $estilos = false;
+        }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
         }
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
@@ -1412,8 +1599,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -1440,9 +1627,11 @@ final class modulo {
     //     - $arquivos: possiveis arquivos submetidos pela pagina
     //     - $dados_gerais: dados enviados ao callback
     //     $dados_pagina
+    //     - String $id: identificador da pagina
     //     - String $titulo: titulo da pagina
     //     - Array[String] $nav: barra de navegacao
     //     - Array[String] || String $estilos: folhas de estilos CSS
+    //     - Array[String] || String $scripts: scripts em JavaScript
     //     - String $submodulo: indica que e' um submodulo, deve ser informado o nome do objeto filho da classe (usado para preencher o vetor $nav, caso nao seja preenchido)
     //     - Bool $usar_abas: indica que a pagina utiliza abas e espera que existam as variaveis globais:
     //       String $id_abas: identificador das abas, caso existam
@@ -1451,7 +1640,7 @@ final class modulo {
     //
     static public function pagina($callback, $dados_pagina = false, $dados_gerais = false) {
     // callback $callback: funcao/metodo que e' chamada pela pagina
-    // Object $dados_pagina: dados opcionais ($titulo, $nav, $estilos, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
+    // Object $dados_pagina: dados opcionais ($id, $titulo, $nav, $estilos, $scripts, $submodulo, $usar_abas, $id_abas, $abas, $ativa)
     // Object $dados_gerais: dados informados ao callback
     //
         global $CFG, $USUARIO;
@@ -1471,6 +1660,7 @@ final class modulo {
         $arquivos   = formulario::get_arquivos();
 
         // Dados da Pagina
+        $id = isset($dados_pagina->id) ? $dados_pagina->id : null;
         $titulo = self::get_titulo($dados_pagina, $arquivo);
         $nav = self::get_nav($dados_pagina, $modulo, $arquivo);
         if (isset($dados_pagina->estilos)) {
@@ -1480,6 +1670,12 @@ final class modulo {
         } else {
             $estilos = false;
         }
+        if (isset($dados_pagina->scripts)) {
+            $scripts = $dados_pagina->scripts;
+        } else {
+            $scripts = false;
+        }
+
         $usar_abas = isset($dados_pagina->usar_abas) ? $dados_pagina->usar_abas : false;
         if ($usar_abas) {
             global $id_abas, $abas, $ativa;
@@ -1490,8 +1686,8 @@ final class modulo {
         }
 
         // Imprimir Pagina
-        $pagina = new pagina();
-        $pagina->cabecalho($titulo, $nav, $estilos);
+        $pagina = new pagina($id);
+        $pagina->cabecalho($titulo, $nav, $estilos, $scripts);
         $pagina->imprimir_menu($USUARIO);
         $pagina->inicio_conteudo($titulo);
         if ($usar_abas) {
@@ -1600,9 +1796,10 @@ final class modulo {
     //
     //     Obtem uma entidade via get ou via session e salva o codigo em sessao
     //
-    static public function get_entidade_session($classe, $modulo = false) {
+    static public function get_entidade_session($classe, $modulo = false, $campos = false) {
     // String $classe: nome da classe pai
     // String || Bool $modulo: nome do modulo ou false para obter automaticamente
+    // Array[String] || Bool $campos: campos a serem consultados automaticamente, ou true para todos ou false para PK
     //
         global $USUARIO;
 
@@ -1624,7 +1821,7 @@ final class modulo {
         } else {
             pagina::erro($USUARIO, 'Faltou informar o campo '.$campo);
         }
-        $entidade = new $classe('', $valor_campo);
+        $entidade = new $classe('', $valor_campo, $campos);
         if (!$entidade->pode_ser_manipulado($USUARIO)) {
             $log = new log_sistema();
             $log->inserir($USUARIO->cod_usuario, LOG_ACESSO, true, $entidade->get_valor_chave(), $entidade->get_classe(), $modulo.'/'.$arquivo);
@@ -1675,6 +1872,7 @@ final class modulo {
     //
         global $USUARIO;
         try {
+            simp_autoload($classe);
             $entidade = new $classe();
         } catch (Exception $e) {
             pagina::erro($USUARIO, $e->getMessage());
@@ -1687,14 +1885,14 @@ final class modulo {
     //
     //     Checa se o objeto e' subclasse de objeto_formulario e aborta a execucao caso necessario
     //
-    static private function checar_classe($obj) {
+    static private function checar_classe($obj, $classe = 'objeto_formulario') {
     // Mixed $obj: objeto a ser testado
+    // String $classe: classe a ser avaliada
     //
         global $CFG, $USUARIO;
-        $pai = 'objeto_formulario';
-        if (!($obj instanceof $pai)) {
-            $classe = get_class($obj);
-            pagina::erro($USUARIO, "A classe {$classe} n&atilde;o &eacute; subclasse de \"{$pai}\"");
+        if (!($obj instanceof $classe)) {
+            $classe_obj = get_class($obj);
+            pagina::erro($USUARIO, "A classe {$classe_obj} n&atilde;o &eacute; subclasse de \"{$classe}\"");
             exit(1);
         }
     }
@@ -1841,6 +2039,22 @@ final class modulo {
             }
         }
         return $nav;
+    }
+
+
+    //
+    //     Obtem a classe CSS usada pelo link
+    //
+    private static function get_class_link($arquivo) {
+    // String $arquivo: nome do arquivo
+    //
+        if (preg_match('/^inserir(_[a-z]+)*\.php$/', $arquivo)) {
+            return 'inserir';
+        }
+        if (preg_match('/^importar(_[a-z]+)*\.php$/', $arquivo)) {
+            return 'importar';
+        }
+        return '';
     }
 
 }//class

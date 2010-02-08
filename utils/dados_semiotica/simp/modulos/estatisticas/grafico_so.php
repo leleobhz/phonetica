@@ -4,7 +4,7 @@
 // Descricao: Grafico de S.O. utilizados para acesso em um periodo
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.1.0.2
 // Data: 09/11/2007
 // Modificado: 19/02/2009

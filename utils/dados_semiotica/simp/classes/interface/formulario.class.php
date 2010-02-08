@@ -4,10 +4,10 @@
 // Descricao: Classe para geracao de formularios HTML
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.2.1
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.2.8
 // Data: 06/08/2007
-// Modificado: 30/07/2009
+// Modificado: 21/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -101,6 +101,8 @@ class formulario {
 
         // Se nao e' um vetor
         } elseif (is_scalar($dados)) {
+
+            // TODO: nao checar magic_quotes_gpc quando o Simp exigir PHP 5.3
             $quotes = ini_get('magic_quotes_gpc');
             if (!FORMULARIO_UTF8 && texto::is_utf8($dados)) {
                 $dados = utf8_decode($dados);
@@ -350,8 +352,12 @@ class formulario {
     // String $id: ID do fieldset
     //
         $class = $class ? " class=\"{$class}\"" : '';
-        $id = $this->montar_id($id);
-        $id = $id ? " id=\"{$id}\"" : '';
+        if ($id) {
+            $id = $this->montar_id($id);
+            $id = " id=\"{$id}\"";
+        } else {
+            $id = '';
+        }
         $r = "<fieldset{$class}{$id}>".
              "<legend>{$titulo}</legend>";
         if ($return) { return $r; }
@@ -851,6 +857,10 @@ class formulario {
     // String $class: classe de estilos CSS
     // String || Array[String => String] $ajuda: texto da ajuda do campo ou vetor com posicoes "link" e (opcionalmente) "texto"
     //
+        if (!ini_get('file_uploads')) {
+            return $this->campo_aviso('Este sistema n&atilde;o est&aacute; configurado para aceitar o envio de arquivos.', $return);
+        }
+
         // Forcar o method e enctype
         $this->metodo  = 'post';
         $this->enctype = 'multipart/form-data';
@@ -870,6 +880,9 @@ class formulario {
 
         // Gerar campo
         $r = '';
+
+        $r .= $this->campo_aviso('Tamanho m&aacute;ximo permitido: '.texto::formatar_bytes($limite, true).' ('.$limite.' bytes)', true);
+
         if ($label) {
             $r .= "<div id=\"area_{$id_completo}\" class=\"campo\">";
             $r .= $this->label($id, $label, true, '', $ajuda);
@@ -1026,7 +1039,7 @@ class formulario {
             $r .= $this->campo_select($id_minuto, $id_minuto, $vt_minutos, $minuto, 0, 0, 1, 'minuto');
             if ($segundo !== false) {
                 $r .= '<span>:</span>';
-                $r .= $this->campo_select($id_segundo, $id_segundo, $vt_segundos,  $segundo, 0, 0, 1, 'segundo');
+                $r .= $this->campo_select($id_segundo, $id_segundo, $vt_segundos, $segundo, 0, 0, 1, 'segundo');
             }
         }
 
@@ -1076,7 +1089,12 @@ class formulario {
         $r .= "<span>/</span>";
         $r .= $this->campo_select($id_mes, $id_mes, $vt_meses, $mes, 0, 0, 1, 'mes');
         $r .= "<span>/</span>";
-        $r .= $this->campo_select($id_ano, $id_ano, $vt_anos,  $ano, 0, 0, 1, 'ano');
+        if (isset($vt_anos[$ano]) && count($vt_anos) < 150) {
+            $r .= $this->campo_select($id_ano, $id_ano, $vt_anos,  $ano, 0, 0, 1, 'ano');
+        } else {
+            $ano = sprintf('%04d', $ano);
+            $r .= $this->campo_text($id_ano, $id_ano, $ano, 4, 4, false, false, true, 'texto ano');
+        }
 
         if ($label) {
             $r .= '</div>'.
@@ -1155,6 +1173,7 @@ class formulario {
         $r .= $this->campo_select($id_ddd, $id_ddd, $vt_codigos, $ddd, false, $disable, true, 'ddd');
         $r .= '<span>) </span>';
         $r .= $this->campo_text($id_numero, $id_numero, $numero, 8, 8, false, $disable, true, 'numero');
+        $r .= ' <small>(s&oacute;&nbsp;n&uacute;meros)</small>';
 
         if ($label) {
             $r .= '</div>'.
@@ -1469,7 +1488,7 @@ class formulario {
         if (FORMULARIO_AJAX) {
             $dados   = base64_encode(implode(';', array($classe, $campo, base64_encode(serialize($condicoes)))));
             $eventos = " onkeyup=\"return ativar_timer_busca(this, '{$dados}');\"";
-            $r .= $this->campo_informacao('Digite e aguarde', 1);
+            $r .= $this->campo_informacao('Digite e aguarde', true);
         } else {
             $eventos = '';
         }
@@ -1480,7 +1499,7 @@ class formulario {
         }
         $r .= "<input type=\"text\" name=\"{$name_completo}\" id=\"{$id_completo}\" value=\"{$valor}\" ".
               "maxlength=\"{$maxlength}\" size=\"{$size}\"{$class}{$eventos} />".
-              "<div></div>";
+              "<div class=\"resultado_campo_busca\"></div>";
 
         if ($label) {
             $r .= '</div>'.
@@ -1612,7 +1631,7 @@ class formulario {
         $class = $class ? " class=\"{$class}\"" : '';
         $id = $this->montar_id($id);
         $icone_ajuda = self::montar_ajuda($ajuda);
-        $dois_pontos = ($dois_pontos && FORMULARIO_IE) ? ':' : '';
+        $dois_pontos = ($dois_pontos && FORMULARIO_IE && FORMULARIO_IE < 7) ? ':' : '';
         return "<label id=\"label_{$id}\" for=\"{$id}\"{$class}>{$nome}{$icone_ajuda}{$dois_pontos}</label>";
     }
 
@@ -1666,18 +1685,23 @@ class formulario {
         if (is_numeric($valor)) {
             $str_valor = (string)$valor;
             if ($str_valor[0] != '0') {
-                $valor = (double)$valor;
+                $float_valor = (double)$valor;
             }
-            switch (util::get_tipo($valor)) {
+            switch (util::get_tipo($float_valor)) {
             case 'int':
-                return sprintf('%0.0f', $valor);
+                return sprintf('%0.0f', $float_valor);
             case 'float':
-                if ($mascara == 'moeda') {
-                    return sprintf('%0.2f', $valor);
-                } else {
-                    $sub = abs($valor) - floor(abs($valor));
+                switch ($mascara) {
+                case 'moeda':
+                    return sprintf('%0.2f', $float_valor);
+                case 'int':
+                case 'uint':
+                    return sprintf('%0.0f', $float_valor);
+                case 'float':
+                case 'ufloat':
+                    $sub = abs($float_valor) - floor(abs($float_valor));
                     $casas_decimais = max(0, strlen($sub) - 2);
-                    return sprintf("%0.{$casas_decimais}f", $valor);
+                    return sprintf("%0.{$casas_decimais}f", $float_valor);
                 }
             }
         }

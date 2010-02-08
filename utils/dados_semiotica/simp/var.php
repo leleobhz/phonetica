@@ -4,10 +4,10 @@
 // Descricao: Arquivo de Configuracoes Adicionais
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.28
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.32
 // Data: 03/03/2007
-// Modificado: 02/09/2009
+// Modificado: 15/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -15,7 +15,7 @@ define('DEBUG_SIMP', 0); // Modo Debug
 
 // Deixe descomentada a linha de interesse
 //error_reporting((E_ALL | E_STRICT) ^ (E_NOTICE | E_USER_NOTICE)); // Ignorar noticias
-error_reporting(E_ALL | E_STRICT); // Reportar todos os erros
+error_reporting(E_ALL | E_STRICT | E_DEPRECATED); // Reportar todos os erros
 
 $CFG = new stdClass();
 
@@ -85,17 +85,17 @@ if ($CFG->localhost) {
 
 
 /// COOKIES E SESSOES
-$CFG->tempo_session       = 7200;                      // Tempo de sessao: 2 horas = 2 * 60 * 60
-$CFG->inatividade_session = true;                      // Tempo de sessao por inatividade
-$CFG->codigo_session      = md5($CFG->ip);             // Nome do campo da sessao para guardar o cod_usuario
+$CFG->tempo_session       = 7200;                                    // Tempo de sessao: 2 horas = 2 * 60 * 60
+$CFG->inatividade_session = true;                                    // Tempo de sessao por inatividade
+$CFG->codigo_session      = md5($CFG->ip);                           // Nome do campo da sessao para guardar o cod_usuario
 if ($CFG->versao && !isset($_COOKIE['instalando'])) {
-    $CFG->nome_cookie  = 'cookie_'.$CFG->sistema;      // Nome do cookie para guardar dados gerais
-    $CFG->id_session   = md5($CFG->id);                // Nome do cookie da sessao
-    $CFG->path_session = $CFG->sistema;                // Caminho relativo para salvar a sessao
+    $CFG->nome_cookie  = 'cookie_'.$CFG->sistema;                    // Nome do cookie para guardar dados gerais
+    $CFG->id_session   = md5($CFG->id);                              // Nome do cookie da sessao
+    $CFG->path_session = 'simp'.DIRECTORY_SEPARATOR.$CFG->sistema;   // Caminho relativo para salvar a sessao
 } else {
     $CFG->nome_cookie  = 'cookie_instalacao';
     $CFG->id_session   = md5('session_instalacao');
-    $CFG->path_session = '';
+    $CFG->path_session = 'simp'.DIRECTORY_SEPARATOR.'instalacao';
 }
 
 /// ENDERECOS
@@ -173,6 +173,10 @@ function get_arquivos_classe($classe) {
     // Se pediu por uma classe de autenticacao
     } elseif (file_exists($arq_autenticacao = $CFG->dirclasses.'autenticacao/'.$classe.'.class.php')) {
         $vt[] = realpath($arq_autenticacao);
+
+    // Se pediu por uma classe de definicao de atributo
+    } elseif (file_exists($arq_atributo = $CFG->dirclasses.'atributos/'.$classe.'.class.php')) {
+        $vt[] = realpath($arq_atributo);
     }
     return $vt;
 }
@@ -229,32 +233,37 @@ unset($funcoes_autoload);
 session_name($CFG->id_session);
 session_set_cookie_params($CFG->time + $CFG->tempo_session, $CFG->path, $CFG->dominio_cookies);
 
-// Path para guardar as sessoes (caso o sistema esteja instalado)
-if ($CFG->versao && !isset($_COOKIE['instalando'])) {
-    $save_path = session_save_path();
-    if (empty($save_path)) {
-        $save_paths = array('/var/lib/php/session/', '/tmp/');
-        foreach ($save_paths as $sp) {
-            if (is_dir($sp) && is_writeable($sp)) {
-                $save_path = $sp;
-            }
+// Path para guardar as sessoes
+$save_path = session_save_path();
+if (empty($save_path)) {
+    $save_paths = array('/var/lib/php/session/', '/tmp/');
+    foreach ($save_paths as $sp) {
+        if (is_dir($sp) && is_writeable($sp)) {
+            $save_path = $sp;
         }
-        unset($save_paths);
     }
-    if (!empty($save_path)) {
-        $novo_save_path = realpath($save_path).'/'.$CFG->path_session;
-        if (!is_dir($novo_save_path) && is_writeable($save_path)) {
-            if (mkdir($novo_save_path)) {
-                @chmod($novo_save_path, 0333);
-                @chown($novo_save_path, 'root');
-            } else {
-                $novo_save_path = $save_path;
-            }
-        }
-        session_save_path($novo_save_path);
-    }
-    unset($novo_save_path, $save_path);
+    unset($save_paths);
 }
+if (!empty($save_path)) {
+    $novo_save_path = realpath($save_path).DIRECTORY_SEPARATOR.$CFG->path_session;
+
+    // Se o diretorio nao existe ainda
+    if (!is_dir($novo_save_path) && is_writeable($save_path)) {
+
+        // Se conseguir criar o diretorio
+        if (util::criar_diretorio_recursivo($novo_save_path, 0300)) {
+            @chmod($novo_save_path, 0700);
+            @chown($novo_save_path, 'root');
+
+        // Se nao conseguir criar o diretorio: manter o antigo
+        } else {
+            $novo_save_path = $save_path;
+        }
+    }
+    session_save_path($novo_save_path);
+}
+unset($novo_save_path, $save_path);
+
 ini_set('session.gc_maxlifetime', $CFG->tempo_session);
 
 if (!defined('IGNORAR_SESSAO') && php_sapi_name() != 'cli') {
@@ -403,11 +412,12 @@ link::normalizar($CFG->site, array('xml'));
 /// CONFIGURACOES PESSOAIS
 $CFG->pessoal = new stdClass();
 $campos = array('tema'              => TEMA_PADRAO,
-                'ajax'              => 1,
+                'ajax'              => '1',
                 'fonte'             => 'padrao',
                 'tamanho'           => '100%',
-                'sem_imagens'       => 0,
-                'sem_transparencia' => 0);
+                'sem_imagens'       => '0',
+                'sem_transparencia' => '0',
+                'som'               => '1');
 if (isset($CFG->cookies['tema'])) {
     foreach ($campos as $nome => $valor) {
         $CFG->pessoal->$nome = $CFG->cookies[$nome];

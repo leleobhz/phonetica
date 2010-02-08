@@ -4,7 +4,7 @@
 // Descricao: Exibe os dados de um arquivo do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 25/09/2007
 // Modificado: 01/02/2007

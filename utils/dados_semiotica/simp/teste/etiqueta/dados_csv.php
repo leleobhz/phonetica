@@ -1,4 +1,16 @@
 <?php
+//
+// SIMP
+// Descricao: Etiqueta gerada com dados de um arquivo CSV
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 if (isset($_GET['debug'])) {
@@ -33,9 +45,17 @@ class etiqueta extends fpdf_etiqueta {
         $this->MultiCell($w, $h, $texto, DEBUG_FPDF_ETIQUETA);
     }
 
+
+    //
+    //     Obtem a unidade usada pelo usuario
+    //
+    public function get_unidade_usuario() {
+        return 'cm';
+    }
+
 }
 
-$e = new etiqueta('3080', 'cm');        // Construtor de etiquetas do tipo 3080
+$e = new etiqueta('3080');              // Construtor de etiquetas do tipo 3080
 $e->importar_csv('./dados.csv');        // Importar dados do arquivo dados.csv
 $e->imprimir_etiquetas();               // Imprimir etiquetas com os dados do arquivo CSV
 

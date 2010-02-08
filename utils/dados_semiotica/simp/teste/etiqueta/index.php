@@ -1,3 +1,17 @@
+<?php
+//
+// SIMP
+// Descricao: Lista os tipos de testes de etiquetas
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
+?>
 <p>Exemplos de utiliza&ccedil;&atilde;o:</p>
 <ul>
 <li><a href="tradicional.php">Tradicional</a> - Um tipo de etiqueta (<a href="tradicional.php?debug">debug</a>);</li>

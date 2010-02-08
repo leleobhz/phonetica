@@ -4,7 +4,7 @@
 // Descricao: Grafico do numero de erros por mes
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.1.0.2
 // Data: 24/10/2007
 // Modificado: 20/02/2009

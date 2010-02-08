@@ -4,10 +4,10 @@
 // Descricao: Arquivo Principal
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.3
 // Data: 03/03/2007
-// Modificado: 05/03/2008
+// Modificado: 14/08/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //

@@ -1,5 +1,16 @@
 <?php
-//@ignoredoc
+//
+// SIMP
+// Descricao: Exemplo de como se manda um e-mail com a classe email
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.1
+// Data: 03/03/2007
+// Modificado: 14/01/2010
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../config.php');
 
 $mensagem = <<<MENSAGEM
@@ -10,13 +21,13 @@ MENSAGEM;
 
 $email = new email('Assunto de teste');
 
-$email->set_smtp('smtp.exemplo.br', 25);
+//$email->set_smtp('smtp.exemplo.br', 25);
 
-$email->set_remetente('Rubens Takiguti Ribeiro', 'rubens@exemplo.br');
-$email->set_destinatario('rubs', 'rubs33@gmail.com');
-//$email->adicionar_copia('Iuna Fricke DAscenzi', 'iunaf@exemplo.br', 'oculta');
+$email->set_remetente('Rubens Takiguti Ribeiro', 'rubens@exemplo.com.br');
+$email->set_destinatario('Destinatario da Silva', 'destinatario@exemplo.com.br');
+//$email->adicionar_copia('Alguem da Silva', 'alguem@exemplo.com.br', 'oculta');
 $email->set_mensagem($mensagem, 1);
-//$email->adicionar_anexo('/home/rubens/figura.jpg');
+$email->adicionar_anexo(dirname(__FILE__).'/pdf/imagem.jpg');
 
 $enviou = $email->enviar();
 

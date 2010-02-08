@@ -3,7 +3,7 @@
 // Descricao: JavaScript para mover objetos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.8
 // Data: 12/06/2007
 // Modificado: 13/04/2009

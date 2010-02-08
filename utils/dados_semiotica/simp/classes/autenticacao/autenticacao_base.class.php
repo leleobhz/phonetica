@@ -4,7 +4,7 @@
 // Descricao: Classe base para as classes de autenticacao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.2
 // Data: 12/08/2008
 // Modificado: 02/06/2009

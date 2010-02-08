@@ -4,10 +4,10 @@
 // Descricao: Classe de operacoes matematicas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.1
 // Data: 06/02/2009
-// Modificado: 06/02/2009
+// Modificado: 28/10/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -42,6 +42,26 @@ final class matematica {
             return 0;
         }
         $soma = array_sum($vetor);
+        return round($soma / $quantidade, $precisao);
+    }
+
+
+    //
+    //     Calcula a media geral de um vetor multidimensional de numeros
+    //
+    public static function get_media_geral($vetor, $precisao = 2) {
+    // Array[Array[Int || Float]] $vetor: vetor multidimensional de valores numericos
+    // Int $precisao: numero de casas decimais do resultado
+    //
+        $quantidade = 0;
+        $soma = 0;
+        foreach ($vetor as $subvetor) {
+            $quantidade += count($subvetor);
+            $soma += array_sum($subvetor);
+        }
+        if (!$quantidade) {
+            return 0;
+        }
         return round($soma / $quantidade, $precisao);
     }
 

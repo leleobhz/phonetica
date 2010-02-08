@@ -1,5 +1,16 @@
 <?php
-//@ignoredoc
+//
+// SIMP
+// Descricao: Descricao de como montar a documentacao dos tipos de dados usados no Simp
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../config.php');
 
 echo '<h1>Documenta&ccedil;&atilde;o de Tipos</h1></h1>';

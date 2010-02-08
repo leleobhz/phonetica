@@ -4,10 +4,10 @@
 // Descricao: Arquivo que exibe um grafico de utilizacao da memoria
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.5
 // Data: 20/09/2007
-// Modificado: 13/01/2009
+// Modificado: 21/10/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -48,10 +48,11 @@ for ($i = 10; $i <= 100; $i += 10) {
 
 $g->escala = $escala;
 $g->valores = $valores;
-
-$margem = 118;
+$g->conversao_valores = 'texto::formatar_bytes';
 
 $maior = max($valores);
+$margem = 118;
+
 // Regra de 3
 // altura -> $maior
 // 350    -> 2097152

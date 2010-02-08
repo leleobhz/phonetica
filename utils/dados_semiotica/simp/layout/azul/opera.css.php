@@ -4,7 +4,7 @@
 // Descricao: Folha de estilos especificos para navegador Opera
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 15/06/2007
 // Modificado: 21/07/2008

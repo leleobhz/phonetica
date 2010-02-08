@@ -4,7 +4,7 @@
 // Descricao: Gera nova senha e envia ao usuario
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.4
 // Data: 03/03/2007
 // Modificado: 30/04/2008

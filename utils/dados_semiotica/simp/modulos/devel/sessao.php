@@ -4,7 +4,7 @@
 // Descricao: Arquivo que lista os dados da sessao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 29/10/2007
 // Modificado: 07/02/2008

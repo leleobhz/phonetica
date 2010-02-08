@@ -4,10 +4,10 @@
 // Descricao: Cadastra usuarios
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.6
 // Data: 29/08/2007
-// Modificado: 27/02/2009
+// Modificado: 15/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -21,8 +21,8 @@ $dados_form->campos = array(
     'login',
     'email',
     'vetor_grupos',
+    'geracao_senha',
     'Senha' => array(
-        'geracao_senha',
         'senha_sugerida',
         'confirmacao'
     )
@@ -40,4 +40,9 @@ $dados_form->ajuda   = <<<AJUDA
   sua senha.</p>
 AJUDA;
 
-modulo::inserir('usuario', $dados_form);
+// Dados da pagina
+$modulo = util::get_modulo(__FILE__);
+$dados_pagina = new stdClass();
+$dados_pagina->scripts = array($CFG->wwwmods.$modulo.'/script.js');
+
+modulo::inserir('usuario', $dados_form, $dados_pagina);

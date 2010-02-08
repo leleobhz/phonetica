@@ -4,10 +4,10 @@
 // Descricao: Interface de operacoes sobre bancos de dados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.6
 // Data: 24/04/2008
-// Modificado: 02/09/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -122,7 +122,7 @@ final class driver_mysql_operacao extends driver_mysql {
 
 
     //
-    //     SHOW TABLES: obtem a lista de tabelas do BD (com nome e comentario)
+    //     SHOW TABLES: obtem a lista de tabelas do BD (com "nome", "comentario" e objeto "detalhes")
     //
     public function get_tabelas() {
         $tabelas = array();
@@ -134,7 +134,7 @@ final class driver_mysql_operacao extends driver_mysql {
         }
         while ($tabela = $this->fetch_object($resultado)) {
             $nome_tabela = $tabela->{'Tables_in_'.$this->base};
-            $sql_status = "SHOW TABLE STATUS FROM {$this->base} LIKE '{$nome_tabela}'";
+            $sql_status = "SHOW TABLE STATUS FROM {$this->base} WHERE `Name` = '{$nome_tabela}'";
             $resultado_status = $this->consultar($sql_status);
 
             if ($resultado_status) {
@@ -147,13 +147,15 @@ final class driver_mysql_operacao extends driver_mysql {
                 }
             } else {
                 $comentario = '';
+                $status = null;
             }
 
             // Gerar objeto com os dados obtidos
             $t = new stdClass();
             $t->nome = $nome_tabela;
             $t->comentario = $comentario;
-            $tabelas[] = $t;
+            $t->detalhes = $status;
+            $tabelas[$nome_tabela] = $t;
         }
         $this->liberar_resultado($resultado);
         return $tabelas;
@@ -243,6 +245,25 @@ final class driver_mysql_operacao extends driver_mysql {
         $sql_servidor = $this->delimitar_valor($this->servidor);
         $sql = "SELECT COUNT(*) AS `existe` FROM `mysql`.`user` AS `u` ".
                "WHERE `u`.`User` = {$sql_usuario} AND `u`.`Host` = {$sql_servidor};";
+        $resultado = $this->consultar($sql);
+        if (!$resultado) {
+            return false;
+        }
+        $obj = $this->fetch_object($resultado);
+        $this->liberar_resultado($resultado);
+
+        return (bool)$obj->existe;
+    }
+
+
+    //
+    //     Checa se um BD existe no SGBD
+    //
+    public function db_exists($base) {
+    // String $base: base de dados em questao
+    //
+        $sql_base = $this->limpar_valor($base);
+        $sql = "SELECT COUNT(*) AS `existe` FROM `mysql`.`db` WHERE `Db` = '{$sql_base}'";
         $resultado = $this->consultar($sql);
         if (!$resultado) {
             return false;

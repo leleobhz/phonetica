@@ -4,7 +4,7 @@
 // Descricao: Estilos do modulo de arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 01/02/2008
 // Modificado: 29/07/2008

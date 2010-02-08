@@ -4,10 +4,10 @@
 // Descricao: Classe para realizar operacoes comuns sobre vetores
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.2
 // Data: 25/08/2009
-// Modificado: 25/08/2009
+// Modificado: 05/10/2009
 // Copyright (C) 2009  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -35,9 +35,9 @@ final class vetor {
             }
         }
         foreach ($vetor as $chave => $objeto) {
-            if (isset($objeto->$atributo)) {
-                $indice = $objeto->$atributo;
-                if (isset($matriz[$indice])) {
+            $indice = $objeto->$atributo;
+            if (!is_null($indice)) {
+                if (!isset($matriz[$indice])) {
                     $matriz[$indice] = array();
                 }
                 $matriz[$indice][$chave] = $objeto;
@@ -69,6 +69,23 @@ final class vetor {
             }
         }
         return $vetor_atributo;
+    }
+
+
+    //
+    //     Ordena um vetor utilizando um vetor de chaves e retorna o vetor ordenado
+    //
+    public static function ordenar_por_chaves($vetor, $chaves) {
+    // Array[Mixed => Mixed] $vetor: vetor indexado de alguma forma
+    // Array[Mixed] $chaves: vetor de chaves utilizadas para ordenacao
+    //
+        $novo = array();
+        foreach ($chaves as $chave) {
+            if (isset($vetor[$chave])) {
+                $novo[$chave] = $vetor[$chave];
+            }
+        }
+        return $novo;
     }
 
 }//class

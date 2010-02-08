@@ -4,7 +4,7 @@
 // Descricao: Folha de estilos de formularios
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.8
 // Data: 06/05/2008
 // Modificado: 25/08/2009

@@ -4,10 +4,10 @@
 // Descricao: Interface de operacoes sobre bancos de dados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.7
 // Data: 04/08/2008
-// Modificado: 02/09/2009
+// Modificado: 21/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -43,12 +43,16 @@ final class driver_pgsql_operacao extends driver_pgsql {
     // String $charset: codificacao usada no banco de dados a ser criado
     //
         if ($this->database_exists($base)) {
-            $this->drop_database($base);
+            if (!$this->drop_database($base)) {
+                $this->adicionar_erro('Erro ao apagar a base existente');
+                return false;
+            }
         }
 
         // Obter SQL
         $sql = $this->sql_create_database($base, $charset);
         if (!$sql) {
+            $this->adicionar_erro('Erro ao preparar SQL de cria&ccedil;&atilde;o do BD');
             return false;
         }
 
@@ -70,7 +74,11 @@ final class driver_pgsql_operacao extends driver_pgsql {
         }
 
         // Executar
-        return (bool)$this->consultar($sql);
+        $r = (bool)$this->consultar($sql);
+        if (!$r) {
+            $this->adicionar_erro('Erro ao apagar BD: talvez seja necess&aacute;rio reiniciar o servidor HTTP');
+        }
+        return $r;
     }
 
 
@@ -144,7 +152,7 @@ final class driver_pgsql_operacao extends driver_pgsql {
 
 
     //
-    //     SHOW TABLES: obtem a lista de tabelas do BD (com nome e comentario)
+    //     SHOW TABLES: obtem a lista de tabelas do BD (com "nome", "comentario" e objeto "detalhes")
     //
     public function get_tabelas() {
         $tabelas = array();
@@ -161,7 +169,8 @@ final class driver_pgsql_operacao extends driver_pgsql {
                 $tabela = new stdClass();
                 $tabela->nome       = $t->tabela;
                 $tabela->comentario = $t->comentario;
-                $tabelas[] = $tabela;
+                $tabela->detalhes   = null;
+                $tabelas[$t->tabela] = $tabela;
             }
             $this->liberar_resultado($resultado);
         }
@@ -199,12 +208,12 @@ final class driver_pgsql_operacao extends driver_pgsql {
                    "  i.indisprimary = 't' AND ".
                    "  c.relname = '{$tabela}'";
 
-            $r = $this->consultar($sql);
-            if ($r && $this->quantidade_registros($r)) {
-                $obj = $this->fetch_object($r);
+            $result1 = $this->consultar($sql);
+            if ($result1 && $this->quantidade_registros($result1)) {
+                $obj = $this->fetch_object($result1);
                 $extras[$obj->atributo] = new stdClass();
                 $extras[$obj->atributo]->chave = 'PK';
-                $this->liberar_resultado($r);
+                $this->liberar_resultado($result1);
             }
 
             // Consultar nome, posicao, tamanho e comentario
@@ -237,7 +246,7 @@ final class driver_pgsql_operacao extends driver_pgsql {
                     $extras[$obj->atributo]->tamanho = $obj->tamanho;
                 }
             }
-            $this->liberar_resultado($resut2);
+            $this->liberar_resultado($result2);
 
             // Consultar valor padrao
             $sql3 = 'SELECT '.
@@ -267,7 +276,7 @@ final class driver_pgsql_operacao extends driver_pgsql {
                     }
                 }
             }
-            $this->liberar_resultado($resut3);
+            $this->liberar_resultado($result3);
 
             // Obter restricoes de chaves estrangeiras
             $sql4 = 'SELECT '.
@@ -292,7 +301,7 @@ final class driver_pgsql_operacao extends driver_pgsql {
                 $extras[$obj->atributo]->atributo_ref = $obj->atributo_ref;
                 $extras[$obj->atributo]->chave = 'FK';
             }
-            $this->liberar_resultado($resut4);
+            $this->liberar_resultado($result4);
 
             // Preencher o vetor de campos
             foreach ($resultado as $nome => $atributos) {
@@ -368,6 +377,26 @@ final class driver_pgsql_operacao extends driver_pgsql {
         $sql = "SELECT COUNT(*) AS existe FROM pg_roles WHERE rolname = {$sql_usuario}";
         $resultado = $this->consultar($sql);
         if (!$resultado) {
+            return false;
+        }
+        $obj = $this->fetch_object($resultado);
+        $this->liberar_resultado($resultado);
+
+        return (bool)$obj->existe;
+    }
+
+
+    //     
+    //     Checa se um BD existe no SGBD
+    //
+    public function db_exists($base) {
+    // String $base: base de dados em questao
+    //
+        $sql_base = $this->limpar_valor($base);
+        $sql = "SELECT COUNT(*) AS existe FROM pg_database WHERE datname = '{$sql_base}'";
+        $resultado = $this->consultar($sql);
+        if (!$resultado) {
+            $this->adicionar_erro('Erro ao determinar se o BD existe');
             return false;
         }
         $obj = $this->fetch_object($resultado);
@@ -497,12 +526,16 @@ final class driver_pgsql_operacao extends driver_pgsql {
     //
         $sql_usuario = $usuario;
 
-        $sqls = array();
-        foreach ($this->get_tabelas() as $tabela) {
-            $sql_tabela = $tabela->nome;
-            $sqls[] = "ALTER TABLE {$sql_tabela} OWNER TO {$sql_usuario}";
+        // Obter ID do usuario
+        $sql = "SELECT usesysid FROM pg_user WHERE usename = '{$sql_usuario}'";
+        $resultado = $this->consultar($sql);
+        if (!$resultado) {
+            return false;
         }
-        return $sqls;
+        $obj = $this->fetch_object($resultado);
+        $id = $this->limpar_valor($obj->usesysid);
+
+        return "UPDATE pg_database SET datdba = '{$id}' WHERE datname = '{$base}'";
     }
 
 }//class

@@ -4,7 +4,7 @@
 // Descricao: Lista as tecnologias, linguagens e normas empregadas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.8
 // Data: 07/11/2007
 // Modificado: 16/03/2009

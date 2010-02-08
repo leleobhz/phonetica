@@ -4,7 +4,7 @@
 // Descricao: Classe de autenticacao de usuarios de um servidor SMTP
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 13/08/2008
 // Modificado: 03/07/2009
@@ -134,7 +134,7 @@ final class aut_smtp extends autenticacao_base {
 
         // Se nao conectou
         if (!$this->conexao) {
-            trigger_error('Erro ao conectar no servidor SMTP (Erro '.$cod_erro.': '.$str_erro.')');
+            trigger_error('Erro ao conectar no servidor SMTP (Erro '.$cod_erro.': '.$str_erro.')', E_USER_WARNING);
             return $this->fechar_conexao($erros, "Erro ao conectar no servidor SMTP (Erro {$cod_erro})");
         }
 

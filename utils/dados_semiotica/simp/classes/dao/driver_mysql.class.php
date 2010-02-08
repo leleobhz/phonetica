@@ -4,10 +4,10 @@
 // Descricao: Driver de conexao com o MySQL usando funcoes da extensao mysql para PHP
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.9
 // Data: 17/04/2008
-// Modificado: 03/07/2009
+// Modificado: 15/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -116,7 +116,8 @@ class driver_mysql extends driver_base {
                 return false;
             }
         }
-        $this->versao = mysql_get_server_info();
+
+        $this->versao = mysql_get_server_info($this->conexao);
         if ($conectou !== false) {
             $this->desconectar();
         }
@@ -165,6 +166,12 @@ class driver_mysql extends driver_base {
             $this->desconectar();
             return false;
         }
+
+        $charset = $this->get_charset(OBJETO_DAO_CHARSET);
+        if ($charset && $charset != mysql_client_encoding($this->conexao)) {
+            mysql_set_charset($charset, $this->conexao);
+        }
+
         return $this->conexao;
     }
 
@@ -244,7 +251,7 @@ class driver_mysql extends driver_base {
     //
     //     Inicia uma transacao
     //
-    public function inicio_transacao($modo = DRIVER_BASE_REPEATABLE_READ) {
+    public function inicio_transacao($modo = DRIVER_BASE_MODO_PADRAO) {
     // Int $modo: codigo do modo de transacao
     //
 
@@ -254,7 +261,7 @@ class driver_mysql extends driver_base {
         }
 
         // Conectar
-        if (!$this->conectar()) {
+        if (!$this->conectar(null, false)) {
             $this->adicionar_erro('Erro ao iniciar transa&ccedil;&atilde;o (conexao)');
             return false;
         }
@@ -299,7 +306,7 @@ class driver_mysql extends driver_base {
         }
 
         // Voltar o modo de transacao para o padrao
-        $this->set_modo_transacao(DRIVER_BASE_REPEATABLE_READ);
+        $this->set_modo_transacao(DRIVER_BASE_MODO_PADRAO);
 
         $this->transacao = false; // Fechar a transacao
         $this->desconectar();     // Desconectar

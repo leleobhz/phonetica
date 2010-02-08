@@ -4,10 +4,10 @@
 // Descricao: Classe que controla listas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.6
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.7
 // Data: 22/08/2007
-// Modificado: 31/07/2008
+// Modificado: 22/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -98,10 +98,15 @@ final class lista {
     //
     //     Imprime uma lista hierarquica
     //
-    static public function hierarquica($lista) {
+    static public function hierarquica($lista, $return = false) {
     // Array[String => Bool || Type] $lista: vetor associativo hierarquico onde as chaves sao os textos de impressao e os valores sao false (no nao expandido) ou um vetor associativo hierarquico
+    // Bool $return: retorna a lista na forma de string
     //
-        return self::hierarquica_recursiva($lista, true);
+        $retorno = self::hierarquica_recursiva($lista, true);
+        if ($return) {
+            return $retorno;
+        }
+        echo $retorno;
     }
 
 
@@ -112,35 +117,37 @@ final class lista {
     // Array[String => Bool || Type] $lista: vetor associativo hierarquico onde as chaves sao os textos de impressao e os valores sao false (no nao expandido) ou um vetor associativo hierarquico
     // Bool $primeira_chamada: indica se e' a primeira chamada 'a funcao
     //
+        $retorno = '';
         if (is_array($lista)) {
             $total = count($lista);
             $chaves = array_keys($lista);
             $valores = array_values($lista);
             unset($lista);
 
-            echo "<ul class=\"hierarquia\">";
+            $retorno .= "<ul class=\"hierarquia\">";
             for ($i = 0; $i < $total; $i++) {
                 $chave = &$chaves[$i];
                 $valor = &$valores[$i];
                 $class = ($i < ($total - 1)) ? ' class="l"' : '';
 
-                echo '<li>';
-                echo '<span class="lb">&nbsp;</span>';
-                echo "<span{$class}>";
-                echo '<span class="valor">';
-                echo $chave;
+                $retorno .= '<li>';
+                $retorno .= '<span class="lb">&nbsp;</span>';
+                $retorno .= "<span{$class}>";
+                $retorno .= '<span class="valor">';
+                $retorno .= $chave;
                 if (is_array($valor)) {
-                    self::hierarquica_recursiva($valor, false);
+                    $retorno .= self::hierarquica_recursiva($valor, false, true);
                 }
-                echo '</span>';
-                echo '</span>';
-                echo "</li>\n";
+                $retorno .= '</span>';
+                $retorno .= '</span>';
+                $retorno .= "</li>\n";
             }
-            echo "</ul>\n";
+            $retorno .= "</ul>\n";
         }
         if ($primeira_chamada) {
-            echo "<br class=\"clear\" />\n";
+            $retorno .= "<br class=\"clear\" />\n";
         }
+        return $retorno;
     }
 
 }//class

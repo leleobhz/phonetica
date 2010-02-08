@@ -4,10 +4,10 @@
 // Descricao: Lista de logs do sistema
 // Autor: Rubens Takiguti Ribeiro && Rodrigo Pereira Moreira
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.1.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.1.5
 // Data: 23/05/2007
-// Modificado: 09/06/2009
+// Modificado: 29/09/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -212,8 +212,6 @@ function imprimir_resultado($logs, &$vt_campos) {
     }
     $vt_campos_exibidos = get_campos_exibidos();
 
-    util::get_cdata($cdata, $fcdata, false);
-
     echo "<table class=\"tabela\" id=\"lista_logs\">\n";
     echo "<caption>Tabela de Log no Sistema</caption>\n";
     echo "<thead>\n";
@@ -246,7 +244,7 @@ function imprimir_resultado($logs, &$vt_campos) {
         $entidade = $log->entidade;
         $detalhes = $log->detalhes;
 
-        if ($cod_entidade && $entidade) {
+        if ($cod_entidade && $entidade && isset($vt_campos_exibidos[1])) {
             try {
                 simp_autoload($entidade);
                 $obj = new $entidade('', $cod_entidade);
@@ -256,9 +254,9 @@ function imprimir_resultado($logs, &$vt_campos) {
             } catch (Exception $e) {
                 $nome_entidade = '-';
             }
+        } else {
+            $nome_entidade = '-';
         }
-
-        if (!isset($nome_entidade)) { $nome_entidade = '-'; }
 
         $dados = array($nome, $nome_entidade, $data, $operacao, $ip, $cod_entidade, $entidade, $detalhes);
         echo "  <tr>\n";

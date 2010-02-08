@@ -4,7 +4,7 @@
 // Descricao: Consultas alto nivel ao banco de dados Oracle
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 09/09/2008
 // Modificado: 29/07/2009
@@ -26,6 +26,20 @@ final class driver_oci8_objeto extends driver_objeto {
     //
         $this->ultimo_insert = array();
         parent::__construct('oci8', $servidor, $porta, $usuario, $senha, $base);
+    }
+
+
+    //
+    //     Monta a funcao usada em uma condicao SQL
+    //
+    public function montar_funcao_condicao($funcao, $operando, $tipo_operando, $atributo) {
+    // String $funcao: nome da funcao (dia, mes, ano, hora, minuto, segundo)
+    // String $operando: valor do operando
+    // Int $tipo_operando: indica o que e' o operando (CONDICAO_SQL_TIPO_ATRIBUTO ou CONDICAO_SQL_TIPO_VALOR)
+    // atributo $atributo: definicao do atributo
+    //
+//TODO
+        trigger_error('Driver Oracle nao suporte a funcao "'.$funcao.'"', E_USER_WARNING);
     }
 
 

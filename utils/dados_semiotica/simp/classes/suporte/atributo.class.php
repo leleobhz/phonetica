@@ -4,10 +4,10 @@
 // Descricao: Classe Atributo (define os atributos das classes)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.2.12
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.1
 // Data: 06/08/2007
-// Modificado: 02/09/2009
+// Modificado: 16/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -22,7 +22,7 @@ final class atributo {
     //
     //     Retorna os valores padrao para cada caracteristica de um atributo
     //
-    public function valor_padrao($caracteristica) {
+    public static function valor_padrao($caracteristica) {
     // String $caracteristica: nome da caracteristica do atributo
     //
         switch ($caracteristica) {
@@ -61,36 +61,45 @@ final class atributo {
 
 
     //
+    //     Retorna um vetor com as caracteristicas de um atributo
+    //
+    public static function get_caracteristicas() {
+        return array(
+            'nome',
+            'descricao',
+            'label',
+            'ajuda',
+            'exemplo',
+            'tipo',
+            'chave',
+            'minimo',
+            'maximo',
+            'casas_decimais',
+            'fixo',
+            'moeda',
+            'padrao',
+            'pode_vazio',
+            'validacao',
+            'classe',
+            'validacao_especifica',
+            'filtro',
+            'unico',
+            'campo_formulario',
+            'usar_valor_padrao',
+            'tipo_data_inicio',
+            'data_inicio',
+            'tipo_data_fim',
+            'data_fim'
+            );
+    }
+
+
+    //
     //     Retorna um XML com as caracteristicas do atributo
     //
     public function get_definicao_xml() {
-        $caracteristicas = array('nome',
-                                 'descricao',
-                                 'label',
-                                 'ajuda',
-                                 'exemplo',
-                                 'tipo',
-                                 'chave',
-                                 'minimo',
-                                 'maximo',
-                                 'casas_decimais',
-                                 'fixo',
-                                 'moeda',
-                                 'padrao',
-                                 'pode_vazio',
-                                 'validacao',
-                                 'classe',
-                                 'validacao_especifica',
-                                 'filtro',
-                                 'unico',
-                                 'campo_formulario',
-                                 'usar_valor_padrao',
-                                 'tipo_data_inicio',
-                                 'data_inicio',
-                                 'tipo_data_fim',
-                                 'data_fim');
         $vt_caracteristicas = array();
-        foreach ($caracteristicas as $c) {
+        foreach (self::get_caracteristicas() as $c) {
             $valor = $this->__get($c);
             $tipo  = util::get_tipo($valor);
             $valor = util::exibir_var($valor, UTIL_EXIBIR_TEXTO);
@@ -144,7 +153,7 @@ final class atributo {
         if (isset($this->valores[$caracteristica])) {
             return $this->valores[$caracteristica];
         }
-        return $this->valor_padrao($caracteristica);
+        return self::valor_padrao($caracteristica);
     }
 
 
@@ -271,7 +280,7 @@ final class atributo {
 
         // Guardar valor apenas se ele for diferente do padrao
         // (Leve economia de espaco em memoria)
-        if ($valor === $this->valor_padrao($caracteristica)) {
+        if ($valor === self::valor_padrao($caracteristica)) {
             unset($this->valores[$caracteristica]);
         } else {
             $this->valores[$caracteristica] = $valor;
@@ -504,7 +513,8 @@ final class atributo {
         switch ($this->__get('tipo')) {
         case 'data':
             $data = objeto::parse_data($valor, false);
-            return is_null($valor) || $data['ano'] == 0;
+            return is_null($valor) || 
+                   ($data['dia'] == 0 && $data['mes'] == 0 && $data['ano'] == 0 && $data['hora'] == 0 && $data['minuto'] == 0 && $data['segundo'] == 0);
         default:
             return is_null($valor);
         }

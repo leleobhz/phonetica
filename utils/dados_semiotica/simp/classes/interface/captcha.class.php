@@ -4,10 +4,10 @@
 // Descricao: Classe que gera e valida um campo captcha (texto em imagem)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.11
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.13
 // Data: 30/01/2008
-// Modificado: 26/08/2009
+// Modificado: 21/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -99,7 +99,9 @@ final class captcha {
         }
 
         self::riscar_linha($img);
-        imagefilter($img, IMG_FILTER_GAUSSIAN_BLUR);
+        if (function_exists('imagefilter')) {
+            imagefilter($img, IMG_FILTER_GAUSSIAN_BLUR);
+        }
         self::escrever($img, $chave);
 
         // Testar qualidade do captcha
@@ -169,9 +171,9 @@ final class captcha {
             $cor = self::$cores['texto'.(mt_rand(1, 5))];
             
             $x_bola = $x + 10 + mt_rand(-5, 5);
-            $y_bola = $y + ($altura / 2) + mt_rand(-5, 5);
+            $y_bola = $y + ($altura / 2) + mt_rand(-15, 15);
 
-            imageellipse($img, $x_bola, $y_bola, 400 / $altura, 400 / $altura, $cor);
+            imageellipse($img, $x_bola, $y_bola, (400 + mt_rand(-100, 100)) / $altura, (400 + mt_rand(-100, 100)) / $altura, $cor);
 
             imagettftext($img, $altura, $angulo, $x, $y + $altura, $cor, CAPTCHA_FONTE, $chave[$i]);
         }

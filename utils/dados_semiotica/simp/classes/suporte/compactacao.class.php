@@ -4,7 +4,7 @@
 // Descricao: Classe de compactacao de arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.7
 // Data: 04/10/2007
 // Modificado: 25/05/2009

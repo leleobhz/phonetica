@@ -4,10 +4,10 @@
 // Descricao: Driver de conexao com o Firebird usando PDO
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 14/10/2008
-// Modificado: 03/07/2009
+// Modificado: 04/11/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -226,7 +226,7 @@ class driver_pdo_firebird extends driver_base {
         }
 
         // Conectar
-        if (!$this->conectar()) {
+        if (!$this->conectar(null, false)) {
             $this->adicionar_erro('Erro ao iniciar transa&ccedil;&atilde;o (conexao)');
             return false;
         }
@@ -318,7 +318,7 @@ class driver_pdo_firebird extends driver_base {
     //
         $classe = 'PDOStatement';
         if ($resultado instanceof $classe) {
-            return $resultado->columnCount();
+            return $resultado->rowCount();
         }
         trigger_error('Tipo invalido para o parametro resultado ('.util::get_tipo($resultado).')', E_USER_NOTICE);
         return false;

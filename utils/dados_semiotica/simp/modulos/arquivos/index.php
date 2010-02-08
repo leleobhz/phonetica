@@ -4,10 +4,10 @@
 // Descricao: Lista de Arquivos do Sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.6
 // Data: 25/09/2007
-// Modificado: 03/07/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -43,8 +43,7 @@ AJUDA;
     $campos = array('arquivo', 'modulo', 'descricao');
     $arquivos = objeto::get_objeto('arquivo')->consultar_varios(condicao_sql::vazia(), $campos, array('modulo' => 1));
     if ($arquivos) {
-
-        $modulos = arquivos_modulos($arquivos);
+        $modulos = vetor::agrupar_por_atributo($arquivos, 'modulo');
 
         $classlinha = 'class="linha"';
         $classop    = 'class="opcoes"';
@@ -87,23 +86,6 @@ AJUDA;
 
 
 //
-//     Retorna uma matriz de modulos por arquivos
-//
-function arquivos_modulos($arquivos) {
-// Array[Object] $arquivos: vetor de arquivos
-//
-    $modulos = array();
-    foreach ($arquivos as $a) {
-        if (!isset($modulos[$a->modulo])) {
-            $modulos[$a->modulo] = array();
-        }
-        $modulos[$a->modulo][] = $a;
-    }
-    return $modulos;
-}
-
-
-//
 //     Imprime uma lista de links
 //
 function imprimir_links($pagina) {
@@ -113,7 +95,7 @@ function imprimir_links($pagina) {
 
     $links = array(link::arquivo_modulo($USUARIO, 'inserir.php', $modulo, false, '', 'inserir', 1),
                    link::arquivo_modulo($USUARIO, 'inconsistencias.php', $modulo, false, '', 'inconsistencia', 1),
-                   link::arquivo_modulo($USUARIO, 'gerar_ini.php', $modulo, false, '', 'ini', 1));
+                   link::arquivo_modulo($USUARIO, 'gerar_ini.php', $modulo, false, '', 'ini', 1, true, true, false));
 
     $pagina->listar_opcoes($links);
 }

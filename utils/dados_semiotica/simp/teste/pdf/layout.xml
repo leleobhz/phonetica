@@ -34,24 +34,25 @@
      border (px): tamanho da borda da celula
      bordercolor (#RRGGBB): cor da borda da celula
      color (#RRGGBB): cor do texto da celula
+     fontsize (pontos): tamanho do texto da celula
      height (px): altura minima da celula
      padding (px): espacamento interno do texto da celula e a sua borda
      valign (top, middle, bottom): alinhamento vertical do texto na celula
 -->
-  <th height="70px" border="0"><![CDATA[Exemplo]]></th>
+  <th height="70px" border="0" color="#FF0000"><![CDATA[Exemplo]]></th>
   <th align="right" border="2px" bordercolor="#FF0000" valign="bottom"><![CDATA[linha<br />outra linha<br />e outra]]></th>
   <th align="left" padding="1px" border="15px" bordercolor="#00FF00"><![CDATA[SIMP]]></th>
 </tr>
 
 <tr>
-  <td colspan="2"><![CDATA[Juntando coluna 1 com 2]]></td>
+  <td colspan="2" fontsize="20"><![CDATA[Juntando coluna 1 com 2]]></td>
   <td padding="5px"><![CDATA[Coluna 3]]></td>
 </tr>
 
 <tr>
   <td bgimage="./imagem.jpg" bgposition="br"><![CDATA[1]]></td>
   <td bold="1"><![CDATA[2 (em negrito)]]></td>
-  <td rowspan="2"><![CDATA[3 (juntando linha 3 e 4)]]></td>
+  <td rowspan="2" fontsize="4"><![CDATA[3 (juntando linha 3 e 4)]]></td>
 </tr>
 
 

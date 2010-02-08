@@ -4,10 +4,10 @@
 // Descricao: Classe Evento
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.2.0.3
+// E-mail: rpmoreira@tecnolivre.com.br
+// Versao: 1.2.0.4
 // Data: 09/08/2007
-// Modificado: 30/06/2009
+// Modificado: 19/01/2010
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -65,7 +65,7 @@ final class evento extends evento_base {
             if ($this->id_form == $this->id_formulario_inserir() &&
                 !$this->get_auxiliar('campo_data')) {
                 $prefixo = $atributo->nome;
-                $data = objeto::parse_data($valor);
+                $data = objeto::parse_data($valor, false);
                 $form->campo_hora('data', $data['hora'], $data['minuto'], $data['segundo'], 'Hora');
                 return true;
             }
@@ -164,13 +164,13 @@ final class evento extends evento_base {
         $mes_anterior = mktime(0, 0, 0, $mes - 1, 1, $ano);
         $link_voltar = $CFG->site;
         $link_voltar = link::adicionar_atributo($link_voltar, 'cal', $mes_anterior);
-        $voltar = link::texto($link_voltar, '&larr;', 'M&ecirc;s anterior', '', 'seta', 1, 0, 0);
+        $voltar = link::texto($link_voltar, paginacao::seta_esquerda(), 'M&ecirc;s anterior', '', 'seta', 1, 0, 0);
 
         // Gerar link para mes seguinte
         $mes_seguinte = mktime(0, 0, 0, $mes + 1, 1, $ano);
         $link_avancar = $CFG->site;
         $link_avancar = link::adicionar_atributo($link_avancar, 'cal', $mes_seguinte);
-        $avancar = link::texto($link_avancar, '&rarr;', 'M&ecirc;s seguinte', '', 'seta', 1, 0, 0);
+        $avancar = link::texto($link_avancar, paginacao::seta_direita(), 'M&ecirc;s seguinte', '', 'seta', 1, 0, 0);
 
 
         // Recuperar nomes dos dias da semana e dos meses

@@ -1,4 +1,16 @@
 <?php
+//
+// SIMP
+// Descricao: Etiqueta gerada com um metodo simples imprimir_etiqueta
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../../config.php');
 
 if (isset($_GET['debug'])) {
@@ -21,7 +33,8 @@ class etiqueta extends fpdf_etiqueta {
     // Float $x: posicao X do topo esquerdo da etiqueta
     // Float $y: posicao Y do topo esquerdo da etiqueta
     //
-        $w = $this->largura * $this->get_conversao() - 0.6;
+        $c = $this->get_conversao();
+        $w = $this->largura * $c - 0.6;
         $h = 0.6;
 
         $texto = "Teste\n".
@@ -32,12 +45,20 @@ class etiqueta extends fpdf_etiqueta {
         $this->SetXY($x + 0.3, $y + 0.3);
         $this->MultiCell($w, $h, $texto, DEBUG_FPDF_ETIQUETA);
 
-        $this->Line($x, $y, $x + $this->largura * $this->get_conversao(), $y + $this->altura * $this->get_conversao());
+        $this->Line($x, $y, $x + $this->largura * $c, $y + $this->altura * $c);
+    }
+
+
+    //
+    //     Obtem a unidade usada pelo usuario
+    //
+    public function get_unidade_usuario() {
+        return 'cm';
     }
 
 }
 
-$e = new etiqueta('3080', 'cm');        // Construtor de etiquetas do tipo 3080
+$e = new etiqueta('3080');              // Construtor de etiquetas do tipo 3080
 $e->set_quantidade(65);                 // Definir a quantidade de etiquetas a serem impressas (65)
 $e->imprimir_etiquetas(3, 2);           // Imprimir 65 etiquetas (tipo 3080) a partir da linha 3 coluna 2
 

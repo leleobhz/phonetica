@@ -4,10 +4,10 @@
 // Descricao: Arquivo de Constantes
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.12
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.19
 // Data: 28/05/2007
-// Modificado: 04/06/2009
+// Modificado: 08/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -42,10 +42,11 @@ define('COD_ANALISTAS', 3);
 
 
 /// CONSTANTES
+define('ANO_INICIO', 2009);
 define('VERSAO_SISTEMA', '1.0');
 define('TEMPO_EXPIRA', 31536000);   // Tempo de duracao da cache (1 ano)
 define('DESCRICAO_SIMP', 'Framework para o Desenvolvimento de Sistemas de Informação Modulares em PHP');
-define('VERSAO_SIMP', '1.4.1b');
+define('VERSAO_SIMP', '1.4.3b');
 define('MANUAL_PHP', 'http://br.php.net/manual/pt_BR/');
 define('DEVEL_BLOQUEADO', true);
 

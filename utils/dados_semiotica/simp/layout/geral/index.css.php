@@ -4,10 +4,10 @@
 // Descricao: Folha de estilos geral
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.18
 // Data: 11/03/2008
-// Modificado: 25/08/2009
+// Modificado: 15/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -82,6 +82,13 @@ ul, ol {
   margin-bottom: 3px;
 }
 
+ol ol {
+  list-style-type: upper-latin;
+}
+ol ol ol {
+  list-style-type: lower-latin;
+}
+
 /***********
  * CLASSES *
  ***********/
@@ -108,6 +115,22 @@ br.clear {
 
 .hide {
   display: none !important;
+}
+
+.caps_lock {
+  background-color: #FFEEEE;
+  border: 1px solid #990000;
+  border-top: 0;
+  color: #FF0000;
+  display: block;
+  font-size: .8em;
+  font-weight: bolder;
+  margin: 0 1em;
+  padding: .5em 1em;
+  text-align: center;
+  text-decoration: blink;
+  -moz-border-radius-bottomleft: 1em;
+  -moz-border-radius-bottomright: 1em;
 }
 
 /* Cores de relevancia */
@@ -561,6 +584,7 @@ ul.hierarquia li .valor img.bt_expandir {
   clear: both;
   display: block;
   margin: 10px 2px;
+  text-align: left;
 }
 
 .abas .nomes_abas span {
@@ -699,6 +723,12 @@ form a.ajuda a img {
   cursor: pointer;
 }
 
+/* FORMULARIO */
+.formulario hr {
+  float: left;
+  width: 100%;
+}
+
 /* CAMPOS DE DATA E HORA */
 .formulario .data_hora,
 .formulario .data {
@@ -743,6 +773,18 @@ form a.ajuda a img {
 }
 .formulario .telefone input.ramal {
   width: 4em;
+}
+
+/* CAMPOS DE BUSCA */
+.formulario .resultado_campo_busca {
+  background-color: #CCCCCC;
+  border: 1px outset #CCCCCC;
+  display: none;
+  padding: .5em !important;
+  width: 90% !important;
+}
+.formulario .resultado_campo_busca select {
+  cursor: pointer;
 }
 
 /* Graficos */

@@ -4,10 +4,10 @@
 // Descricao: Grafico de numero de acessos por mes
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.2
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.3
 // Data: 25/06/2007
-// Modificado: 20/02/2009
+// Modificado: 18/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -38,7 +38,7 @@ while ($time < $ate) {
     $vt_condicoes[] = condicao_sql::montar('operacao', '=', LOG_ENTRADA);
     $vt_condicoes[] = condicao_sql::montar('data', '>=', $time);
     $vt_condicoes[] = condicao_sql::montar('data', '<', $proximo_time);
-    $vt_condicoes[] = condicao_sql::montar('erro', '=', 0);
+    $vt_condicoes[] = condicao_sql::montar('erro', '=', false);
     $vt_condicoes[] = condicao_sql::montar('cod_usuario', '<>', 1);
     $condicoes = condicao_sql::sql_and($vt_condicoes);
     $valores[] = $log->quantidade_registros($condicoes);

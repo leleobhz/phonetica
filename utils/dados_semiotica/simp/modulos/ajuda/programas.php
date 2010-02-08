@@ -4,7 +4,7 @@
 // Descricao: Lista de programas recomendados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.6
 // Data: 26/11/2007
 // Modificado: 16/03/2009

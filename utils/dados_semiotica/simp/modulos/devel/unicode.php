@@ -4,7 +4,7 @@
 // Descricao: Exibe grupos de caracteres Unicode
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 20/11/2008
 // Modificado: 20/08/2009
@@ -139,7 +139,7 @@ if (\$i < 32 && ctype_cntrl(\$char)) {
     \$char = htmlspecialchars(\$char);
     \$hex = sprintf('%X', \$i);
     \$entity = texto::codificar(\$char);
-    \$entity = (\$entity != \$char) ? htmlentities(\$entity) : '-';
+    \$entity = (\$entity != \$char) ? htmlentities(\$entity, ENT_QUOTES, 'UTF-8') : '-';
 }
 PHP;
     } else {
@@ -153,7 +153,7 @@ for (\$j = 0; \$j < \$len; \$j++) {
 \$bin = implode(' ', \$vt_bin);
 \$hex = sprintf('%X', \$i);
 \$entity = texto::codificar(\$char);
-\$entity = (\$entity != \$char) ? htmlentities(\$entity) : '-';
+\$entity = (\$entity != \$char) ? htmlentities(\$entity, ENT_QUOTES, 'UTF-8') : '-';
 PHP;
     }
 

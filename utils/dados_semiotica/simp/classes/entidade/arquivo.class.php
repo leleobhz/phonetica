@@ -4,7 +4,7 @@
 // Descricao: Classe Arquivos
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.11
 // Data: 10/09/2007
 // Modificado: 30/06/2009

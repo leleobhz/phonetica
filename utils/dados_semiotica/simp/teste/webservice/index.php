@@ -4,7 +4,7 @@
 // Descricao: Exemplo de requisicao XML para o Web Service
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 28/11/2007
 // Modificado: 28/11/2007
@@ -52,7 +52,7 @@ if ($cliente->fault) {
         $pagina->cabecalho('Teste do Web Service', array('' => 'Teste do Web Service'), false);
         $pagina->inicio_conteudo('Teste do Web Service');
         echo '<pre>';
-        print_r($resultado);
+        var_dump($resultado);
         echo '</pre>';
 
         // Debug

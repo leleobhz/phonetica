@@ -4,7 +4,7 @@
 // Descricao: Creditos do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.7
 // Data: 04/06/2007
 // Modificado: 20/08/2009

@@ -4,7 +4,7 @@
 // Descricao: Interface de operacoes sobre bancos de dados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 11/09/2008
 // Modificado: 02/09/2009
@@ -122,7 +122,7 @@ final class driver_oci8_operacao extends driver_oci8 {
 
 
     //
-    //     SHOW TABLES: obtem a lista de tabelas do BD (com nome e comentario)
+    //     SHOW TABLES: obtem a lista de tabelas do BD (com "nome", "comentario" e objeto "detalhes")
     //
     public function get_tabelas() {
         $tabelas = array();
@@ -139,8 +139,9 @@ final class driver_oci8_operacao extends driver_oci8 {
             $t = new stdClass();
             $t->nome = $nome_tabela;
 //TODO
-//            $t->comentario = $comentario;
-            $tabelas[] = $t;
+            $t->comentario = null;
+            $t->detalhes = null;
+            $tabelas[$nome_tabela] = $t;
         }
         return $tabelas;
     }

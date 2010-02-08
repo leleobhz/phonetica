@@ -4,10 +4,10 @@
 // Descricao: Arquivo que mescla todos arquivos js em um compactado
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.9
 // Data: 22/01/2008
-// Modificado: 08/07/2009
+// Modificado: 07/10/2009
 // License: LICENSE.TXT
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 //
@@ -21,6 +21,7 @@ $localhost = $CFG->localhost ? 'true' : 'false';
 
 $buffer = '/* Arquivo Compactado */'.
           '{'.
+          "var script_local='{$CFG->wwwroot}javascript/javascript.js.php';".
           "var wwwroot='{$CFG->wwwroot}';".
           "var dominio='{$CFG->dominio}';".
           "var dominio_cookies=".($CFG->dominio_cookies ? "'".$CFG->dominio_cookies."'" : 'false').";".

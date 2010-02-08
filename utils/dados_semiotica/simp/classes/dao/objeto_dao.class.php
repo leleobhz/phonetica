@@ -4,10 +4,10 @@
 // Descricao: Classe de comunicacao com Bancos de Dados (Data Access Object) atraves de um driver
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.5
 // Data: 22/04/2008
-// Modificado: 03/07/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -78,9 +78,7 @@ final class objeto_dao {
     //     Metodo Factory
     //
     public static function dao() {
-        $classe = __CLASS__;
-        $obj = new $classe();
-        return $obj;
+        return new self();
     }
 
 

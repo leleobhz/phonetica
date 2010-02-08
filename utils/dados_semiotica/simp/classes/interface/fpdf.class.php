@@ -17,7 +17,7 @@
 // Descricao: Modificacao da classe FPDF para PHP 5
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.6.0.1
 // Data: 26/06/2007
 // Modificado: 02/12/2008

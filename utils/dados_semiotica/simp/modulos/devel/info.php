@@ -4,7 +4,7 @@
 // Descricao: info do servidor Apache
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.4
 // Data: 31/07/2007
 // Modificado: 14/02/2008

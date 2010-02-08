@@ -4,10 +4,10 @@
 // Descricao: Classe que controla os logs do sistema
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.12
+// E-mail: rpmoreira@tecnolivre.com.br
+// Versao: 1.0.0.14
 // Data: 05/09/2007
-// Modificado: 01/06/2009
+// Modificado: 25/11/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -55,7 +55,7 @@ abstract class log_sistema_base extends objeto {
         // CAMPO: ip
         $atributo = new atributo('ip', 'IP', '');
         $atributo->set_tipo('string', false);
-        $atributo->set_intervalo(7, 15);
+        $atributo->set_intervalo(0, 15);
         $atributo->set_validacao(false, false, false);
         $this->adicionar_atributo($atributo);
         unset($atributo);
@@ -86,7 +86,7 @@ abstract class log_sistema_base extends objeto {
 
         // CAMPO: detalhes
         $atributo = new atributo('detalhes', 'Detalhes', '');
-        $atributo->set_tipo('string', false);
+        $atributo->set_tipo('string', true);
         $atributo->set_intervalo(1, 255);
         $atributo->set_validacao(false, false, false);
         $this->adicionar_atributo($atributo);

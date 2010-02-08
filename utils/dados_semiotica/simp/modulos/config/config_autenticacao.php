@@ -4,10 +4,10 @@
 // Descricao: Altera os dados de Configuracao de Autenticacao
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.10
 // Data: 21/08/2007
-// Modificado: 27/02/2009
+// Modificado: 11/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -39,8 +39,9 @@ AJUDA;
 
 /// Dados da pagina
 $dados_pagina = new stdClass();
-$dados_pagina->titulo = $titulo;
-$dados_pagina->nav = $nav;
+$dados_pagina->titulo    = $titulo;
+$dados_pagina->nav       = $nav;
+$dados_pagina->estilos   = $estilos;
 $dados_pagina->usar_abas = true;
 
 modulo::alterar('config', $dados_form, $dados_pagina);

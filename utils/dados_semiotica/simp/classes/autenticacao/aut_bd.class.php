@@ -4,7 +4,7 @@
 // Descricao: Classe de autenticacao de usuarios de uma tabela de um banco de dados relacional
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.1
 // Data: 10/02/2009
 // Modificado: 04/03/2009

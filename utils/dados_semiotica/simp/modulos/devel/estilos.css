@@ -160,3 +160,18 @@ p.item + div {
 #insercao .formulario {
   width: 100%;
 }
+
+/* Tabelas do bd */
+#lista_tabelas {
+  float: left;
+  width: 30%;
+}
+#lista_tabelas {
+  float: left;
+  width: 30%;
+}
+
+#conteudo_tabela {
+  float: left;
+  width: 60%;
+}

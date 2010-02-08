@@ -4,10 +4,10 @@
 // Descricao: Extensao da classe FPDF com suporte a impressao de tabelas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.13
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.17
 // Data: 19/03/2008
-// Modificado: 03/09/2009
+// Modificado: 27/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -22,6 +22,14 @@ class fpdf_table extends fpdf {
     //
     public function GetPageWidth() {
         return $this->w;
+    }
+
+
+    //
+    //     Gets page height
+    //
+    public function GetPageHeight() {
+        return $this->h;
     }
 
 
@@ -65,6 +73,7 @@ class fpdf_table extends fpdf {
         $LineWidth = (double)$this->LineWidth;
         $FontSize = (double)$this->FontSize;
         $autoPageBreak = $this->AutoPageBreak;
+        $TextColor = $this->TextColor;
 
         $this->unit = 'pt';
         $this->k = 1;
@@ -109,6 +118,7 @@ class fpdf_table extends fpdf {
         $this->LineWidth = (double)$LineWidth;
         $this->FontSize  = (double)$FontSize;
         $this->SetAutoPageBreak($autoPageBreak, (double)$bMargin);
+        $this->TextColor = $TextColor;
 
         setlocale(LC_NUMERIC, $locale);
     }
@@ -216,6 +226,10 @@ class fpdf_table extends fpdf {
             }
         }
 
+        if (!isset($td['fontsize'])) {
+            $td->addAttribute('fontsize', $this->FontSize);
+        }
+
         list($border, $unit) = sscanf($td['border'], '%d%s');
         $border = (double)$border / (double)$this->getK($unit);
         $td['border'] = sprintf('%0.40f', (double)$border);
@@ -250,6 +264,10 @@ class fpdf_table extends fpdf {
             if (!isset($th[$attribute])) {
                 $th->addAttribute($attribute, $value);
             }
+        }
+
+        if (!isset($td['fontsize'])) {
+            $th->addAttribute('fontsize', $this->FontSize);
         }
 
         list($border, $unit) = sscanf($th['border'], '%d%s');
@@ -340,6 +358,8 @@ class fpdf_table extends fpdf {
         // Set margin_top of table
         if ((double)$table['border']) {
             $margin_top = (double)$table['border'];
+        } else {
+            $margin_top = 0;
         }
         $table->addAttribute('margin_top', sprintf('%0.40f', (double)$margin_top));
 
@@ -539,20 +559,21 @@ class fpdf_table extends fpdf {
             $width = (double)$cell['content_width'];
             $border = (double)$cell['border'];
             $padding = (double)$cell['padding'];
-            $bold = $cell->getName() == 'th';
+            $bold = $cell['bold'];
+            $fontsize = (double)$cell['fontsize'];
 
             $sub = (double)(2 * ((double)$border + (double)$padding));
 
-            $part1->height = (double)$this->GetTextCellHeight($part1->text, $width, $border, $padding, $bold);
+            $part1->height = (double)$this->GetTextCellHeight($part1->text, $width, $border, $padding, $bold, $fontsize);
             $part1->content_height = (double)$part1->height - (double)$sub;
 
             if ((double)$part1->height < (double)$page_height) {
-                $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold);
+                $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold, $fontsize);
                 $part2->content_height = (double)$part2->height - (double)$sub;
                 return;
             }
         }
-        $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold);
+        $part2->height = (double)$this->GetTextCellHeight($part2->text, $width, $border, $padding, $bold, $fontsize);
         $part2->content_height = (double)$part2->height - (double)$sub;
     }
 
@@ -582,24 +603,25 @@ class fpdf_table extends fpdf {
     //
     //     Calculates height of text cell
     //
-    private function GetTextCellHeight($text, $width, $border, $padding, $bold) {
+    private function GetTextCellHeight($text, $width, $border, $padding, $bold, $size) {
     // String $text: Text to be checked
     // Float $width: cell width
     // Float $border: border size
     // Float $padding: padding size
     // Bool $bold: bold font
+    // Int $size: font size
     //
         $text = utf8_decode($text);
         $text = preg_replace('/<br[\s]*\/>/i', "\n", $text);
 
         // Get the size of Cell
         $w = (double)$width;
-        $h = (double)$this->FontSize;
+        $h = (double)$size;
 
         if ($bold) {
-            $this->SetFont('', 'B');
+            $this->SetFont('', 'B', $h);
         } else {
-            $this->SetFont('', '');
+            $this->SetFont('', '', $h);
         }
         $cell_height = (double)$border +
                        (double)$padding +
@@ -640,15 +662,7 @@ class fpdf_table extends fpdf {
             $w = (double)$cell['content_width'];
             $h = (double)$this->FontSize;
 
-            switch ($cell->getName()) {
-            case 'th':
-                $this->SetFont('', 'B');
-                break;
-            case 'td':
-            default:
-                $this->SetFont('', '');
-                break;
-            }
+            $this->setFont('', $cell['bold'] ? 'B' : '', (double)$cell['fontsize']);
             $cell_height = (double)$cell['border'] +
                            (double)$cell['padding'] +
                            (double)$this->MultiCellHeight((double)$w, (double)$h, $text) +
@@ -695,7 +709,7 @@ class fpdf_table extends fpdf {
     //
     //     Convert HTML RGB color to Array with 'r', 'g' and 'b' index
     //
-    private function GetHTMLColor($rgb_color) {
+    private static function GetHTMLColor($rgb_color) {
     // String $rgb_color: color in RGB HTML format (#XXX or #XXXXXX)
     //
         switch (strlen($rgb_color)) {
@@ -782,7 +796,7 @@ class fpdf_table extends fpdf {
     //
         $table->x0 = sprintf('%0.40f', (double)$this->GetX());
         $table->y0 = sprintf('%0.40f', (double)$this->GetY());
-        $table_color = $this->GetHTMLColor($table['bordercolor']);
+        $table_color = self::GetHTMLColor($table['bordercolor']);
 
         if (DEBUG_FPDF_TABLE) {
             $this->Rect((double)$this->lMargin, (double)$this->tMargin,
@@ -859,7 +873,7 @@ class fpdf_table extends fpdf {
                 $this->y += (double)$table['border'];
             }
         }
-
+//TODO
 //self::DebugTable($table);
     }
 
@@ -945,7 +959,7 @@ class fpdf_table extends fpdf {
         $by = (double)$this->y + ($text ? ((double)$cell['border'] / (double)2) : 0);
         $bwidth  = (double)$cell['width']  - ($text ? ((double)$cell['border']) : 0);
         $bheight = (double)$cell['height'] - ($text ? ((double)$cell['border']) : 0);
-        $bgcolor = $this->GetHTMLColor($cell['bgcolor']);
+        $bgcolor = self::GetHTMLColor($cell['bgcolor']);
         $this->SetFillColor($bgcolor['r'], $bgcolor['g'], $bgcolor['b']);
         $this->SetLineWidth(0);
         $this->Rect((double)$bx, (double)$by, (double)$bwidth, (double)$bheight, 'F');
@@ -1057,7 +1071,7 @@ class fpdf_table extends fpdf {
             $by = (double)$this->y + ((double)$cell['border'] / (double)2);
             $bwidth = (double)$cell['width'] - (double)$cell['border'];
             $bheight = (double)$cell['height'] - (double)$cell['border'];
-            $border_color = $this->GetHTMLColor($cell['bordercolor']);
+            $border_color = self::GetHTMLColor($cell['bordercolor']);
             $this->SetDrawColor($border_color['r'], $border_color['g'], $border_color['b']);
             $line_width = (double)$this->LineWidth;
             $this->SetLineWidth((double)$cell['border']);
@@ -1085,11 +1099,15 @@ class fpdf_table extends fpdf {
                             (double)$cell['content_height']);
             }
 
+            // Color
+            $color = self::GetHTMLColor($cell['color']);
+
             $this->x +=  (double)$cell['border'] + (double)$cell['padding'];
             $this->y += (double)$margin_top;
-            $this->SetFont('', $cell['bold'] == '1' ? 'B' : '');
+            $this->SetFont('', $cell['bold'] == '1' ? 'B' : '', (double)$cell['fontsize']);
+            $this->SetTextColor($color['r'], $color['g'], $color['b']);
             $w = (double)$cell['content_width'];
-            $h = (double)$this->FontSize;
+            $h = (double)$cell['fontsize'];
             $this->MultiCell((double)$w, (double)$h, $text, DEBUG_FPDF_TABLE, $align);
         }
     }
@@ -1125,7 +1143,6 @@ class fpdf_table extends fpdf {
     // String $txt: text of cell
     //
         $correct = (double)0.5;
-        $className = __CLASS__;
         $this2 = clone($this);
         $cw=&$this2->CurrentFont['cw'];
         if (preg_match('/.+/u', $txt)) {

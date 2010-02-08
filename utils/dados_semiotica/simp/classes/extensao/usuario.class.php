@@ -4,10 +4,10 @@
 // Descricao: Classe Usuario
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.37
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.41
 // Data: 22/08/2007
-// Modificado: 14/07/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -103,6 +103,7 @@ final class usuario extends usuario_base {
             } elseif (!empty($dados->senha_sugerida) || !empty($dados->confirmacao)) {
                 $this->avisos[] = 'Aten&ccedil;&atilde;o: a senha especificada n&atilde;o foi utilizada!';
             }
+            //nobreak
 
         // Formulario de definicao de grupos
         case $this->id_formulario_relacionamento('grupos'):
@@ -181,7 +182,7 @@ final class usuario extends usuario_base {
         // Metodo Crypt com sal fixo
         //return crypt($senha, 'SP');
 
-        // Metodo Crypt com sal aleatorio
+        // Metodo Crypt com sal variado
         //if ($senha_codificada !== false) {
         //    return crypt($senha, $senha_codificada);
         //} else {
@@ -202,7 +203,7 @@ final class usuario extends usuario_base {
     //     Verifica se a senha esta correta
     //
     public function validar_senha($login, $senha, &$erros) {
-    // String $login: login a ser verificado em autenticacao LDAP e usuario Linux
+    // String $login: login a ser verificado
     // String $senha: senha a ser comparada com a do objeto
     // Array[String] $erros: vetor de erros ocorridos
     //
@@ -227,8 +228,7 @@ final class usuario extends usuario_base {
         }
 
         // Checar se ja existe o usuario no BD local
-        $classe = $this->get_classe();
-        $u = new $classe('login', $login);
+        $u = new self('login', $login);
         if ($u->existe()) {
             return true;
         }
@@ -268,8 +268,8 @@ final class usuario extends usuario_base {
 
         $salvar_campos = array('nome', 'login', 'email', 'senha');
         if (!$u->salvar_completo($salvar_campos)) {
-            $erros = array_merge($erros, $u->get_erros());
             $erros[] = 'Erro ao cadastrar usu&aacute;rio no sistema';
+            $erros[] = $u->get_erros();
             return false;
         }
         return true;
@@ -405,8 +405,8 @@ final class usuario extends usuario_base {
         $email->set_mensagem($msg_html, 1);
 
         if (!$email->enviar()) {
-            $this->erros = array_merge($this->erros, $email->get_erros());
             $this->erros[] = 'Erro ao enviar e-mail com a senha para o usu&aacute;rio';
+            $this->erros[] = $email->get_erros();
             return false;
         }
         return true;
@@ -657,6 +657,11 @@ final class usuario extends usuario_base {
                 $vt_cache[$p->arquivo->modulo.':'.$p->arquivo->arquivo] = $p->arquivo;
             }
         }
+
+        // Arquivo principal
+        $campos = array('arquivo', 'modulo', 'descricao');
+        $dados_arquivo = new arquivo('', 1, $campos);
+        $vt_cache[':index.php'] = $dados_arquivo;
 
         $consultou = true;
         return $this->get_arquivo($modulo, $arquivo);

@@ -3,10 +3,10 @@
 // Descricao: JavaScript utilizado pelas paginas (AJAX)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.5
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.2.6
 // Data: 12/06/2007
-// Modificado: 29/07/2009
+// Modificado: 29/01/2010
 // TODO: Funcionar no IE(ca)
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
@@ -100,7 +100,16 @@ function iniciar(foco) {
         timer_foco = window.setTimeout("set_foco();", 700);
     }
     timer_hora = window.setInterval("atualizar_hora();", 1000);
-    //document.normalize();
+
+    // Executar scripts extras
+    var scripts = document.getElementsByTagName("script");
+    for (var i = 0; i < scripts.length; i++) {
+        var src = scripts.item(i).getAttribute("src");
+        if (src != script_local) {
+            var conteudo = get_conteudo(src);
+            eval(conteudo);
+        }
+    }
 
     return true;
 }
@@ -439,7 +448,7 @@ function get_dados(form) {
             }
             break;
         case "submit":
-            if (elemento.getAttribute("clicou") == 1) {
+            if (elemento.getAttribute("clicou") == "1") {
                 var parametro = elemento.name + "=" + encodeURIComponent(elemento.value);
                 param.push(parametro);
             }
@@ -672,7 +681,7 @@ function atualizar() {
                 try {
                     head.appendChild(item);
                 } catch (e) {
-                    alert("Erro: " + e.message + "\n\nRecomenda-se desabilitar o JavaScript.");
+                    window.alert("Erro: " + e.message + "\n\nRecomenda-se desabilitar o JavaScript.");
                 }
             }
         }
@@ -683,7 +692,8 @@ function atualizar() {
     if (nav2) {
         var pai = nav.parentNode;
         try {
-            pai.replaceChild(nav2, nav);
+            var novo = document.importNode(nav2, true);
+            pai.replaceChild(novo, nav);
         } catch (e) {
             try {
                 nav.innerHTML = nav2.innerHTML;
@@ -845,31 +855,26 @@ function definir_atributos() {
                 while ((get_tag(form) != "form") && form.parentNode) {
                     form = form.parentNode;
                 }
-                if (get_tag(form) == "form") {
+                if (get_tag(form) == "form" && form.onsubmit) {
                     var novo = function() {
                         var vt = this.getElementsByTagName('input');
                         var i = 0;
                         for (i = 0; i < vt.length; i++) {
                             var s = vt.item(i);
-                            if (s.getAttribute("clicou") == 1) {
+                            if (s.getAttribute("clicou") == "1") {
                                 var h = document.createElement("input");
                                 h.setAttribute("type", "hidden");
                                 h.setAttribute("name", s.getAttribute("name"));
                                 h.setAttribute("value", s.getAttribute("value"));
                                 this.appendChild(h);
                                 s.setAttribute("disabled", "disabled");
-                                if (s.getAttribute("value").length >= 7) {
-                                    s.setAttribute("antes", s.getAttribute("value"));
-                                    s.setAttribute("value", "Aguarde");
-                                    s.style.backgroundImage = "url(" + wwwroot + "imgs/icones/carregando_form.gif)";
-                                    s.style.backgroundRepeat = "no-repeat";
-                                }
+                                s.setAttribute("antes", s.getAttribute("value"));
+                                s.setAttribute("value", "Aguarde");
+                                s.style.backgroundImage = "url(" + wwwroot + "imgs/icones/carregando_form.gif)";
+                                s.style.backgroundRepeat = "no-repeat";
                             }
                         }
                     };
-                    if (!form.onsubmit) {
-                        form.onsubmit = function() { return true; };
-                    }
                     form.onsubmit = juntar_funcoes(form.onsubmit, novo);
                 }
             }
@@ -1007,11 +1012,12 @@ function atualizar_campo(campo) {
 //
     switch (campo.nodeName) {
     case "input":
-        if (campo.getAttribute("type") == "password") {
+        var type = campo.getAttribute("type");
+        if (type == "password") {
             var aviso = document.createElement("span");
-            aviso.appendChild(document.createTextNode("Caps Lock"));
-            aviso.style.fontSize = "0.8em";
             aviso.style.display = "none";
+            definir_classe(aviso, "caps_lock");
+            aviso.appendChild(document.createTextNode("Caps Lock"));
 
             campo.aviso = aviso;
             campo.checado = false;
@@ -1021,7 +1027,7 @@ function atualizar_campo(campo) {
 
                 // Se precionou Caps Lock
                 if (this.checado && k == 20) {
-                    this.aviso.style.display = this.aviso.style.display == "inline" ? "none" : "inline";
+                    this.aviso.style.display = this.aviso.style.display == "block" ? "none" : "block";
                 }
 
                 this.checado = true;
@@ -1033,17 +1039,29 @@ function atualizar_campo(campo) {
                 if (entre(k, 65, 90) || k == 199) {
 
                     // se shift: nao usou caps lock
-                    this.aviso.style.display = shift ? "none" : "inline";
+                    this.aviso.style.display = shift ? "none" : "block";
                 }
 
                 // Se obteve uma tecla minuscula
                 if (entre(k, 97, 122) || k == 231) {
 
                     // se shift: usou caps lock
-                    this.aviso.style.display = shift ? "inline" : "none";
+                    this.aviso.style.display = shift ? "block" : "none";
                 }
                 return true;
             };
+        } else if (type == "hidden") {
+            if (campo.getAttribute("name") == "id_progresso") {
+                var form = campo.parentNode;
+                while (form && form.nodeName != "form") { form = form.parentNode; }
+                var id = campo.getAttribute("value");
+                form.setAttribute("id_progresso", id);
+                form.onsubmit = function() {
+                    var url = wwwroot + "webservice/progresso.php?id=" + this.getAttribute("id_progresso");
+                    window.open(url, "Progresso", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, width=400, height=250");
+                    return true;
+                }
+            }
         }
         break;
 //    case "select":
@@ -1534,10 +1552,12 @@ function set_foco() {
     try {
         for (var f = 0; f < document.forms.length; f++) {
             for (var i = 0; i < document.forms[f].length; i++) {
-                if (document.forms[f][i].getAttribute("type") != "hidden" &&
-                    !document.forms[f][i].getAttribute("disabled")) {
-                    document.forms[f][i].focus();
-                    return
+                var c = document.forms[f][i];
+                if (c.getAttribute("type") != "hidden" &&
+                    !c.getAttribute("disabled")) {
+                    c.focus();
+                    c.select();
+                    return;
                 }
             }
         }
@@ -1913,6 +1933,8 @@ function ativar_timer_busca(input, dados) {
         window.clearTimeout(timer_busca);
     }
     input_busca = input;
+
+    // Ativar apos 1 segundo
     timer_busca = setTimeout("buscar('" + dados + "')", 1000);
 }
 
@@ -1955,6 +1977,9 @@ function buscar(dados) {
                 e = e ? e : window.event;
                 e.returnValue = false;
                 limpar(that.div);
+                that.div.style.display = "none";
+                that.input.focus();
+                that.input.select();
                 return false;
             };
             a.onkeypressed = a.onclick;
@@ -1969,6 +1994,9 @@ function buscar(dados) {
                 option.setAttribute("value", valor);
                 option.ondblclick = function() {
                     limpar(that.div);
+                    that.div.style.display = "none";
+                    that.input.focus();
+                    that.input.select();
                     return false;
                 };
                 select.appendChild(option);
@@ -1985,13 +2013,14 @@ function buscar(dados) {
     //     Consulta assincronamente
     //
     this.consultar = function() {
-        that.div.style.width = "100%";
         if (that.input.value.length > 0) {
+            that.div.style.display = "block";
             that.ajax.set_funcao(that.atualizar_itens);
             that.ajax.exibir_carregando(div);
             that.ajax.consultar("GET", that.url, true, null);
         } else {
             limpar(that.div);
+            that.div.style.display = "none";
         }
         return true;
     };
@@ -2135,4 +2164,17 @@ function juntar_funcoes(velho, novo) {
 
     var saida = new Function(novo + velho);
     return saida;
+}
+
+
+//
+//     Retorna o conteudo texto de URL
+//
+function get_conteudo(url) {
+// String url: endereco do javascript a ser importado
+//
+    var ajax = new class_ajax();
+    if (!ajax.xmlhttp) { return ""; }
+    ajax.consultar("GET", url, false, null);
+    return ajax.get_retorno("text");
 }

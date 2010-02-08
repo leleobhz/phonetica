@@ -4,10 +4,10 @@
 // Descricao: Classe que oferece varias listas uteis
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.22
+// E-mail: rpmoreira@tecnolivre.com.br
+// Versao: 1.0.0.24
 // Data: 20/08/2007
-// Modificado: 24/07/2009
+// Modificado: 29/01/2010
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -451,6 +451,48 @@ final class listas {
 
 
     //
+    //     Obtem a descricao dos caracteres de controle ASCII
+    //
+    public static function get_caracteres_controle() {
+        return array(
+            0   => 'Nulo',
+            1   => 'In&iacute;cio de Cabe&ccedil;alho',
+            2   => 'In&iacute;cio de Texto',
+            3   => 'Fim de Texto',
+            4   => 'Fim de Fita',
+            5   => 'Enquire',
+            6   => 'Reconhecimento',
+            7   => 'Campainha',
+            8   => 'Espa&ccedil;o atr&aacute;s',
+            9   => 'Tabula&ccedil;&atilde;o Horizontal',
+            10  => 'Line-feed',
+            11  => 'Tabula&ccedil;&atilde;o Vertical',
+            12  => 'Form-feed',
+            13  => 'Retorno de carro',
+            14  => 'Sa&iacute;da do Shift',
+            15  => 'Entrada do Shift',
+            16  => 'Data-link Escape',
+            17  => 'Controle de Dispositivo 1',
+            18  => 'Controle de Dispositivo 2',
+            19  => 'Controle de Dispositivo 3',
+            20  => 'Controle de Dispositivo 4',
+            21  => 'N&atilde;o-reconhecimento',
+            22  => 'Synchronous Idle',
+            23  => 'Fim de bloco de transmiss&atilde;o',
+            24  => 'Cancelar',
+            25  => 'End-of-Medium',
+            26  => 'Substituto',
+            27  => 'Escape (ESC)',
+            28  => 'Separador de Arquivo',
+            29  => 'Separador de Grupo',
+            30  => 'Separador de Registro',
+            31  => 'Separador de Unidade',
+            127 => 'Delete'
+        );
+    }
+
+
+    //
     //     Obtem as faixas de caracteres Unicode
     //
     public static function get_faixas_unicode() {
@@ -790,7 +832,7 @@ final class listas {
             return false;
         }
         while (($item = readdir($dir)) !== false) {
-            if ($item[0] == '.') { continue; }
+            if (substr($item, 0, 1) == '.') { continue; }
             if (is_dir($diretorio.$item)) {
                 self::get_classes_recursivo($diretorio.$item.'/', $classes, $reflexao_base, $apenas_instanciaveis);
             } elseif (preg_match('/^([A-z0-9-_\.]+).class.php$/', $item, $match)) {
@@ -817,6 +859,7 @@ final class listas {
                 }
             }
         }
+        closedir($dir);
     }
 
 

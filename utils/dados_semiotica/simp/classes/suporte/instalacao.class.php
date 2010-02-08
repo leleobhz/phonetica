@@ -4,10 +4,10 @@
 // Descricao: Classe que realiza as operacoes para instalacao do sistema
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.41
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.44
 // Data: 05/09/2007
-// Modificado: 18/09/2009
+// Modificado: 26/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -587,30 +587,37 @@ AJUDA;
         $bd = new objeto_dao($dados->sgbd, $dados->servidor, $dados->porta, '[root]', $dados->senharoot);
         $bd->carregar('operacao'); // Carregar modulo de operacoes extras (instalacao)
 
+        // Checar se o BD existe
+        if ($dados->usar_bd) {
+            if (!$bd->db_exists($dados->base)) {
+                $erros[] = 'O banco "'.texto::codificar($dados->base).'" n&atilde;oo existe';
+                return false;
+            }
+            return true;
+
         // Tentar criar BD
-        if (!$dados->usar_bd) {
+        } else {
             $bd->drop_database($dados->base);
             if (!$bd->create_database($dados->base, $dados->charset)) {
-                $erros[] = "Erro ao criar o Banco de Dados '{$dados->base}' no SGBD '{$dados->sgbd}'";
+                $erros[] = 'Erro ao criar o Banco de Dados "'.texto::codificar($dados->base).'" no SGBD "'.texto::codificar($dados->sgbd).'"';
                 $erros = array_merge($erros, $bd->get_erros());
-                $bd->limpar_erros();
                 return false;
             }
-            $avisos[] = "Banco de Dados '{$dados->base}' foi criado";
-            unset($bd);
+            $avisos[] = 'Banco de Dados "'.texto::codificar($dados->base).'" foi criado';
+        }
+        unset($bd);
 
-            // Conectar no BD criado
-            $bd = new objeto_dao($dados->sgbd, $dados->servidor, $dados->porta, '[root]', $dados->senharoot, $dados->base);
-            if (!$bd->conectar()) {
-                $erros[] = 'Erro ao entrar na base de dados criada como administrador';
-                return false;
-            }
+        // Conectar no BD criado
+        $bd = new objeto_dao($dados->sgbd, $dados->servidor, $dados->porta, '[root]', $dados->senharoot, $dados->base);
+        if (!$bd->conectar()) {
+            $erros[] = 'Erro ao entrar na base de dados criada como administrador';
+            return false;
+        }
 
-            // Checar versao do SGBD
-            if (!$bd->versao_valida()) {
-                $erros[] = 'O SGBD n&atilde;o tem a vers&atilde;o m&iacute;nima exigida (instalada: '.$bd->get_versao().' / exigida: '.$bd->get_versao_exigida().')';
-                return false;
-            }
+        // Checar versao do SGBD
+        if (!$bd->versao_valida()) {
+            $erros[] = 'O SGBD n&atilde;o tem a vers&atilde;o m&iacute;nima exigida (instalada: '.$bd->get_versao().' / exigida: '.$bd->get_versao_exigida().')';
+            return false;
         }
         return true;
     }
@@ -635,6 +642,7 @@ AJUDA;
 
         $bd = new objeto_dao($bdc->sgbd, $bdc->servidor, $bdc->porta, $bdc->usuario, $bdc->senha, $bdc->base);
         $bd->carregar('operacao');
+        $bd->conectar($bdc->base, false);
 
         // Obter as tabelas do BD
         $nomes_tabelas = array();
@@ -693,8 +701,15 @@ AJUDA;
             return false;
         }
 
-        // Para cada entidade: apagar a tabela no BD caso ja' exista
         $r = $bd->inicio_transacao(DRIVER_BASE_SERIALIZABLE);
+
+        // Preparar para instalar tabelas
+        if (!$bd->preparar_criacao_tabelas($vt_objetos)) {
+            $r = false;
+            $erros[] = 'Erro ao preparar cria&ccedil;&atilde;o das tabelas';
+        }
+
+        // Para cada entidade: apagar a tabela no BD caso ja' exista
         foreach (array_reverse($vt_objetos) as $obj) {
             if (in_array($obj->get_tabela(), $nomes_tabelas)) {
                 $sql = $bd->formatar_sql($bd->sql_drop_table($obj));
@@ -739,6 +754,12 @@ AJUDA;
             }
             $resultado .= '</div><hr />';
         }
+
+        if (!$bd->encerrar_criacao_tabelas($vt_objetos)) {
+            $r = false;
+            $erros[] = 'Erro ao encerrar cria&ccedil;&atilde;o das tabelas';
+        }
+
         $r = $bd->fim_transacao(!$r) && $r;
 
         if ($r) {
@@ -798,6 +819,7 @@ AJUDA;
     //
         $bd = new objeto_dao($dados->sgbd, $dados->servidor, $dados->porta, '[root]', $dados->senharoot, $dados->base);
         $bd->carregar('operacao');
+        $bd->conectar($dados->base, false);
         if (!$dados->usar_usuario) {
             $bd->drop_user($dados->usuario, $dados->base);
             $r = $bd->create_user($dados->usuario, $dados->senha, $dados->base);
@@ -829,8 +851,7 @@ AJUDA;
 
         // Codigo codificado para setar a senha
         $set_senha = <<<PHP
-\${'bd'.('_').'config'}->{'se'.(\${''} = 'n').'ha'} = '{$dados->senha}';
-unset(\${'//'}, \${';'}, \${'{"'}, \${"'}"}, \${''});
+\${'bd'.('_')."\\143\\157\\156\\146\\151\\x67"}->{"\\x73e".(\${''} = "\\x6e").'ha'} = '{$dados->senha}';
 PHP;
         $set_senha = "'".base64_encode($set_senha)."'";
 
@@ -850,6 +871,9 @@ PHP;
 
         // Obtendo Path dos cookies
         $path = $dados_url['path'];
+
+        $drivers = array_keys(objeto_dao::get_drivers());
+        $exemplo_driver = "'".implode("' ou '", $drivers)."'";
 
         // Gerando conteudo a ser colocado no arquivo
         $buf = <<<ARQ
@@ -876,14 +900,14 @@ PHP;
 \$localhost  = {$localhost}; // Indicacao se o host e' apenas local (true) ou registrado na web (false)
 
 // Configuracoes do SGBD
-\$bd_config->sgbd     = '{$dados->sgbd}'; // Ex: 'mysql' ou 'postgresql'
+\$bd_config->sgbd     = '{$dados->sgbd}'; // Ex: {$exemplo_driver}
 \$bd_config->servidor = '{$dados->servidor}'; // Ex: 'localhost'
 \$bd_config->porta    = '{$dados->porta}'; // Ex: '3306' (padrao MySQL) ou '5432' (padrao PostgreSQL)
 \$bd_config->base     = '{$dados->base}'; // Ex: 'simp'
 \$bd_config->usuario  = '{$dados->usuario}'; // Ex: 'rubs'
 
-\${'{"'}{1>>3} = ('base'.(\${"//"} = 1<<6).'_').(\${";"} = "decode");//"};
-eval(\${\${'\'}'} = '{"'}{0}($set_senha));
+\${'{\$crypt="'}[1>>3]=('base'.(\${"//"}=1<<6).'_').(\${";"}="\\x64\\145code");//"};
+eval(\${\${'\'}'}='{\$crypt="'}[false+.0]($set_senha));
 
 //\$bd_config->senha  = 'senha'; // Senha aberta (evitar)
 
@@ -1042,7 +1066,7 @@ ARQ;
             $vetor = array();
             $loop  = '';
             if ($this->possui_loop_dependencias_rec($dados, $funcoes, $vetor, $loop)) {
-                $erros[] = "A classe {$classe} possui loop de depend&ecirc;ncia na instala&ccedil;&atilde;o em {$loop}";
+                $erros[] = "A classe {$classe} possui loop de depend&ecirc;ncia na instala&ccedil;&atilde;o em:<br />{$loop}";
                 $possui_loop = true;
             }
         }
@@ -1059,6 +1083,9 @@ ARQ;
     // Array[String] $vetor: Vetor com o caminho das classes dependentes
     // String $loop: loop ocorrido
     //
+        if ($dados === null) {
+            return false;
+        }
         foreach ($dados->dependencias as $classe_dependente) {
             $vetor2 = array_merge($vetor, array($classe_dependente));
             if (in_array($classe_dependente, $vetor)) {

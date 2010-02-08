@@ -1,6 +1,16 @@
 <?php
-//@ignoredoc
-/// Exemplos de como montar condicoes SQL
+//
+// SIMP
+// Descricao: Exemplos de como montar condicoes SQL com a classe condicao_sql
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.0
+// Data: 03/03/2007
+// Modificado: 03/03/2007
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
+// License: LICENSE.TXT
+//
 require_once('../config.php');
 
 
@@ -21,37 +31,41 @@ require_once('../config.php');
 
 
 // Exemplo 1: Consultar usuarios cujo codigo e' diferente de 1
-$condicao = condicao_sql::montar('cod_usuario', '<>', '1', false);
+$condicao = condicao_sql::montar('cod_usuario', '<>', 1);
 // 'cod_usuario' e' o primeiro operando (um atributo da classe usuario)
 // '<>' e' o operador que significa diferente
-// '1' e' o segundo operando (um valor)
-// false e' uma flag que indica que o segundo operando nao e' um atributo da classe usuario, mas um valor escalar
-$usuarios = objeto::get_objeto('usuario')->consultar_varios(null, array('nome'));
+// 1 e' o segundo operando (um valor)
+$usuarios = objeto::get_objeto('usuario')->consultar_varios($condicao, array('nome'));
 imprimir_usuarios($usuarios);
 
 
 
 // Exemplo 2: Consultar usuarios pela primeira condicao checando tambem se o login
 //            comeca com 'r' e se esta' no grupo de administradores
-$condicao2 = condicao_sql::montar('login', 'LIKE', 'r%', false);
-$condicao3 = condicao_sql::montar('grupos:cod_grupo', '=', COD_ADMIN, false);
+$condicao2 = condicao_sql::montar('login', 'LIKE', 'r%');
+$condicao3 = condicao_sql::montar('grupos:cod_grupo', '=', COD_ADMIN);
 
 // Agrupar as condicoes com AND:
 $vt_condicoes = array($condicao, $condicao2, $condicao3);
 $condicao_and = condicao_sql::sql_and($vt_condicoes);
 
-$usuarios = objeto::get_objeto('usuario')->consultar_varios($condicao_and);
+$usuarios = objeto::get_objeto('usuario')->consultar_varios($condicao_and, array('nome'));
 imprimir_usuarios($usuarios);
 
 
 // Exemplo 3: Obter o complemento da primeira condicao
 $condicao_complemento = condicao_sql::sql_not($condicao);
-$usuarios = objeto::get_objeto('usuario')->consultar_varios($condicao_complemento);
+$usuarios = objeto::get_objeto('usuario')->consultar_varios($condicao_complemento, array('nome'));
 imprimir_usuarios($usuarios);
 
 
 
+//
+//     Imprime a lista de usuarios informada
+//
 function imprimir_usuarios(&$usuarios) {
+// Array[usuario] $usuarios: vetor de usuarios a serem impressos
+//
     static $i = 1;
     echo '<h1>Lista '.($i++).':</h1>';
     if (count($usuarios)) {

@@ -4,10 +4,10 @@
 // Descricao: Classe que identifica o Navegador e o SO
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.7
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.11
 // Data: 04/06/2007
-// Modificado: 14/07/2009
+// Modificado: 10/12/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -55,11 +55,10 @@ final class user_agent {
     static public function get_dados($user_agent) {
     // String $user_agent: user agent obtido pela requisicao HTTP ao servidor
     //
-        $classe = __CLASS__;
-        $ua = new $classe($user_agent);
+        $ua = new self($user_agent);
 
         $obj = new stdClass();
-        foreach (get_class_vars($classe) as $atributo => $valor) {
+        foreach (get_class_vars(__CLASS__) as $atributo => $valor) {
             $obj->$atributo = $ua->__get($atributo);
         }
         return $obj;
@@ -99,28 +98,27 @@ final class user_agent {
             $obj = get_browser($this->user_agent);
 
             // Se e' um buscador
-            if (isset($obj->crawler) && $obj->crawler) {
-                $agent->css        = '0';
-                $agent->javascript = '0';
-                $agent->movel      = '0';
+            if (property_exists($obj, 'crawler') && $obj->crawler) {
+                $this->css        = '0';
+                $this->javascript = '0';
+                $this->movel      = '0';
 
             // Se e' um navegador
             } else {
-
-                if (isset($obj->suportscss)) {
-                    $agent->css = $obj->suportscss ? '1' : '0';
+                if (property_exists($obj, 'supportscss')) {
+                    $this->css = $obj->supportscss ? '1' : '0';
                 } else {
-                    $agent->css = '1';
+                    $this->css = '1';
                 }
-                if (isset($obj->javascript)) {
-                    $agent->javascript = $obj->javascript ? '1' : '0';
+                if (property_exists($obj, 'javascript')) {
+                    $this->javascript = $obj->javascript ? '1' : '0';
                 } else {
-                    $agent->javascript = '1';
+                    $this->javascript = '1';
                 }
-                if (isset($obj->ismobiledevice)) {
-                    $agent->movel = $obj->ismobiledevice ? '1' : '0';
+                if (property_exists($obj, 'ismobiledevice')) {
+                    $this->movel = $obj->ismobiledevice ? '1' : '0';
                 } else {
-                    $agent->movel = '0';
+                    $this->movel = '0';
                 }
             }
 
@@ -342,7 +340,8 @@ final class user_agent {
                              'Windows XP'     => 'XP',
                              'Windows NT 5.2' => '.NET 2003',
                              'WinNT5.2'       => '.NET 2003',
-                             'Windows NT 6.0' => 'Vista'
+                             'Windows NT 6.0' => 'Vista',
+                             'Windows NT 6.1' => '7'
                             );
             $this->versao_so = $this->versao($versoes);
 
@@ -440,7 +439,7 @@ final class user_agent {
             if (count($vt) < 2) {
                 return '';
             }
-            if ($pos = strpos($vt[1], $b)) {
+            if (($pos = strpos($vt[1], $b)) !== false) {
                 return trim(substr($vt[1], 0, $pos));
             }
         }

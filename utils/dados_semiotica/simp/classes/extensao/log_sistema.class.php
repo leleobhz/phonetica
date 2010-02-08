@@ -4,10 +4,10 @@
 // Descricao: Classe Log do Sistema
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rpmoreira@tecnolivre.com.br
+// Versao: 1.0.0.10
 // Data: 05/09/2007
-// Modificado: 01/06/2008
+// Modificado: 08/12/2009
 // Copyright (C) 2007  Rodrigo Pereira Moreira
 // License: LICENSE.TXT
 //
@@ -24,7 +24,7 @@ final class log_sistema extends log_sistema_base {
     // String $entidade: nome da entidade que gerou a opeacao
     // String $detalhes: detalhes da operacao ealizada
     //
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'localhost';
+        $ip = self::get_ip_real();
 
         $detalhes = texto::substr($detalhes, 0, 255);
         $this->set_atributo('cod_usuario',  $cod_usuario);
@@ -51,6 +51,21 @@ final class log_sistema extends log_sistema_base {
             return strftime(LOG_SISTEMA_FORMATO_DATA, $this->get_atributo($nome_atributo));
         }
         return parent::exibir_atributo($nome_atributo);
+    }
+
+
+    //
+    //     Obtem o IP real do usuario
+    //
+    public static function get_ip_real() {
+        if (array_key_exists('HTTP_CLIENT_IP', $_SERVER)) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } elseif (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+            return $_SERVER['REMOTE_ADDR'];
+        }
+        return '0.0.0.0';
     }
 
 }//class

@@ -4,7 +4,7 @@
 // Descricao: Arquivo para inserir os dados do evento
 // Autor: Rodrigo Pereira Moreira && Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rpmoreira@tecnolivre.ufla.br
+// E-mail: rpmoreira@tecnolivre.com.br
 // Versao: 1.0.0.8
 // Data: 09/08/2007
 // Modificado: 09/06/2009

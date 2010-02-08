@@ -4,7 +4,7 @@
 // Descricao: Pagina de estatisticas sobre navegadores utilizados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.6
 // Data: 09/11/2007
 // Modificado: 19/02/2009

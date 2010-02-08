@@ -4,7 +4,7 @@
 // Descricao: Script de Instalacao dos Usuarios
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 05/09/2007
 // Modificado: 06/07/2008
@@ -46,7 +46,7 @@ function instalar_usuario(&$erros) {
     $u->nome  = 'Gerente';
     $u->login = 'gerente';
     $u->senha = 'gerente';
-    $u->email = 'gerente@semiofon.org';
+    $u->email = 'gerente@tecnolivre.com.br';
     if (!$u->salvar()) {
         $r = false;
         $erros[] = $u->get_erros();

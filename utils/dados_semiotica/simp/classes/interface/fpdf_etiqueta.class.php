@@ -4,10 +4,10 @@
 // Descricao: Extensao da classe fpdf_table para impressao de etiquetas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.0
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.2
 // Data: 01/10/2008
-// Modificado: 06/10/2008
+// Modificado: 28/10/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -40,6 +40,12 @@ abstract class fpdf_etiqueta extends fpdf_table {
     // Float $x: posicao X do topo esquerdo da etiqueta
     // Float $y: posicao Y do topo esquerdo da etiqueta
     //
+
+
+    //
+    //     Obtem a unidade usada pelo usuario
+    //
+    abstract public function get_unidade_usuario();
 
 
 /// @ METODOS QUE PODEM SER SOBRECARREGADOS
@@ -91,6 +97,8 @@ abstract class fpdf_etiqueta extends fpdf_table {
             return array('Letter', 'P', 'mm', 4, 15, 48.000, 17.000, 44.000, 17.000, 13.700, 12.000);
         case '3095': // 85,73 x 59,27 mm
             return array('Letter', 'P', 'mm', 2, 4, 96.300, 59.300, 85.700, 59.300, 16.700, 21.200);
+        case '7023': // 70,00 x 23,80 mm
+            return array(array(167.5, 304.5), 'P', 'mm', 2, 12, 73.600, 25.400, 70.000, 23.800, 11.000, 00.000);
         case 'A4047': // 150 x 49 mm
             return array('A4', 'P', 'mm', 1, 5, 150.000, 50.000, 150.000, 50.000, 29.700, 24.000);
         case 'A4048': // 31 x 17 mm
@@ -100,6 +108,28 @@ abstract class fpdf_etiqueta extends fpdf_table {
 //            return array('Letter', 'P', 'mm', col, lin, dw, dh, w, h, ml, mt);
         }
         $this->Error('Tipo de etiqueta invalido: '.$tipo);
+    }
+
+
+    //
+    //     Retorna os nomes dos tipos de etiquetas conhecidas
+    //
+    public static function get_tipos_etiquetas() {
+        return array('3080',
+                     '3081',
+                     '3082',
+                     '3083',
+                     '3084',
+                     '3085',
+                     '3086',
+                     '3087',
+                     '3088',
+                     '3089',
+                     '3095',
+                     '7023',
+                     'A4047',
+                     'A4048'
+                     );
     }
 
 
@@ -143,16 +173,32 @@ abstract class fpdf_etiqueta extends fpdf_table {
     //
     //     Construtor padrao
     //
-    final public function __construct($tipo, $unidade = 'mm') {
+    final public function __construct($tipo) {
     // String $tipo: nome do tipo de etiqueta a ser buscado no metodo get_medidas
-    // String $unidade: unidade de medida usado para exibir uma etiqueta
     //
+        $medidas = $this->get_medidas_tipo($tipo);
+        $unidade = $this->get_unidade_usuario();
+
         $this->tipo    = $tipo;
-        $this->medidas = $this->get_medidas_tipo($tipo);
+        $this->medidas = $medidas;
+
+        if ($unidade != $this->unidade) {
+            $conversao = self::calcular_conversao($this->unidade, $unidade);
+            if (is_array($this->papel)) {
+                list($largura_papel, $altura_papel) = $this->papel;
+                $largura_papel *= $conversao;
+                $altura_papel *= $conversao;
+                $medidas[0] = array($largura_papel, $altura_papel);
+                $this->medidas = $medidas;
+            }
+        } else {
+            $conversao = 1.0;
+        }
+
         parent::__construct($this->orientacao, $unidade, $this->papel);
         $this->SetMargins(0, 0, 0);
         $this->SetAutoPageBreak(false, 0);
-        $this->conversao = $this->calcular_conversao();
+        $this->conversao = $conversao;
     }
 
 
@@ -386,14 +432,15 @@ abstract class fpdf_etiqueta extends fpdf_table {
     //     Calcula a constante de conversao da unidade de medidas da etiqueta para
     //     a unidade de escolha do usuario.
     //
-    private function calcular_conversao() {
+    private static function calcular_conversao($unidade_etiquetas, $unidade_usuario) {
+    // String $unidade_etiquetas: unidade usada pela etiqueta
+    // String $unidade_usuario: unidade usada pelo usuario
+    //
         $vt = array('pt' => 1,
                     'mm' => 72 / 25.4,
                     'cm' => 72 / 2.54,
                     'in' => 72);
 
-        $unidade_etiquetas = $this->unidade;
-        $unidade_usuario   = $this->unit;
         return (float)$vt[$unidade_etiquetas] / (float)$vt[$unidade_usuario];
     }
 

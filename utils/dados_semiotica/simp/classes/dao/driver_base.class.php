@@ -4,10 +4,10 @@
 // Descricao: Classe base de conexoes com Bancos de Dados
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.10
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.11
 // Data: 17/04/2008
-// Modificado: 06/07/2009
+// Modificado: 19/10/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -17,6 +17,9 @@ define('DRIVER_BASE_READ_UNCOMMITTED', 1);
 define('DRIVER_BASE_READ_COMMITTED',   2);
 define('DRIVER_BASE_REPEATABLE_READ',  3); // Padrao
 define('DRIVER_BASE_SERIALIZABLE',     4);
+
+// Indicacao do modo de transacao padrao
+define('DRIVER_BASE_MODO_PADRAO',      DRIVER_BASE_REPEATABLE_READ);
 
 abstract class driver_base {
     protected $conexao           = false;    // ID da conexao estabelecida
@@ -136,7 +139,7 @@ abstract class driver_base {
     //
     //     Inicia uma transacao
     //
-    abstract public function inicio_transacao($modo = DRIVER_BASE_REPEATABLE_READ);
+    abstract public function inicio_transacao($modo = DRIVER_BASE_MODO_PADRAO);
     // Int $modo: modo de transacao
     //
 
@@ -363,7 +366,7 @@ abstract class driver_base {
         } else {
 //if (headers_sent()) {
 //echo '<p style="overflow: auto; border: 1px dotted #000000; font-family: monospace; background-color: #EEEEEE; color: #660000; padding: 1em">['.self::$instrucoes.'] '.texto::codificar($sql).'</p>';
-//$f = fopen('/tmp/sql', 'a');fputs($f, $sql."\n");fclose($f);
+//file_put_contents('/tmp/sql', $sql.";\n", FILE_APPEND);
 //}
             $resultado = $this->query($sql);
             self::$instrucoes += 1;

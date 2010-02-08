@@ -4,10 +4,10 @@
 // Descricao: Classe Abstrata Objeto (classe base para as entidades do sistema)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.2.4
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.3.4.26
 // Data: 06/08/2007
-// Modificado: 10/09/2009
+// Modificado: 04/02/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -524,8 +524,9 @@ abstract class objeto implements Iterator {
         foreach (self::$instancias as $classe => $instancias) {
             foreach ($instancias as $codigo => $instancia) {
                 if ($instancia->referencias == 0) {
-                    self::remover_instancia($classe, $codigo);
-                    ++$quantidade;
+                    if (self::remover_instancia($classe, $codigo)) {
+                        ++$quantidade;
+                    }
                 }
             }
         }
@@ -562,13 +563,18 @@ abstract class objeto implements Iterator {
     // String $classe: nome da classe da instancia
     // Int $codigo: codigo unico da instancia
     //
+        // Nao precisa remover instancias singleton (ocupa muito pouco de memoria)
+        if (self::$definicoes[$classe]->singleton) {
+            return false;
+        }
+
+        // Checar numero de instancias
         if (isset(self::$instancias[$classe][$codigo])) {
             $referencias = self::$instancias[$classe][$codigo]->referencias;
-            if ($referencias > 0) {
-                trigger_error('Apagando instancia que possui '.$referencias.' referencias (classe '.$classe.' / codigo '.$codigo.')', E_USER_NOTICE);
+            if ($referencias == 0) {
+                unset(self::$instancias[$classe][$codigo]);
+                return true;
             }
-            unset(self::$instancias[$classe][$codigo]);
-            return true;
         }
         return false;
     }
@@ -753,10 +759,11 @@ XML;
     //
     //     Construtor padrao, que consulta um objeto por uma chave e valor
     //
-    final public function __construct($chave = false, $valor = false, $campos = false) {
+    final public function __construct($chave = false, $valor = false, $campos = false, $consultar_memoria = true) {
     // String || Bool $chave: chave da busca ou false para usar a chave primaria
     // Mixed $valor: valor da busca (false para nao consultar nada)
     // Array[String] || Bool $campos: vetor de atributos simples ou implicitos desejados (true = todos | false = apenas PK)
+    // Bool $consultar_memoria: indica se deve consultar primeiro na memoria (lista de instancias)
     //
         // Definir dados gerais da entidade
         // (Metodo que chama o metodo criar_entidade)
@@ -767,9 +774,9 @@ XML;
         // Consultar a entidade pela chave e valor
         if (self::$dao->carregou('objeto')) {
             if ($this->singleton()) {
-                $this->consultar('', 1, true);
+                $this->consultar('', 1, true, null, $consultar_memoria);
             } elseif ($valor !== false) {
-                $this->consultar($chave, $valor, $campos);
+                $this->consultar($chave, $valor, $campos, null, $consultar_memoria);
             }
         }
     }
@@ -858,10 +865,11 @@ XML;
     //
     //     Obtem um objeto pai especificando-se o nome da classe pai
     //
-    final public function get_pai($classe_pai, $atributo = false, $campos = false) {
+    final public function get_pai($classe_pai, $atributo = false, $campos = false, $consultar_memoria = true) {
     // String $classe_pai: nome da classe pai
     // String || Bool $atributo: nome do atributo do pai que aponta para um objeto da classe corrente (false para usar o nome da chave primaria da classe corrente)
     // Array[String] || Bool $campos: vetor de atributos simples ou implicitos desejados (true = todos | false = apenas PK)
+    // Bool $consultar_memoria: indica se deve consultar primeiro da memoria (lista de instancias)
     //
         // Criar instancia do objeto pai
         $classe_pai = (string)$classe_pai;
@@ -887,7 +895,7 @@ XML;
         }
 
         // Consultar o pai pelo valor da chave do filho
-        $pai->consultar($atributo, $this->get_valor_chave(), $campos);
+        $pai->consultar($atributo, $this->get_valor_chave(), $campos, null, $consultar_memoria);
         if (!$pai->existe()) {
             $pai->limpar_objeto();
         }
@@ -1175,8 +1183,7 @@ XML;
 
         // Se esta' atribuindo um objeto relacionado
         if ($this->possui_rel_uu($nome_atributo)) {
-            $classe_objeto = 'objeto';
-            if (!($valor instanceof $classe_objeto)) {
+            if (!($valor instanceof self)) {
                 trigger_error('Tipo invalido de valor "'.util::get_tipo($valor).'" (esperado um objeto da classe objeto)', E_USER_ERROR);
             }
             $def = $this->get_definicao_rel_uu($nome_atributo);
@@ -1363,6 +1370,8 @@ XML;
     // String $prefixo: prefixo usado antes de cada atributo
     // Array[String] $remover: nome dos atributos que nao se deseja no resultado
     //
+        trigger_error('Use a classe filtro_atributo ao inves do metodo get_atributos_prefixo', E_USER_DEPRECATED);
+
         $atributos = array();
         if (!is_array($remover)) {
             $remover = array();
@@ -1570,7 +1579,7 @@ XML;
     //
     //     Converte um vetor com elementos na notacao objeto:atributo para um vetor hierarquico
     //
-    final public function converter_notacao_vetor($vetor) {
+    final public static function converter_notacao_vetor($vetor) {
     // Array[String] $vetor: vetor com nomes de atributos na notacao objeto:atributo
     //
         $novo = array();
@@ -1579,8 +1588,9 @@ XML;
             if ($pos !== false) {
                 $vt_atributo = explode(':', $atributo);
                 $ultimo = array_pop($vt_atributo);
-                $php = '$novo["'.str_replace(':', '"]["', implode(':', $vt_atributo)).'"][] = \''.$ultimo.'\';';
-                eval($php);
+                util::definir_vetor_nivel($novo, array_merge($vt_atributo, array(null)), $ultimo);
+                //$php = '$novo["'.str_replace(':', '"]["', implode(':', $vt_atributo)).'"][] = \''.$ultimo.'\';';
+                //eval($php);
             } else {
                 $novo[] = $atributo;
             }
@@ -1717,7 +1727,7 @@ XML;
                     $campo = $valor;
 
                     // Se o valor veio no objeto
-                    if (isset($valores->$campo)) {
+                    if (property_exists($valores, $campo)) {
 
                         if ($sobrescrever) {
                             $r = $this->__set($campo, $valores->$campo) && $r;
@@ -1829,6 +1839,9 @@ XML;
     // Mixed $valor_chave: valor da chave
     //
         if (!$valor_chave) {
+            if ($this->instancia->flag_bd) {
+                return true;
+            }
             trigger_error('O valor da chave nao pode ser nulo', E_USER_WARNING);
             return false;
         }
@@ -1945,13 +1958,15 @@ XML;
 
                 // Se e' um atributo simples ou implicito
                 if ($this->possui_atributo($campo) || $this->possui_atributo_implicito($campo)) {
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->__get($campo);';
-                    eval($php);
+                    util::definir_atributo_nivel($obj, explode(':', $campo), $this->__get($campo));
+                    //$php = '$obj->'.str_replace(':', '->', $campo).' = $this->__get($campo);';
+                    //eval($php);
 
                 // Se e' um relacionamento 1:1
                 } elseif ($this->possui_rel_uu($campo)) {
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_objeto_rel_uu($campo)->get_dados();';
-                    eval($php);
+                    util::definir_atributo_nivel($obj, explode(':', $campo), $this->get_objeto_rel_uu($campo)->get_dados());
+                    //$php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_objeto_rel_uu($campo)->get_dados();';
+                    //eval($php);
 
                 // Se e' um relacionamento 1:N
                 } elseif ($this->possui_rel_un($campo)) {
@@ -1962,14 +1977,17 @@ XML;
                             $vt_objeto[$chave] = $item->get_dados();
                         }
                     }
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $vt_objeto;';
-                    eval($php);
+                    util::definir_atributo_nivel($obj, explode(':', $campo), $vt_objeto);
+                    //$php = '$obj->'.str_replace(':', '->', $campo).' = $vt_objeto;';
+                    //eval($php);
+
                     unset($vt_objeto, $vt_original);
 
                 // Se e' um atributo auxiliar
                 } elseif ($this->possui_auxiliar($campo)) {
-                    $php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_auxiliar($campo);';
-                    eval($php);
+                    util::definir_atributo_nivel($obj, explode(':', $campo), $this->get_auxiliar($campo));
+                    //$php = '$obj->'.str_replace(':', '->', $campo).' = $this->get_auxiliar($campo);';
+                    //eval($php);
                 }
             }
 
@@ -2007,56 +2025,83 @@ XML;
     //
     //     Adiciona um atributo simples na definicao da classe entidade
     //
-    final protected function adicionar_atributo(&$atributo, $classe = false) {
+    final protected function adicionar_atributo($atributo, $classe = false) {
     // Object $atributo: objeto do tipo atributo
+    // String $classe: nome da classe original do atributo
+    //
+
+        // Checagem de consistencia
+        if (!DEVEL_BLOQUEADO && !$this->validar_integridade_atributo($atributo, $classe)) {
+            return false;
+        }
+        if (!$classe) {
+            $classe = $this->get_classe();
+        }
+        $atributo->set_classe($classe);
+
+        // Incluir na lista de atributos da classe
+        $this->definicao->atributos[$atributo->nome] = $atributo;
+
+        // Se e' a chave PK
+        if ($atributo->chave == 'PK') {
+            $this->definicao->tabela->chave = $atributo->nome;
+        }
+
+        // Definir valores iniciais do atributo da instancia
+        $this->set_flag_mudanca($atributo->nome, false);
+    }
+
+
+    //
+    //     Verifica a integridade do atributo a ser inserido na classe
+    //
+    private function validar_integridade_atributo($atributo, $classe) {
+    // atributo $atributo: definicao do atributo a ser inserido na classe
     // String $classe: nome da classe original do atributo
     //
         $classe_atributo = 'atributo';
         if (!($atributo instanceof $classe_atributo)) {
             trigger_error('Tipo invalido do atributo ("'.gettype($atributo).'") na classe "'.$this->get_classe().'"', E_USER_ERROR);
+            return false;
         }
 
         // Classe do atributo
         if ($classe) {
             try {
                 simp_autoload($classe);
-                $atributo->set_classe($classe);
             } catch (Exception $e) {
                 trigger_error('A classe '.$classe.' nao existe ou possui erros', E_USER_ERROR);
-                return;
+                return false;
             }
-        } else {
-            $atributo->set_classe($this->get_classe());
         }
 
         // Obter nome do atributo
         $nome = $atributo->nome;
         if (empty($nome)) {
             trigger_error('Um dos atributos da classe "'.$this->get_classe().'" nao possui  nome', E_USER_ERROR);
+            return false;
         }
 
         // Se nao possui o atributo
         if (!$this->possui_atributo($nome)) {
-            $this->definicao->atributos[$nome] = $atributo;
             if ($atributo->chave == 'PK') {
                 if (!$this->definicao->tabela->chave) {
-                    $this->definicao->tabela->chave = $nome;
                     if (!is_null($atributo->padrao)) {
-                        trigger_error('A chave primaria da classe "'.$this->get_classe().'" nao pode ter valor padrao', E_USER_WARNING);
+                        trigger_error('A chave primaria da classe "'.$this->get_classe().'" nao pode ter valor padrao', E_USER_ERROR);
+                        return false;
                     }
                 } else {
                     trigger_error('Foi definida mais de uma chave primaria na classe "'.$this->get_classe().'"', E_USER_ERROR);
+                    return false;
                 }
             }
 
         // Se o atributo ja existe
         } else {
             trigger_error('O atributo "'.$nome.'" foi definido mais de uma vez na classe "'.$this->get_classe().'"', E_USER_ERROR);
-            return;
+            return false;
         }
-
-        // Definir valores iniciais do atributo da instancia
-        $this->set_flag_mudanca($nome, false);
+        return true;
     }
 
 
@@ -2069,32 +2114,8 @@ XML;
     // String $metodo: nome do metodo que retorna o valor do atributo (o metodo nao recebe parametros)
     // Array[String] $atributos_necessarios: vetor de atributos necessarios para montar o atributo implicito (apenas para otimizar consultas)
     //
-        if (empty($nome) || empty($descricao)) {
-            trigger_error('O nome/descricao do atributo implicito nao pode ser vazio', E_USER_ERROR);
+        if (!DEVEL_BLOQUEADO && !$this->validar_integridade_atributo_implicito($nome, $descricao, $metodo, $atributos_necessarios)) {
             return false;
-        }
-
-        // Se nao existe o metodo
-        if (!method_exists($this, $metodo)) {
-            trigger_error('O metodo "'.$metodo.'" nao existe na classe "'.$this->get_classe().'"', E_USER_ERROR);
-
-        // Se o metodo nao tem visibilidade adequada
-        } elseif (!is_callable(array($this, $metodo))) {
-            trigger_error('O metodo "'.$metodo.'" da classe "'.$this->get_classe().'" precisa ser publico', E_USER_ERROR);
-        }
-
-        if (is_array($atributos_necessarios)) {
-            $novo = array();
-            foreach ($atributos_necessarios as $atributo) {
-                if ($this->possui_atributo($atributo) ||
-                    $this->possui_atributo_implicito($atributo) ||
-                    $this->possui_rel_uu($atributo)) {
-                    $novo[] = $atributo;
-                } else {
-                    trigger_error('A classe "'.$this->get_classe().'" nao possui o atributo "'.$atributo.'" (especifique os atributos simples antes dos implicitos)', E_USER_ERROR);
-                }
-            }
-            $atributos_necessarios = array_unique($novo);
         }
 
         // Montar os dados do atributo implicito
@@ -2109,21 +2130,68 @@ XML;
 
 
     //
+    //     Verifica a integridade do atributo implicito a ser inserido na classe
+    //
+    private function validar_integridade_atributo_implicito($nome, $descricao, $metodo, $atributos_necessarios) {
+    // String $nome: nome do atributo implicito gerado no objeto
+    // String $descricao: nome do atributo para o usuario
+    // String $metodo: nome do metodo que retorna o valor do atributo (o metodo nao recebe parametros)
+    // Array[String] $atributos_necessarios: vetor de atributos necessarios para montar o atributo implicito (apenas para otimizar consultas)
+    //
+        if (empty($nome) || empty($descricao)) {
+            trigger_error('O nome/descricao do atributo implicito nao pode ser vazio', E_USER_ERROR);
+            return false;
+        }
+
+        // Se nao existe o metodo
+        if (!method_exists($this, $metodo)) {
+            trigger_error('O metodo "'.$metodo.'" nao existe na classe "'.$this->get_classe().'"', E_USER_ERROR);
+            return false;
+
+        // Se o metodo nao tem visibilidade adequada
+        } elseif (!is_callable(array($this, $metodo))) {
+            trigger_error('O metodo "'.$metodo.'" da classe "'.$this->get_classe().'" precisa ser publico', E_USER_ERROR);
+            return false;
+        }
+
+        if (is_array($atributos_necessarios)) {
+            foreach ($atributos_necessarios as $atributo) {
+                if (!$this->possui_atributo($atributo) &&
+                    !$this->possui_atributo_implicito($atributo) &&
+                    !$this->possui_rel_uu($atributo)) {
+                    trigger_error('A classe "'.$this->get_classe().'" nao possui o atributo "'.$atributo.'" (especifique os atributos simples antes dos implicitos)', E_USER_ERROR);
+                    return false;
+                }
+            }
+        } elseif (is_string($atributos_necessarios)) {
+            trigger_error('Os atributos necessarios do atributo implicito "'.$nome.'" da classe "'.$this->get_classe().'" precisa ser um vetor', E_USER_ERROR);
+            return false;
+        }
+        return true;
+    }
+
+
+    //
     //     Adicionar chave unica composta
     //
     final protected function adicionar_chave_unica_composta($campos) {
     // Array[String] $campos: vetor de campos simples que foram a chave unica composta
     //
+        // Obter a posicao dos campos chave no vetor de atributos
         $atributos = array_keys($this->get_atributos());
         $vt_indice_campo = array();
         foreach ($campos as $campo) {
-            if ($this->possui_atributo($campo)) {
-                $vt_indice_campo[] = array_search($campo, $atributos);
-            } else {
-                trigger_error('As chaves unicas compostas devem ser formadas por atributos simples (informado "'.$campo.'" na classe "'.$this->get_classe().'")', E_USER_WARNING);
+            $vt_indice_campo[] = array_search($campo, $atributos);
+        }
+
+        // Checar se todas os campos foram encontrados
+        if (!DEVEL_BLOQUEADO) {
+            if (in_array(false, $vt_indice_campo)) {
+                trigger_error('As chaves unicas compostas devem ser formadas por atributos simples (erro na classe "'.$this->get_classe().'" / chaves: '.implode(', ', $campos).')', E_USER_ERROR);
                 return false;
             }
         }
+
         $this->definicao->uk_compostas[] = $vt_indice_campo;
     }
 
@@ -2360,10 +2428,12 @@ XML;
     //
     //     Consulta os dados de um objeto no BD
     //
-    final public function consultar($chave, $valor, $campos = false) {
+    final public function consultar($chave, $valor, $campos = false, $flag = null, $consultar_memoria = true) {
     // String || Bool $chave: chave da consulta (false para a chave primaria)
     // Mixed $valor: valor da busca
     // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
+    // Int $flag: flag de consulta na camada DAO ou null para o valor padrao
+    // Bool $consultar_memoria: indica se deve consultar dados da memoria (lista de instancias)
     //
         // Checar se a chave de busca existe
         if (empty($chave)) {
@@ -2374,19 +2444,23 @@ XML;
         }
 
         // Chechar se o dado ja' esta' na lista de instancias (self::$instancias)
-        $this->consultar_lista_instancias($chave, $valor);
+        if ($consultar_memoria) {
+            $this->consultar_lista_instancias($chave, $valor);
+        }
 
         // Montar a condicao de consulta
-        $condicoes = condicao_sql::montar($chave, '=', $valor, false);
+        $condicoes = condicao_sql::montar($chave, '=', $valor);
 
         // Montar flag
-        $flag = OBJETO_ADICIONAR_CHAVES;
+        if ($flag === null && $consultar_memoria) {
+            $flag = OBJETO_ADICIONAR_CHAVES;
 
-        // Se esta' consultando o mesmo objeto, remover os campos consultados
-        if (self::get_modo_persistencia() == OBJETO_MODO_CONGELAR &&
-            $this->get_flag_consulta($chave) &&
-            $this->get_atributo($chave) == $valor) {
-            $flag |= OBJETO_REMOVER_CONSULTADOS;
+            // Se esta' consultando o mesmo objeto, remover os campos consultados
+            if (self::get_modo_persistencia() == OBJETO_MODO_CONGELAR &&
+                $this->get_flag_consulta($chave) &&
+                $this->get_atributo($chave) == $valor) {
+                $flag |= OBJETO_REMOVER_CONSULTADOS;
+            }
         }
 
         return $this->consultar_dao($condicoes, $campos, $flag);
@@ -2396,16 +2470,19 @@ XML;
     //
     //     Consulta os dados de um objeto no BD sob varias condicoes
     //
-    final public function consultar_condicoes($condicoes, $campos = false) {
+    final public function consultar_condicoes($condicoes, $campos = false, $flag = null) {
     // condicao_sql $condicoes: condicoes de busca
     // Array[String] || Bool $campos: campos desejados (true = todos | false = apenas PK)
+    // Int $flag: flag de consulta na camada DAO ou null para o valor padrao
     //
         // Chechar se o dado ja' esta' na lista de instancias (self::$entidades)
-        //TODO: ver uma forma de fazer isso para otimizar
+        //TODO: ver uma forma de fazer isso para otimizar (e colocar um parametro $consultar_memoria = true)
         //$this->consultar_lista_instancias_condicoes($condicoes);
 
         // Montar flag
-        $flag = OBJETO_ADICIONAR_CHAVES;
+        if ($flag === null) {
+            $flag = OBJETO_ADICIONAR_CHAVES;
+        }
 
         return $this->consultar_dao($condicoes, $campos, $flag);
     }
@@ -2432,10 +2509,10 @@ XML;
 
         // Se possui atributos simples a serem consultados
         if (count($vt_campos)) {
-            $retorno = self::$dao->select($this, $vt_campos, $condicoes, null, null, 1);
+            $iterador = self::$dao->select_iterador($this, $vt_campos, $condicoes, null, 1);
 
             // Se nao consultou devido um erro de BD
-            if (is_bool($retorno)) {
+            if (is_bool($iterador)) {
                 switch ($this->get_genero()) {
                 case 'M':
                     $this->erros[] = 'Erro ao consultar os dados do '.$this->get_entidade();
@@ -2450,7 +2527,7 @@ XML;
                 return false;
 
             // Se consultou, mas o resultado e' um conjunto vazio
-            } elseif (count($retorno) == 0) {
+            } elseif ($iterador->size() == 0) {
 
                 // Se o objeto ja' existe: apagar
                 if ($this->existe()) {
@@ -2459,8 +2536,8 @@ XML;
 
                 return false;
             }
-            $obj = array_pop($retorno);
-            unset($retorno);
+            $obj = $iterador->current();
+            unset($iterador);
 
             // Se o objeto ja' existe
             if ($this->existe()) {
@@ -2596,7 +2673,7 @@ XML;
 
                 // Atributo implicito
                 } elseif ($this->possui_atributo_implicito($campo)) {
-                    $pos = strpos($campo, ':');
+                    $pos = strrpos($campo, ':');
                     $nome_obj = ($pos !== false) ? substr($campo, 0, $pos).':' : '';
                     $def = $this->get_definicao_implicito($campo);
                     if (is_array($def->atributos) && count($def->atributos)) {
@@ -2678,9 +2755,9 @@ XML;
     // String || Bool || Array[String => Bool] $ordem: campo usado para ordenacao ou false para chave PK ou vetor de campos apontando para o tipo de ordenacao (true = crescente / false = decrescente)
     //
         if (is_string($ordem)) {
-            $ordem = array($ordem => 1);
+            $ordem = array($ordem => true);
         } elseif (is_bool($ordem)) {
-            $ordem = array($this->get_chave() => 1);
+            $ordem = array($this->get_chave() => true);
         } elseif (!is_array($ordem)) {
             if (!is_null($ordem)) {
                 trigger_error('Tipo invalido "'.gettype($ordem).'"', E_USER_WARNING);
@@ -2810,12 +2887,19 @@ XML;
     //
     //     Consulta os atributos simples e implicitos caso nao tenham sido consultados (para vetor utilize a consultar_vetor_rel_un)
     //
-    final public function consultar_campos($campos) {
+    final public function consultar_campos($campos, $flag = null, $consultar_memoria = true) {
     // Array[String] || Bool $campos: vetor de campos desejados (true = todos | false = apenas PK)
+    // Int $flag: flag de consulta na camada DAO ou null para usar o valor padrao
+    // Bool $consultar_memoria: indica se deve consultar dados da memoria (lista de instancias)
     //
-        if ($this->existe()) {
+        if (!$this->existe()) {
+            trigger_error('O objeto da classe "'.$this->get_classe().'" nao pode consultar campos sem existir', E_USER_WARNING);
+            return false;
+        }
 
-            // Campos a serem consultados
+        // Montar flag de consulta
+        if ($flag === null) {
+            
             switch (self::get_modo_persistencia()) {
             case OBJETO_MODO_CONGELAR:
                 $flag = OBJETO_REMOVER_CONSULTADOS | OBJETO_ADICIONAR_CHAVES;
@@ -2824,23 +2908,23 @@ XML;
                 $flag = OBJETO_ADICIONAR_CHAVES;
                 break;
             }
-            $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores, $flag);
-            $vt_campos = array_merge($vt_campos, $objetos, $vetores);
-
-            return $this->consultar($this->get_chave(), $this->get_valor_chave(), $vt_campos);
         }
-        trigger_error('O objeto nao pode consultar campos sem existir', E_USER_WARNING);
-        return false;
+
+        // Campos a serem consultados
+        $vt_campos = $this->get_campos_reais($campos, $objetos, $vetores, $flag);
+        $vt_campos = array_merge($vt_campos, $objetos, $vetores);
+        return $this->consultar($this->get_chave(), $this->get_valor_chave(), $vt_campos, $flag, $consultar_memoria);
     }
 
 
     //
     //     Define o valor de um atributo simples, passando por uma filtragem e validacao
     //
-    final public function set_atributo($nome_atributo, $valor, $filtrar = true) {
+    final public function set_atributo($nome_atributo, $valor, $filtrar = true, $validar = true) {
     // String $nome_atributo: nome do atributo
     // Mixed $valor: valor do atributo
     // Bool $filtrar: flag indicando se o valor deve ser filtrado ou nao
+    // Bool $validar: flag indicando se o valor deve ser validado ou nao
     //
         // Se usou a notacao objeto:atributo
         if (strpos($nome_atributo, ':') !== false) {
@@ -2849,10 +2933,11 @@ XML;
         }
 
         // Se nao validou: abortar
-        if (!$this->validar_atributo($nome_atributo, $valor)) {
+        if ($validar && !$this->validar_atributo($nome_atributo, $valor)) {
             return false;
         }
 
+        // Se precisa filtrar
         if ($filtrar) {
             $valor = $this->filtrar_valor($nome_atributo, $valor);
         }
@@ -3072,8 +3157,16 @@ XML;
     //
         $vt1 = self::parse_data($data1, false);
         $vt2 = self::parse_data($data2, false);
-        return (float)sprintf('%04d%02d%02d%02d%02d%02d', $vt1['ano'], $vt1['mes'], $vt1['dia'], $vt1['hora'], $vt1['minuto'], $vt1['segundo']) - 
-               (float)sprintf('%04d%02d%02d%02d%02d%02d', $vt2['ano'], $vt2['mes'], $vt2['dia'], $vt2['hora'], $vt2['minuto'], $vt2['segundo']);
+
+        $vt_comparacoes = array('ano', 'mes', 'dia', 'hora', 'minuto', 'segundo');
+        foreach ($vt_comparacoes as $componente) {
+            if ($vt1[$componente] > $vt2[$componente]) {
+                return 1;
+            } elseif ($vt1[$componente] < $vt2[$componente]) {
+                return -1;
+            }
+        }
+        return 0;
     }
 
 
@@ -3266,6 +3359,18 @@ XML;
 
 
     //
+    //     Retorna se existem registros no BD com as condicoes especificadas (mais rapido que o metodo quantidade_registros)
+    //
+    final public function possui_registros($condicoes = null, $quantidade = 1) {
+    // condicao_sql $condicoes: condicoes de consulta
+    // Int $quantidade: quantidade de registros a ser verificada (retorna true se existirem pelo menos $quantidade registros)
+    //
+        $iterador = self::$dao->select_iterador($this, false, $condicoes, false, 1, $quantidade - 1);
+        return ($iterador !== false) && (bool)$iterador->size();
+    }
+
+
+    //
     //     Retorna a quantidade de registro no BD com as condicoes especificadas
     //
     final public function quantidade_registros($condicoes = null) {
@@ -3276,13 +3381,13 @@ XML;
 
 
     //
-    //     Retorna se existem registros no BD com as condicoes especificadas (mais rapido que o metodo quantidade_registros)
+    //     Calcula a soma dos valores de um determinado atributo da entidade
     //
-    final public function possui_registros($condicoes = null, $quantidade = 1) {
-    // condicao_sql $condicoes: condicoes de consulta
-    // Int $quantidade: quantidade de registros a ser verificada (retorna true se existirem pelo menos $quantidade registros)
+    final public function calcular_soma($campo, $condicoes = null) {
+    // String $campo: nome do campo que sera somado
+    // condicao_sql $condicoes: condicoes da busca
     //
-        return (bool)count(self::$dao->select($this, false, $condicoes, false, false, 1, $quantidade - 1));
+        return self::$dao->select_soma($this, $campo, $condicoes);
     }
 
 
@@ -3294,24 +3399,58 @@ XML;
     // Array[String] || Bool $campos: vetor de campos desejados (true = todos; false = apenas PK)
     // condicao_sql $condicoes: condicoes da busca
     //
+        return $this->consultar_extremo('maior', $campo, $campos, $condicoes);
+    }
+
+
+    //
+    //     Consulta os dados pelo menor valor de um campo especificado
+    //
+    final public function consultar_menor($campo, $campos = false, $condicoes = null) {
+    // String $campo: nome do campo que deve ser o menor
+    // Array[String] || Bool $campos: vetor de campos desejados (true = todos; false = apenas PK)
+    // condicao_sql $condicoes: condicoes da busca
+    //
+        return $this->consultar_extremo('menor', $campo, $campos, $condicoes);
+    }
+
+
+    //
+    //     Consulta os dados dos extremos de um campo especificado
+    //
+    private function consultar_extremo($tipo_extremo, $campo, $campos, $condicoes, $consultar_memoria = true) {
+    // String $tipo_extremo: maior ou menor
+    // String $campo: nome do campo que deve ser o extremo
+    // Array[String] || Bool $campos: vetor de campos desejados (true = todos; false = apenas PK)
+    // condicao_sql $condicoes: condicoes da busca
+    // Bool $consultar_memoria: indica se deve consultar primeiro os dados na memoria (lista de instancias)
+    //
+
         // Checar se o campo testado e' um atributo simples
         if (!$this->possui_atributo($campo)) {
             trigger_error('Consulta ao maior campo precisa utilizar um atributo simples (classe "'.$this->get_classe().'" / campo "'.$campo.'")', E_USER_WARNING);
             return false;
         }
 
-        $maior = self::$dao->select_maior($this, $campo, $condicoes);
-        if ($maior === null) {
+        switch ($tipo_extremo) {
+        case 'maior':
+            $extremo = self::$dao->select_maior($this, $campo, $condicoes);
+            break;
+        case 'menor':
+            $extremo = self::$dao->select_menor($this, $campo, $condicoes);
+            break;
+        }
+        if ($extremo === null) {
             $def = $this->get_definicao_atributo($campo);
             switch ($this->get_entidade()) {
             case 'M':
-                $this->erros[] = 'Erro ao consultar o '.$this->get_entidade().' com maior '.$def->descricao;
+                $this->erros[] = 'Erro ao consultar o '.$this->get_entidade().' com '.$tipo_extremo.' '.$def->descricao;
                 break;
             case 'F':
-                $this->erros[] = 'Erro ao consultar a '.$this->get_entidade().' com maior '.$def->descricao;
+                $this->erros[] = 'Erro ao consultar a '.$this->get_entidade().' com '.$tipo_extremo.' '.$def->descricao;
                 break;
             case 'I':
-                $this->erros[] = 'Erro ao consultar '.$this->get_entidade().' com maior '.$def->descricao;
+                $this->erros[] = 'Erro ao consultar '.$this->get_entidade().' com '.$tipo_extremo.' '.$def->descricao;
                 break;
             }
             return null;
@@ -3323,7 +3462,15 @@ XML;
             $campos = array($campo);
         }
 
-        return $this->consultar($campo, $maior, $campos);
+        if ($condicoes) {
+            $vt_condicoes = array();
+            $vt_condicoes[] = condicao_sql::montar($campo, '=', $extremo);
+            $vt_condicoes[] = $condicoes;
+            $condicoes = condicao_sql::sql_and($vt_condicoes);
+            return $this->consultar_condicoes($condicoes, $campos, null);
+        }
+        $condicoes = condicao_sql::montar($campo, '=', $extremo);
+        return $this->consultar($campo, $extremo, $campos, null, $consultar_memoria);
     }
 
 
@@ -3356,10 +3503,10 @@ XML;
         $inicio = max(0, round($inicio));
 
         // Consultar no BD
-        $registros = self::$dao->select($this, $vt_campos, $condicoes, $ordem, $index, $limite, $inicio);
+        $iterador = self::$dao->select_iterador($this, $vt_campos, $condicoes, $ordem, $limite, $inicio);
 
         // Se nao conseguiu consultar
-        if (is_bool($registros)) {
+        if (is_bool($iterador)) {
             switch ($this->get_genero()) {
             case 'M':
                 $this->erros[] = 'Erro ao consultar os '.$this->get_entidade(true);
@@ -3373,16 +3520,23 @@ XML;
             }
             return false;
         }
-        $retorno = array();
+
+        // Gerar codigo especifico para guardar vetor indexado
+        if ($index) {
+            $php = '$retorno[$registro->'.str_replace(':', '->', $index).'] = clone($obj);';
+        } else {
+            $php = '$retorno[] = clone($obj);';
+        }
 
         // Desabilitar validacao para recuperar os dados do BD
         $obj = self::get_objeto($this->get_classe());
-        foreach ($registros as $i => $registro) {
+        $retorno = array();
+        foreach ($iterador as $registro) {
             $flag_bd = $obj->instancia->flag_bd;
             $obj->instancia->flag_bd = true;
             $obj->set_valores($registro);
             $obj->instancia->flag_bd = $flag_bd;
-            $retorno[$i] = clone($obj);
+            eval($php);
             $obj->limpar_objeto();
         }
 
@@ -3427,11 +3581,13 @@ XML;
             $ordem = array($campo_valor => true,
                            $campo_index => true);
             $ordem = $this->get_campos_ordem($ordem);
+        } else {
+            $ordem = $this->get_campos_ordem($ordem);
         }
 
         // Consultar no BD
-        $registros = self::$dao->select($this, $campos, $condicoes, $ordem, $campo_index, $limite, $inicio);
-        if (is_bool($registros)) {
+        $iterador = self::$dao->select_iterador($this, $campos, $condicoes, $ordem, $limite, $inicio);
+        if (is_bool($iterador)) {
             switch ($this->get_genero()) {
             case 'M':
                 $this->erros[] = 'Erro ao consultar os '.$this->get_entidade(true);
@@ -3444,7 +3600,7 @@ XML;
                 break;
             }
             return false;
-        } elseif (!count($registros)) {
+        } elseif ($iterador->size() == 0) {
             return array();
         }
 
@@ -3455,7 +3611,7 @@ XML;
         $chave  = $this->get_chave();
 
         $obj = new $classe();
-        foreach ($registros as $chave => $item) {
+        foreach ($iterador as $item) {
             $flag_bd = $obj->instancia->flag_bd;
             $obj->instancia->flag_bd = true;
             $obj->set_valores($item);
@@ -3511,10 +3667,10 @@ XML;
         $def = $this->get_definicao_rel_uu($objeto_agrupamento);
         if (!$def->forte) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', 0, false);
+                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', null);
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', 0, false);
+                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', null);
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = '[Sem '.$obj->get_entidade().']';
@@ -3524,10 +3680,10 @@ XML;
         // Percorrer os valores de cada grupo
         foreach ($grupos as $grupo) {
             if ($condicoes) {
-                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave(), false);
+                $condicao_extra = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave());
                 $condicoes_agrupamento = condicao_sql::sql_and(array($condicoes, $condicao_extra));
             } else {
-                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave(), false);
+                $condicoes_agrupamento = condicao_sql::montar($prefixo.$chave_fk, '=', $grupo->get_valor_chave());
             }
             $subvetor = $this->vetor_associativo($campo_index, $campo_valor, $condicoes_agrupamento, $ordem);
             $index = (string)$grupo->__get($campo_agrupamento);
@@ -3608,10 +3764,11 @@ XML;
     //
     //     Salva os dados da entidade no BD (realiza a insercao ou atualizacao dos dados da entidade)
     //
-    final protected function salvar_entidade($campos, $dados_entidade) {
+    private function salvar_entidade($campos, $dados_entidade) {
     // Array[String] $campos: campos a serem salvos (true salva apenas os campos modificados)
     // stdClass $dados_entidade: dados da entidade no singular, plural e genero
     //
+
         // Se ja' existem erros, nem tenta salvar
         if ($this->possui_erros()) {
             trigger_error('Nao pode salvar um objeto que ainda possui erros', E_USER_WARNING);
@@ -3626,28 +3783,37 @@ XML;
         if (!$this->existe()) {
             $set_padrao = true;
             foreach ($this->get_atributos() as $def_atributo) {
-                if (!isset($salvar_campos[$def_atributo->nome])) {
-                    if (!is_null($def_atributo->padrao)) {
-                        switch ($def_atributo->tipo) {
-                        case 'data':
-                            if ($def_atributo->padrao == 'agora') {
-                                $padrao = strftime('%d-%m-%Y-%H-%M-%S');
-                            } else {
-                                $padrao = $def_atributo->padrao;
-                            }
-                            break;
-                        default:
+                if (isset($salvar_campos[$def_atributo->nome])) {
+                    continue;
+                }
+
+                // Se possui valor padrao
+                if (!is_null($def_atributo->padrao)) {
+                    switch ($def_atributo->tipo) {
+                    case 'data':
+                        if ($def_atributo->padrao == 'agora') {
+                            $padrao = strftime('%d-%m-%Y-%H-%M-%S');
+                        } else {
                             $padrao = $def_atributo->padrao;
-                            break;
                         }
-                        $set_padrao = $this->__set($def_atributo->nome, $padrao) && $set_padrao;
-                        $salvar_campos[$def_atributo->nome] = $padrao;
-                    } elseif (!$def_atributo->pode_vazio &&
-                              $def_atributo->chave != 'PK' &&
-                              $def_atributo->chave != 'OFK') {
-                        trigger_error('O atributo "'.$def_atributo->nome.'" da classe "'.$this->get_classe().'" nao pode ser nulo, nao foi definido e nao possui valor padrao', E_USER_WARNING);
-                        return false;
+                        break;
+                    default:
+                        $padrao = $def_atributo->padrao;
+                        break;
                     }
+                    $set_padrao = $this->__set($def_atributo->nome, $padrao) && $set_padrao;
+                    $salvar_campos[$def_atributo->nome] = $padrao;
+
+                // Se e' uma chave fraca: definir como nulo
+                } elseif ($def_atributo->chave == 'OFK') {
+                    $set_padrao = $this->__set($def_atributo->nome, null) && $set_padrao;
+                    $salvar_campos[$def_atributo->nome] = null;
+
+                // Se nao pode ser vazio e nao definiu um valor
+                } elseif (!$def_atributo->pode_vazio &&
+                          $def_atributo->chave != 'PK') {
+                    trigger_error('O atributo "'.$def_atributo->nome.'" da classe "'.$this->get_classe().'" nao pode ser nulo, nao foi definido e nao possui valor padrao', E_USER_WARNING);
+                    return false;
                 }
             }
             if (!$set_padrao) {
@@ -3659,20 +3825,38 @@ XML;
         // Checar chaves unicas compostas
         if ($this->instancia->flag_unicidade && count($this->definicao->uk_compostas)) {
 
-//TODO: consultar todos os atributos que fazem parte de chaves compostas antes de realizar o foreach abaixo
-// para evitar consultas sob demanda.
-
             $atributos = array_keys($this->get_atributos());
             foreach ($this->definicao->uk_compostas as $indices_campos_uk) {
                 $classe = $this->get_classe();
                 $vt_definicoes_uk = array();
                 $vt_valores_uk    = array();
                 $vt_condicoes_uk  = array();
+                $campos_chave_unica_composta = array();
+
+                // Obter os nomes dos campos que formam a chave unica composta
                 foreach ($indices_campos_uk as $indice_campo_uk) {
                     $campo_uk = $atributos[$indice_campo_uk];
+                    $campos_chave_unica_composta[] = $campo_uk;
+                    if (isset($salvar_campos[$campo_uk])) {
+                        $mudou_chave_composta = true;
+                    }
+                }
+
+                // Se nenhum atributo que faz parte da chave composta mudou, entao nao precisa verificar
+                if (!$mudou_chave_composta) {
+                    continue;
+                }
+
+                // Consultar os campos necessarios para checar a chave unica composta
+                if ($this->existe()) {
+                    $this->consultar_campos($campos_chave_unica_composta);
+                }
+
+                // Montar as condicoes de checagem da unicidade
+                foreach ($campos_chave_unica_composta as $campo_uk) {
                     $def_campo_uk = $this->get_definicao_atributo($campo_uk);
                     $vt_definicoes_uk[] = $def_campo_uk->descricao;
-                    $vt_condicoes_uk[] = condicao_sql::montar($campo_uk, '=', $this->__get($campo_uk), false);
+                    $vt_condicoes_uk[] = condicao_sql::montar($campo_uk, '=', $this->__get($campo_uk));
                     $vt_valores_uk[] = texto::codificar($this->__get($campo_uk));
                 }
                 $condicoes_uk = condicao_sql::sql_and($vt_condicoes_uk);
@@ -3700,6 +3884,12 @@ XML;
             }
         }
 
+        // Nao inserir/alterar a chave primaria
+        if (isset($salvar_campos[$this->get_chave()])) {
+            trigger_error('Nao pode alterar a chave primaria', E_USER_NOTICE);
+            unset($salvar_campos[$this->get_chave()]);
+        }
+
         // Se foi consultado do BD, atualiza-lo (UPDATE)
         if ($this->existe()) {
 
@@ -3721,14 +3911,8 @@ XML;
                 return true;
             }
 
-            // Nao alterar a chave primaria
-            if (isset($salvar_campos[$this->get_chave()])) {
-                trigger_error('Nao pode alterar a chave primaria', E_USER_NOTICE);
-                unset($salvar_campos[$this->get_chave()]);
-            }
-
             // Atualizar usando a chave primaria
-            $condicoes = condicao_sql::montar($this->get_chave(), '=', $this->get_valor_chave(), false);
+            $condicoes = condicao_sql::montar($this->get_chave(), '=', $this->get_valor_chave());
 
             $s = self::$dao->update($this, (object)$salvar_campos, $condicoes);
 
@@ -3901,7 +4085,7 @@ XML;
     //
     //     Exclui PERMANENTEMENTE a entidade do BD (e os seus elementos filhos, dependendo do SGBD)
     //
-    final protected function excluir_entidade($dados_entidade) {
+    private function excluir_entidade($dados_entidade) {
     // stdClass $dados_entidade: dados da entidade no singular, plural e genero
     //
         // Se nao foi consultado do BD
@@ -3926,7 +4110,7 @@ XML;
 
         // Utilizar chave primaria para montar a condicao de exclusao
         $pk = $this->get_valor_chave();
-        $condicoes = condicao_sql::montar($this->get_chave(), '=', $pk, false);
+        $condicoes = condicao_sql::montar($this->get_chave(), '=', $pk);
 
         // Excluir
         $r = self::$dao->delete($this, $condicoes);
@@ -3965,17 +4149,19 @@ XML;
             $log->inserir($id_usuario, LOG_DELETE, ($r ? 0 : 1), $pk, $this->get_classe(), $detalhes);
         }
 
-        // Se excluiu com sucesso: apagar dados do objeto (menos os avisos)
+        // Se excluiu com sucesso: apagar dados do objeto (menos os avisos e auxiliares)
         if ($r) {
-            $bk_avisos = $this->avisos;
 
             // Os valores de todas as instancias que apontam para o registro devem ser apagados
             $this->instancia->valores = array();
             $this->instancia->objetos = array();
             $this->instancia->vetores = array();
 
-            $this->limpar_objeto();
-            $this->avisos = $bk_avisos;
+            //$this->limpar_auxiliares();
+            //$this->limpar_avisos();
+            $this->limpar_erros();
+            $this->limpar_instancia();
+            $this->zerar_flags();
 
             // Se a entidade esta' em cache: atualiza-la
             if (self::em_cache($this->get_classe(), $pk)) {
@@ -3990,32 +4176,34 @@ XML;
     //
     //     Realiza as operacoes de (1) pre-salvar, (2) salvar ou excluir e (3) pos-salvar utilizando uma unica transacao
     //
-    final public function salvar_completo($salvar_campos, $operacao = 'salvar') {
+    final public function salvar_completo($salvar_campos, $operacao = 'salvar', $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Array[String] $salvar_campos: campos a serem salvos
     // String $operacao: 'salvar' ou 'excluir'
+    // Int $modo_transacao: tipo de transacao
     //
         $e = new stdClass();
         $e->singular = $this->get_entidade();
         $e->plural   = $this->get_entidade(true);
         $e->genero   = $this->get_genero();
-        return $this->salvar_completo_entidade($salvar_campos, $operacao, $e);
+        return $this->salvar_completo_entidade($salvar_campos, $operacao, $e, $modo_transacao);
     }
 
 
     //
     //     Realiza as operacoes de (1) pre-salvar, (2) salvar ou excluir e (3) pos-salvar utilizando uma unica transacao
     //
-    final protected function salvar_completo_entidade($salvar_campos, $operacao, $dados_entidade) {
+    private function salvar_completo_entidade($salvar_campos, $operacao, $dados_entidade, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Array[String] $salvar_campos: campos a serem salvos
     // String $operacao: 'salvar' ou 'excluir'
     // stdClass $dados_entidade: dados da entidade no singular, plural e genero
+    // Int $modo_transacao: tipo de transacao
     //
         $salvo = true;
         $iniciou_transacao = false;
 
         // Se nao iniciou uma transacao: inicia-la
         if (!self::$em_transacao) {
-            $salvo = $salvo && self::inicio_transacao();
+            $salvo = $salvo && self::inicio_transacao($modo_transacao);
             $iniciou_transacao = true;
         }
 
@@ -4206,7 +4394,7 @@ XML;
         }
 
         // Recuperar a definicao do atributo especificado
-        $atributo = $this->get_definicao_atributo_validacao($nome_atributo);
+        $atributo = clone($this->get_definicao_atributo_validacao($nome_atributo));
 
         // Filtra-lo antes
         if ($filtro = $atributo->filtro) {
@@ -4223,11 +4411,21 @@ XML;
             }
         }
 
+        // Trocar o nome da chave pelo nome da entidade relacionada
+        switch ($atributo->chave) {
+        case 'FK':
+        case 'OFK':
+            $atributo->descricao = $this->get_entidade_rel_uu($atributo->nome, false);
+            break;
+        }
+
         $validacao = validacao::get_instancia();
 
         // Fazer a validacao Geral
         $valido = $validacao->validar_atributo($atributo, $valor, $erros);
-        $this->erros = array_merge($this->erros, $erros);
+        if (!$valido) {
+            $this->erros = array_merge($this->erros, $erros);
+        }
 
         // Fazer a validacao de unicidade
         if ($atributo->unico && $this->instancia->flag_unicidade) {
@@ -4249,13 +4447,13 @@ XML;
             // Se o atributo e' da propria classe
             if ($classe == $this->get_classe()) {
                 $valido = $valido &&
-                          call_user_func_array(array($this, $metodo), array($valor));
+                          call_user_func_array(array($this, $metodo), array($valor, $atributo));
 
             // Se o atributo e' de outra classe
             } else {
                 $outra = self::get_objeto($classe);
                 $valido = $valido &&
-                          call_user_func_array(array($outra, $metodo), array($valor));
+                          call_user_func_array(array($outra, $metodo), array($valor, $atributo));
             }
         }
         return $valido;
@@ -4280,7 +4478,7 @@ XML;
         $vt_condicoes = array();
         foreach ($campos_unicos as $campo_unico) {
             if ($this->get_flag_consulta($campo_unico)) {
-                $vt_condicoes[] = condicao_sql::montar($campo_unico, '=', $this->__get($campo_unico), false);
+                $vt_condicoes[] = condicao_sql::montar($campo_unico, '=', $this->__get($campo_unico));
             }
         }
 
@@ -4294,7 +4492,7 @@ XML;
         // Se o objeto existe, entao nao deve desconsidera-lo do retorno da consulta
         if ($this->existe()) {
             $vt_condicoes = array();
-            $vt_condicoes[] = condicao_sql::montar($this->get_chave(), '<>', $this->get_valor_chave(), false);
+            $vt_condicoes[] = condicao_sql::montar($this->get_chave(), '<>', $this->get_valor_chave());
             $vt_condicoes[] = $condicoes;
             $condicoes = condicao_sql::sql_and($vt_condicoes);
         }
@@ -4349,8 +4547,7 @@ XML;
     // objeto $objeto: um objeto derivado da classe objeto
     //
         // Checar se e' derivado da classe objeto
-        $classe = __CLASS__;
-        if (!($objeto instanceof $classe)) {
+        if (!($objeto instanceof self)) {
             return false;
         }
 
@@ -4360,8 +4557,8 @@ XML;
         }
 
         // Checar valores dos atributos
-        $this->consultar(true);
-        $objeto->consultar(true);
+        $this->consultar_campos(true);
+        $objeto->consultar_campos(true);
         foreach ($this->get_atributos() as $atributo => $def) {
             if ($def->chave == 'PK') { continue; }
             if ($this->__get($atributo) != $objeto->__get($atributo)) {
@@ -4474,9 +4671,7 @@ XML;
 
             // Imprimir os atributos simples da classe
             foreach ($this->get_atributos() as $atributo) {
-                if ($chaves || $atributo->chave == false) {
-                    $s .= $this->imprimir_atributo($atributo->nome, true);
-                }
+                $s .= $this->imprimir_atributo_filtrado($atributo->nome, $chaves);
             }
 
             // Imprimir os atributos implicitos da classe
@@ -4501,11 +4696,11 @@ XML;
             $regioes   = array();
             $possui_campos_reais = array();
             foreach ($campos as $chave => $campo) {
-                $eh_regiao = false;
+                $eh_regiao = is_array($campo);
                 $vt_aux = array();
                 if (is_string($campo)) {
                     $vt_aux = array($campo);
-                } elseif ($eh_regiao = is_array($campo)) {
+                } elseif ($eh_regiao) {
                     $vt_aux = $campo;
                 } else {
                     trigger_error('Informado um tipo invalido ('.gettype($campo).')', E_USER_WARNING);
@@ -4514,6 +4709,18 @@ XML;
                 $objetos = $vetores = array();
                 $vt_campos_reais = $this->get_campos_reais($vt_aux, $objetos, $vetores, OBJETO_ADICIONAR_NOMES);
                 $possui_campos_reais[$chave] = count($vt_campos_reais) + count($objetos) + count($vetores);
+
+                // Se nao possui campos reais, verificar se sao implicitos, pelo menos
+                if (!$possui_campos_reais[$chave]) {
+                    foreach ($vt_aux as $campo_aux) {
+                        if ($this->possui_atributo_implicito($campo_aux)) {
+                            $possui_campos_reais[$chave] = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Determinar nomes das regioes
                 if ($possui_campos_reais[$chave]) {
                     $vt_campos = array_merge($vt_campos, $vt_campos_reais, $objetos, $vetores);
                     if ($eh_regiao) {
@@ -4572,7 +4779,7 @@ XML;
                                 }
                             }
                         } else {
-                            $s .= "<p>N&atilde;o possui</p>\n";
+                            $s .= "<p>N&atilde;o possui ou n&atilde;o foi definido(a)</p>\n";
                         }
                         $s .= "</fieldset>\n";
                     }
@@ -4641,6 +4848,10 @@ XML;
                     $s .= $this->imprimir_atributo($campo, true);
                     break;
                 }
+
+            // Atributo Implicito
+            } elseif ($this->possui_atributo_implicito($campo)) {
+                $s .= $this->imprimir_atributo($campo, true);
 
             // Imprimir nome do objeto 1:1
             } elseif ($this->possui_rel_uu($campo)) {
@@ -4883,8 +5094,7 @@ XML;
         $valor = $this->get_atributo_implicito($nome_atributo);
         switch (util::get_tipo($valor)) {
         case 'object':
-            $classe_objeto = __CLASS__;
-            if ($valor instanceof $classe_objeto) {
+            if ($valor instanceof self) {
                 $valor = $valor->get_nome();
             }
             break;
@@ -4898,7 +5108,7 @@ XML;
     //
     //     Imprime uma lista de entidades
     //
-    public function imprimir_lista($condicoes, $modulo, $id_lista, $link, $opcoes = true, $campos = false, $ordem = false, $index = false, $itens_pagina = false, $campos_consultar = false) {
+    public function imprimir_lista($condicoes, $modulo, $id_lista, $link, $opcoes = true, $campos = false, $ordem = false, $index = false, $itens_pagina = false, $campos_consultar = false, $nomes = false) {
     // condicao_sql $condicoes: condicoes da busca
     // String $modulo: nome do modulo
     // String $id_lista: ID da lista
@@ -4909,115 +5119,153 @@ XML;
     // String $index: campo utilizado para indexar
     // Int $itens_pagina: numero maximo de itens por pagina
     // Array[String] $campos_consultar: campos a serem consultados alem dos campos de exibicao
+    // Array[String => String] $nomes: nomes dos elementos da lista no singular, plural e genero
     //
         global $USUARIO;
 
         // Criar paginacao
         $paginacao = new paginacao($modulo, $id_lista, $link);
-
-        if (!$campos) { $campos = array($this->get_campo_nome()); }
-        if (!$ordem) { $ordem = $campos[0]; }
-        if (!$index) { $index = $this->get_chave(); }
+        if (!$campos) {
+            $campos = array($this->get_campo_nome());
+        }
+        if (!$ordem) {
+            $ordem = array($campos[0] => true);
+        }
+        if (!$index) {
+            $index = $this->get_chave();
+        }
         if ($this->possui_atributo('visivel')) {
             $campos[] = 'visivel';
+        }
+        if ($nomes) {
+            $singular = isset($nomes['singular']) ? $nomes['singular'] : $this->get_entidade();
+            $plural   = isset($nomes['plural'])   ? $nomes['plural']   : $this->get_entidade(true);
+            $genero   = isset($nomes['genero'])   ? $nomes['genero']   : $this->get_genero();
+            $paginacao->set_nomes($singular, $plural, $genero);
         }
 
         // Consultar entidades
         $itens = $paginacao->inicio_lista($this->get_classe(), $condicoes, $campos, $ordem, $index, $itens_pagina, $campos_consultar);
+        if (!$itens) {
+            $paginacao->fim_lista();
+            return;
+        }
 
-        if ($itens) {
-            // Checar se possui atributo cancelado
-            $possui_atributo_cancelado = $this->possui_atributo('cancelado') || $this->possui_atributo_implicito('cancelado');
+        // Checar se possui atributo cancelado
+        $possui_atributo_cancelado = $this->possui_atributo('cancelado') || $this->possui_atributo_implicito('cancelado');
 
-            foreach ($itens as $item) {
-                $cod   = $item->get_valor_chave();
-                $chave = $item->get_chave();
+        foreach ($itens as $item) {
+            $cod   = $item->get_valor_chave();
+            $chave = $item->get_chave();
 
-                // Gerar as opcoes
-                $com_exibir = false;
-                $vt_opcoes = array();
-                foreach ($opcoes as $opcao) {
-                    $dados_opcao = $item->dados_opcao($opcao, $modulo);
-                    if (!$dados_opcao) { continue; }
+            // Gerar as opcoes
+            $com_exibir = false;
+            $vt_opcoes = array();
+            foreach ($opcoes as $opcao) {
+                $dados_opcao = $item->dados_opcao($opcao, $modulo);
+                if (!$dados_opcao) { continue; }
 
-                    if (isset($dados_opcao->principal) && $dados_opcao->principal) {
-                        if ($com_exibir) {
-                            trigger_error('O metodo "dados_opcao" da classe "'.$this->get_classe().'" possui mais de uma opcao principal', E_USER_WARNING);
-                        }
-                        $dados_exibir = $dados_opcao;
-                        $com_exibir = true;
-                        continue;
+                // Checar se a opcao e' de exibir
+                if (isset($dados_opcao->principal) && $dados_opcao->principal) {
+                    if ($com_exibir) {
+                        trigger_error('O metodo "dados_opcao" da classe "'.$this->get_classe().'" possui mais de uma opcao principal', E_USER_WARNING);
                     }
-                    if (!isset($dados_opcao->texto)) {
-                        $dados_opcao->texto = false;
-                        $dados_opcao->exibir_texto = false;
-                    } elseif (!isset($dados_opcao->exibir_texto)) {
-                        $dados_opcao->exibir_texto = false;
-                    }
-                    if (!isset($dados_opcao->carregando)) {
-                        $dados_opcao->carregando = true;
-                    }
-                    if (!isset($dados_opcao->foco)) {
-                        $dados_opcao->foco = true;
-                    }
+                    $dados_exibir = $dados_opcao;
+                    $com_exibir = true;
+                    continue;
+                }
 
-                    if (isset($dados_opcao->icone) && $dados_opcao->icone) {
-                        if ($dados_opcao->arquivo) {
-                            $vt_opcoes[] = link::icone_modulo($USUARIO, $dados_opcao->modulo, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->icone, $dados_opcao->descricao, $dados_opcao->texto, $dados_opcao->exibir_texto, $dados_opcao->carregando, $dados_opcao->foco);
-                        } else {
-                            $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
-                            $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
-                            $vt_opcoes[] = '<img src="'.$dados_opcao->icone.'" alt="'.$dados_opcao->descricao.'" title="'.$dados_opcao->descricao.'"'.$class_opcao.$id_opcao.' />';
+                // Checar se possui texto e deve ser mostrado
+                if (!isset($dados_opcao->texto)) {
+                    $dados_opcao->texto = false;
+                    $dados_opcao->exibir_texto = false;
+                } elseif (!isset($dados_opcao->exibir_texto)) {
+                    $dados_opcao->exibir_texto = false;
+                }
+
+                // Checar se deve ser mostrado o "carregando..."
+                if (!isset($dados_opcao->carregando)) {
+                    $dados_opcao->carregando = true;
+                }
+
+                // Checar se deve dar o foco ao primeiro elemento
+                if (!isset($dados_opcao->foco)) {
+                    $dados_opcao->foco = true;
+                }
+
+                // Se possui icone
+                if (isset($dados_opcao->icone) && $dados_opcao->icone) {
+                    if ($dados_opcao->arquivo) {
+                        $link_arquivo_modulo = link::icone_modulo($USUARIO, $dados_opcao->modulo, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->icone, $dados_opcao->descricao, $dados_opcao->texto, $dados_opcao->exibir_texto, $dados_opcao->carregando, $dados_opcao->foco);
+                        if ($link_arquivo_modulo) {
+                            $vt_opcoes[] = $link_arquivo_modulo;
                         }
                     } else {
-                        if ($dados_opcao->arquivo) {
-                            $vt_opcoes[] = link::arquivo_modulo($USUARIO, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->modulo, $dados_opcao->descricao, $dados_opcao->id, $dados_opcao->class, true, $dados_opcao->carregando, $dados_opcao->foco);
-                        } else {
-                            $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
-                            $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
-                            $vt_opcoes[] = '<span'.$class_opcao.$id_opcao.'>'.$dados_opcao->descricao.'</span>';
+                        $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
+                        $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
+                        $vt_opcoes[] = '<img src="'.$dados_opcao->icone.'" alt="'.$dados_opcao->descricao.'" title="'.$dados_opcao->descricao.'"'.$class_opcao.$id_opcao.' />';
+                    }
+
+                // Se nao possui icone
+                } else {
+                    if ($dados_opcao->arquivo) {
+                        $link_arquivo_modulo = link::arquivo_modulo($USUARIO, "{$dados_opcao->arquivo}?op={$opcao}&amp;{$chave}={$cod}", $dados_opcao->modulo, $dados_opcao->descricao, $dados_opcao->id, $dados_opcao->class, true, $dados_opcao->carregando, $dados_opcao->foco);
+                        if ($link_arquivo_modulo) {
+                            $vt_opcoes[] = $link_arquivo_modulo;
                         }
+                    } else {
+                        $class_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
+                        $id_opcao = $dados_opcao->class ? ' class="'.$dados_opcao->class.'"' : '';
+                        $vt_opcoes[] = '<span'.$class_opcao.$id_opcao.'>'.$dados_opcao->descricao.'</span>';
                     }
                 }
+            }
 
-                // Montar as opcoes
-                $st_opcoes = "<div class=\"opcoes\">".
-                             "<strong class=\"hide\">Op&ccedil;&otilde;es:</strong>".
+            // Montar as opcoes
+            if (count($vt_opcoes)) {
+                $st_opcoes = '<div class="opcoes">'.
+                             '<strong class="hide">Op&ccedil;&otilde;es:</strong> '.
                              implode('<span class="hide">|</span>', $vt_opcoes).
                              "</div>\n";
+            } else {
+                $st_opcoes = '<div class="opcoes">'.
+                             '<strong class="hide">Op&ccedil;&otilde;es:</strong> '.
+                             '<span class="nenhuma_opcao">(Nenhuma op&ccedil;&atilde;o)</span>'.
+                             "</div>\n";
+            }
+            unset($vt_opcoes);
 
-                // Montar o nome da entidade
-                $campos_nome = array();
-                foreach ($campos as $campo) {
-                    $campos_nome[] = $item->exibir($campo);
-                }
-                $nome = implode(' - ', $campos_nome);
+            // Montar o nome da entidade
+            $campos_nome = array();
+            foreach ($campos as $campo) {
+                $campos_nome[] = $item->exibir($campo);
+            }
+            $nome = implode(' - ', $campos_nome);
 
-                if ($possui_atributo_cancelado) {
-                    $class_label = $item->__get('cancelado') ? 'inativo' : 'label';
-                } else {
-                    $class_label = 'label';
-                }
+            if ($possui_atributo_cancelado) {
+                $class_label = $item->__get('cancelado') ? 'inativo' : 'label';
+            } else {
+                $class_label = 'label';
+            }
 
-                // Mostrar um link para a pagina de exibir
-                if ($com_exibir) {
-                    $link_exibir = "{$dados_exibir->arquivo}?{$chave}={$cod}";
-                    $modulo = $dados_exibir->modulo;
-                    $class = (isset($dados_exibir->class) && $dados_exibir->class) ? $dados_exibir->class : $class_label;
-                    $id    = (isset($dados_exibir->id) && $dado_exibir->id) ? $dados_exibir->id : '';
+            // Mostrar um link para a pagina de exibir
+            if ($com_exibir) {
+                $link_exibir = "{$dados_exibir->arquivo}?{$chave}={$cod}";
+                $modulo = $dados_exibir->modulo;
+                $class = (isset($dados_exibir->class) && $dados_exibir->class) ? $dados_exibir->class : $class_label;
+                $id    = (isset($dados_exibir->id) && $dado_exibir->id) ? $dados_exibir->id : '';
 
-                    echo "  <div class=\"linha\">\n";
-                    link::arquivo_modulo($USUARIO, $link_exibir, $modulo, $nome, $id, $class);
-                    echo "    {$st_opcoes}\n";
-                    echo "  </div>\n";
+                echo "  <div class=\"linha\">\n";
+                link::arquivo_modulo($USUARIO, $link_exibir, $modulo, $nome, $id, $class);
+                echo "    {$st_opcoes}\n";
+                echo "  </div>\n";
 
-                // Apenas exibir o nome
-                } else {
-                    echo "  <div class=\"linha\">\n";
-                    echo "    <strong class=\"{$class_label}\">{$nome}</strong>\n";
-                    echo "    {$st_opcoes}\n";
-                    echo "  </div>\n";
-                }
+            // Apenas exibir o nome
+            } else {
+                echo "  <div class=\"linha\">\n";
+                echo "    <strong class=\"{$class_label}\">{$nome}</strong>\n";
+                echo "    {$st_opcoes}\n";
+                echo "  </div>\n";
             }
         }
         $paginacao->fim_lista();
@@ -5036,7 +5284,7 @@ XML;
     //     Bool foco: indica se o link deve definir o foco ao primeiro campo da proxima pagina
     //     String arquivo: nome do arquivo para onde a opcao aponta (opcional)
     //     String modulo: nome do modulo para onde a opcao aponta (opcional)
-    //     String descricao: descricao da opcao (opcional)
+    //     String descricao: breve descricao da opcao (opcional)
     //     String id: identificador unico da opcao
     //     String class: classe CSS da opcao
     //
@@ -5208,19 +5456,12 @@ XML;
         $unico              = (bool)$unico;
         $forte              = (bool)$forte;
 
-        // Criar um objeto da classe do relacionamento
-        try {
-            simp_autoload($classe);
-            $objeto = new $classe();
-        } catch (Exception $e) {
-            trigger_error('A classe "'.$classe.'" nao existe ou possui erros', E_USER_ERROR);
+        if (!DEVEL_BLOQUEADO && !$this->validar_integridade_rel_uu($classe, $nome_objeto, $nome_atributo, $unico, $forte)) {
+            return false;
         }
 
-        // Associacao unaria nao pode ser forte (do objeto para ele mesmo)
-        if ($forte && $classe == $this->get_classe()) {
-            trigger_error('Associacao unaria nao pode ser forte (objeto "'.$nome_objeto.'" / classe "'.$classe.'")', E_USER_ERROR);
-            $forte = false;
-        }
+        // Criar um objeto da classe do relacionamento
+        $objeto = objeto::get_objeto($classe);
 
         // Consultar as informacoes da chave primaria original (chave estrangeira na entidade corrente)
         $def_pk = $objeto->get_definicao_atributo($objeto->get_chave());
@@ -5236,17 +5477,14 @@ XML;
             $def_fk->descricao = $descricao_atributo;
         }
         if ($forte) {
-            $def_fk->chave = 'FK';
+            $def_fk->chave      = 'FK';
             $def_fk->pode_vazio = false;
-            $def_fk->unico = $unico;
+            $def_fk->unico      = $unico;
         } else {
-            $def_fk->chave = 'OFK';
+            $def_fk->chave      = 'OFK';
             $def_fk->pode_vazio = true;
-            if ($unico) {
-                trigger_error('O campo "'.$nome_atributo.'" da classe "'.$this->get_classe().'" nao pode ser unico pois o relacionamento eh fraco', E_USER_WARNING);
-            }
-            $def_fk->unico = false;
-            $def_fk->minimo = min(0, $def_fk->minimo);
+            $def_fk->unico      = false;
+            $def_fk->minimo     = min(0, $def_fk->minimo);
         }
         if (is_array($opcoes)) {
             foreach ($opcoes as $chave_opcao => $valor_opcao) {
@@ -5255,25 +5493,45 @@ XML;
         }
         $this->adicionar_atributo($def_fk, $classe);
 
-        // Se ja' existe o relacionamento: abortar
-        if ($this->possui_rel_uu($def_fk->nome, false)) {
-            trigger_error('A classe "'.$this->get_classe().'" ja possui um relacionamento com "'.$def_fk->nome.'"', E_USER_WARNING);
-            return false;
-        }
-
         // 3 - Criar o objeto que representa o relacionamento 1:1
         $def_rel = new stdClass();
-        $def_rel->nome = $nome_objeto ? $nome_objeto : $classe;
-        if ($descricao_objeto) {
-            $def_rel->descricao = $descricao_objeto;
-        } else {
-            $def_rel->descricao = $objeto->get_entidade();
-        }
-        $def_rel->classe = $classe;
-        $def_rel->forte  = $forte;
+        $def_rel->nome      = $nome_objeto      ? $nome_objeto      : $classe;
+        $def_rel->descricao = $descricao_objeto ? $descricao_objeto : $objeto->get_entidade();
+        $def_rel->classe    = $classe;
+        $def_rel->forte     = $forte;
 
         // Inserir a definicao do objeto
         $this->definicao->rel_uu[$def_fk->nome] = $def_rel;
+    }
+
+
+    //
+    //     Verifica a integridade do relacionamento a ser inserido
+    //
+    private function validar_integridade_rel_uu($classe, $nome_objeto, $nome_atributo, $unico, $forte) {
+    // String $classe: nome da classe relacionada
+    // String $nome_objeto: nome do objeto relacionado
+    // String $nome_atributo: nome do atributo relacionado
+    // Bool $unico: indica se o atributo e' unico na nova tabela (por padrao nao e' unico)
+    // Bool $forte: indica se o relacionamento e' forte (true / 1:1) ou fraco (false / 1:{0,1})
+    //
+        if ($forte) {
+
+            // Associacao unaria nao pode ser forte (do objeto para ele mesmo)
+            if ($classe == $this->get_classe()) {
+                trigger_error('Associacao unaria nao pode ser forte (objeto "'.$nome_objeto.'" / classe "'.$classe.'")', E_USER_ERROR);
+                return false;
+            }
+
+        } else {
+
+            // Associacao fraca nao pode ser unica
+            if ($unico) {
+                trigger_error('O campo "'.$nome_atributo.'" da classe "'.$this->get_classe().'" nao pode ser unico pois o relacionamento eh fraco', E_USER_WARNING);
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -5383,6 +5641,11 @@ XML;
         }
         if (!isset($this->instancia->objetos[$nome_obj])) {
             $this->instancia->objetos[$nome_obj] = self::get_objeto($def->classe);
+            $valor_chave = $this->get_atributo($nome_chave);
+            if ($valor_chave) {
+                $classe = $def->classe;
+                $this->instancia->objetos[$nome_obj] = new $classe('', $valor_chave);
+            }
         }
         return $this->instancia->objetos[$nome_obj];
     }
@@ -5505,13 +5768,29 @@ XML;
 
             // Se o relacionamento e' fraco: atribuir sem questionar
             if (!$def->forte) {
-                return $this->set_valor($chave, $valor) &&
-                       $obj->set_valor($chave_pk, $valor);
+                $set_chave = $this->set_valor($chave, $valor);
+                if ($valor) {
+                    $set_pk = $obj->set_valor($chave_pk, $valor);
+                } else {
+                    $set_pk = true;
+                }
+                return $set_chave && $set_pk;
 
             // Se o relacionamento e' forte: so' aceitar valores validos
             } else {
-                return $this->set_valor($chave, $valor) &&
-                       $obj->consultar($chave_pk, $valor);
+
+                // Se nao foi informada uma chave valida
+                if (!$valor) {
+                    $this->erros[] = 'N&atilde;o foi informado(a) um(a) '.$def->descricao;
+                    return false;
+                }
+
+                // Se nao encontrou o objeto com a chave informada
+                if (!$obj->consultar($chave_pk, $valor)) {
+                    $this->erros[] = 'N&atilde;o pode escolher este(a) '.$def->descricao;
+                    return false;
+                }
+                return $this->set_valor($chave, $valor);
             }
 
         }
@@ -5590,25 +5869,20 @@ XML;
         if ($chave_fk === false) {
             $chave_fk = $this->get_chave();
         }
-        if (empty($nome_vetor)) {
-            trigger_error('O nome do vetor nao pode ser vazio', E_USER_ERROR);
-            return false;
-        }
         $nome_vetor = (string)$nome_vetor;
         $index = $index ? (string)$index : false;
         $impressao = $impressao ? (string)$impressao : false;
-        $chave_fk = $chave_fk ? (string)$chave_fk : false;
+        $chave_fk = (string)$chave_fk;
         if (!$ordem) {
             if ($impressao) {
-                $ordem = array($impressao => true);
+                $ordem = array($impressao => true, $chave_fk => true);
             } else {
                 $ordem = array($chave_fk => true);
             }
         }
 
-        // Se ja existe um vetor com o nome especificado, abortar
-        if ($this->possui_rel_un($nome_vetor)) {
-            trigger_error('O vetor "'.$nome_vetor.'" ja foi especificado', E_USER_ERROR);
+        // Validar integridade do relacionamento
+        if (!DEVEL_BLOQUEADO && !$this->validar_integridade_rel_un($nome_vetor)) {
             return false;
         }
 
@@ -5621,6 +5895,28 @@ XML;
         $obj->ordem     = $ordem;      // Campos usados para ordenar o vetor
 
         $this->definicao->rel_un[$nome_vetor] = $obj;
+    }
+
+
+    //
+    //     Verifica a integridade do relacionamento 1:N
+    //
+    private function validar_integridade_rel_un($nome_vetor) {
+    // String $nome_vetor: nome do vetor
+    //
+        // O nome nao pode ser vazio
+        if (empty($nome_vetor)) {
+            trigger_error('O nome do vetor nao pode ser vazio na classe "'.$this->get_classe().'"', E_USER_ERROR);
+            return false;
+        }
+
+        // Se ja existe um vetor com o nome especificado, abortar
+        if ($this->possui_rel_un($nome_vetor)) {
+            trigger_error('O vetor "'.$nome_vetor.'" ja foi especificado na classe "'.$this->get_classe().'"', E_USER_ERROR);
+            return false;
+        }
+
+        return true;
     }
 
 
@@ -6103,7 +6399,7 @@ XML;
             return false;
         }
         $def = $this->get_definicao_rel_un($nome_vetor);
-        $condicao = condicao_sql::montar($def->chave_fk, '=', $this->get_valor_chave(), false);
+        $condicao = condicao_sql::montar($def->chave_fk, '=', $this->get_valor_chave());
         return objeto::get_objeto($def->classe)->possui_registros($condicao, $quantidade);
     }
 
@@ -6149,6 +6445,9 @@ XML;
             $impressao = $e->get_campo_nome();
         }
         $entidade = $e->get_entidade(1); // Obter nome da entidade no plural
+        $genero = $e->get_genero();
+        unset($e);
+
         $visiveis = array();
         foreach ($this->instancia->vetores[$nome_vetor] as $elemento) {
             if (!isset($elemento->visivel) || $elemento->visivel) {
@@ -6165,7 +6464,7 @@ XML;
             }
             $v .= "</ul>\n";
         } else {
-            switch ($e->get_genero()) {
+            switch ($genero) {
             case 'M':
                 $v .= "<p>Nenhum</p>\n";
                 break;
@@ -6335,11 +6634,14 @@ XML;
     // Mixed $valor_chave: valor da chave primaria
     //
         if (!self::em_cache($classe, $valor_chave)) {
-            throw new Exception("Elemento n&atilde;o encontrado em cache (Classe {$classe} / Chave {$valor_chave})");
+            throw new Exception("Elemento nao encontrado em cache (Classe {$classe} / Chave {$valor_chave})");
         }
 
         // Obter definicao, caso ainda nao exista
         if (!isset(self::$definicoes[$classe])) {
+            if (!isset($_SESSION[OBJETO_CACHE_DEFINICOES][$classe])) {
+                throw new Exception("A definicao da classe {$classe} nao esta em cache");
+            }
             self::$definicoes[$classe] = unserialize($_SESSION[OBJETO_CACHE_DEFINICOES][$classe]);
         }
 
@@ -6417,16 +6719,26 @@ XML;
 
         // Guardar referencias para objetos filhos
         foreach ($instancia->objetos as $nome_obj => $obj) {
-            if (!self::em_cache($obj->get_classe(), $obj->get_valor_chave())) {
-                self::set_cache($obj->get_classe(), $obj->get_valor_chave());
+            if ($obj->get_valor_chave() == 0) {
+                continue;
             }
-            $i->ref_objetos[$nome_obj] = array($obj->get_classe(), $obj->get_valor_chave());
+            if (!self::em_cache($obj->get_classe(), $obj->get_valor_chave())) {
+                if (isset(self::$instancias[$obj->get_classe()][$obj->get_valor_chave()])) {
+                    self::set_cache($obj->get_classe(), $obj->get_valor_chave());
+                }
+            }
+            if (self::em_cache($obj->get_classe(), $obj->get_valor_chave())) {
+                $i->ref_objetos[$nome_obj] = array($obj->get_classe(), $obj->get_valor_chave());
+            }
         }
 
         // Guardar referencias para vetores
         foreach ($instancia->vetores as $nome_vet => $vet) {
             $i->ref_vetores[$nome_vet] = array();
             foreach ($vet as $index => $obj) {
+                if ($obj->get_valor_chave() == 0) {
+                    continue;
+                }
                 if (!self::em_cache($obj->get_classe(), $obj->get_valor_chave())) {
                     self::set_cache($obj->get_classe(), $obj->get_valor_chave());
                 }
@@ -6467,10 +6779,14 @@ XML;
         // Restaurar referencias dos objetos filhos
         foreach ($i->ref_objetos as $nome_obj => $ref_obj) {
             list($classe_ref, $chave_ref) = $ref_obj;
-            if (!isset(self::$instancias[$classe_ref][$chave_ref])) {
+            if ($chave_ref == 0) {
+                // Ignorar
+                continue;
+            } elseif (!isset(self::$instancias[$classe_ref][$chave_ref])) {
                 $instancia->objetos[$nome_obj] = self::get_cache($classe_ref, $chave_ref);
             } elseif (self::$instancias[$classe_ref][$chave_ref] === false) {
                 // Aguardar
+                continue;
             } else {
                 $obj_ref = self::get_objeto($classe_ref);
                 $obj_ref->definir_instancia($classe_ref, $chave_ref);
@@ -6487,6 +6803,7 @@ XML;
                     $instancia->vetores[$nome_vet][$indice] = self::get_cache($classe_ref, $chave_ref);
                 } elseif (self::$instancias[$classe_ref][$chave_ref] === false) {
                     // Aguardar
+                    continue;
                 } else {
                     $obj = self::get_objeto($classe_ref);
                     $obj->definir_instancia($classe_ref, $chave_ref);

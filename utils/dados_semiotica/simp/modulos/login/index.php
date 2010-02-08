@@ -4,10 +4,10 @@
 // Descricao: Arquivo com formulario de log-in
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.26
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.27
 // Data: 03/03/2007
-// Modificado: 03/09/2009
+// Modificado: 25/11/2009
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -143,36 +143,9 @@ if (!$dados) {
 // Se nao houve erro no log-in: guardar sessao
 } else {
     $usuario = new usuario('login', $dados->login, array('login'));
-    if ($usuario->existe()) {
-
-        // Se deseja guardar login para posterior entrada
-        if ($dados->lembrar_login) {
-            $CFG->cookies['login'] = $usuario->login;
-
-        // Se nao deseja guardar login, entao apaga-lo
-        } elseif (isset($CFG->cookies['login'])) {
-            unset($CFG->cookies['login']);
-        }
-        cookie::salvar($CFG->cookies);
-
-        // Gravar Sessao
-        $_SESSION[$CFG->codigo_session] = $usuario->cod_usuario;
-
-        // Gerar Log
-        $log = new log_sistema();
-        $log->inserir($usuario->cod_usuario, LOG_ENTRADA, 0, $usuario->cod_usuario, 'usuario', $_SERVER['HTTP_USER_AGENT']);
-
-        // Ir para pagina principal ou de destino
-        if (isset($_GET['destino'])) {
-            $destino = texto::decodificar(base64_decode($_GET['destino']));
-            header("Location: {$destino}");
-        } else {
-            header("Location: {$CFG->wwwroot}index.php");
-        }
-        exit(0);
 
     // Se o usuario nao existe mais (sabe-se la como...)
-    } else {
+    if (!$usuario->existe()) {
 
         // Destruir a sessao para nao deixar lixo no servidor
         destruir_sessao(true);
@@ -184,6 +157,34 @@ if (!$dados) {
         header("location: {$CFG->wwwlogin}?erro=usuario_inexistente");
         exit(1);
     }
+
+    // Se deseja guardar login para posterior entrada
+    if ($dados->lembrar_login) {
+        $CFG->cookies['login'] = $usuario->login;
+
+    // Se nao deseja guardar login, entao apaga-lo
+    } elseif (isset($CFG->cookies['login'])) {
+        unset($CFG->cookies['login']);
+    }
+    cookie::salvar($CFG->cookies);
+
+    // Gravar Sessao
+    $_SESSION[$CFG->codigo_session] = $usuario->cod_usuario;
+    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+
+    // Gerar Log
+    $log = new log_sistema();
+    $log->inserir($usuario->cod_usuario, LOG_ENTRADA, 0, $usuario->cod_usuario, 'usuario', $_SERVER['HTTP_USER_AGENT']);
+
+    // Ir para pagina principal ou de destino
+    if (isset($_GET['destino'])) {
+        $destino = texto::decodificar(base64_decode($_GET['destino']));
+        header("Location: {$destino}");
+    } else {
+        header("Location: {$CFG->wwwroot}index.php");
+    }
+    exit(0);
+
 }
 
 
@@ -358,6 +359,7 @@ function autenticar_http() {
 
             // Gravar Sessao
             $_SESSION[$CFG->codigo_session] = $usuario->cod_usuario;
+            $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
 
             // Gerar Log
             $log = new log_sistema();
@@ -380,6 +382,7 @@ function destruir_sessao($cookie = true) {
     if (isset($_COOKIE[$CFG->id_session])) {
         if (isset($_SESSION)) {
             $_SESSION[$CFG->codigo_session] = 0;
+            $_SESSION['user_agent'] = '';
             @session_destroy();
             unset($_SESSION);
         }

@@ -4,7 +4,7 @@
 // Descricao: Classe grupos do usuario
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.0
 // Data: 16/06/2008
 // Modificado: 16/06/2008

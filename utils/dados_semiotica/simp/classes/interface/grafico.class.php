@@ -4,10 +4,10 @@
 // Descricao: Classe de geracao de Graficos com a biblioteca GD ou em HTML
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.24
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.1.4
 // Data: 20/06/2007
-// Modificado: 03/08/2009
+// Modificado: 22/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -59,14 +59,10 @@ define('ESCURECER',     0.7); // Porcentagem do escurecimento das cores
 define('FONTE_TITULO',  $CFG->dirclasses.'interface/fontes/AppleGaramond-Bold.ttf'); // Fonte do Titulo
 define('FONTE',         $CFG->dirclasses.'interface/fontes/AppleGaramond.ttf');      // Fonte do Texto
 
-
-//
-//     Classe
-//
 class grafico {
 
     // Geral/Controle
-    private $gd            = false;        // Possui biblioteca GD instalada
+    private $gd             = false;        // Possui biblioteca GD instalada
 
     // Atributos principais
     private $titulo         = false;        // Titulo do Grafico
@@ -81,17 +77,18 @@ class grafico {
     private $legenda_linhas = false;        // Vetor de itens da legenda das linhas que cortam o grafico
 
     // Opcoes adicionais
-    private $angulo        = 45;           // Angulo do texto da escala horizontal (entre 30 e 90)
-    private $pos_legenda   = DIREITA;      // Posicao da legenda (DIREITA, ESQUERDA, CIMA ou BAIXO)
-    private $tipo_cor      = COR_NORMAL;   // Tom das cores (COR_NORMAL, COR_CLARA ou COR_ESCURA)
-    private $borda         = BORDA_3D;     // Tipo de borda (BORDA_SOLIDA ou BORDA_3D)
-    private $ponto         = PONTO_NENHUM; // Tipo de ponto (PONTO_NENHUM, PONTO_BOLA, PONTO_QUADRADO)
-    private $cores         = false;        // Vetor com as cores a serem utilizadas
-    private $formato       = TIPO_PNG;     // Tipo de arquivo (TIPO_PNG, TIPO_JPG, TIPO_GIF ou TIPO_BMP)
-    private $qualidade     = 100;          // Qualidade da imagem para arquivos jpg (entre 0 e 100)
-    private $nome_arquivo  = 'grafico';    // Nome do arquivo gerado
-    private $salvar        = false;        // Opcao para fazer download da imagem
-    private $cache         = false;        // Tempo da imagem em cache
+    private $angulo            = 45;           // Angulo do texto da escala horizontal (entre 30 e 90)
+    private $pos_legenda       = DIREITA;      // Posicao da legenda (DIREITA, ESQUERDA, CIMA ou BAIXO)
+    private $tipo_cor          = COR_NORMAL;   // Tom das cores (COR_NORMAL, COR_CLARA ou COR_ESCURA)
+    private $borda             = BORDA_3D;     // Tipo de borda (BORDA_SOLIDA ou BORDA_3D)
+    private $ponto             = PONTO_NENHUM; // Tipo de ponto (PONTO_NENHUM, PONTO_BOLA, PONTO_QUADRADO)
+    private $cores             = false;        // Vetor com as cores a serem utilizadas
+    private $formato           = TIPO_PNG;     // Tipo de arquivo (TIPO_PNG, TIPO_JPG, TIPO_GIF ou TIPO_BMP)
+    private $qualidade         = 100;          // Qualidade da imagem para arquivos jpg (entre 0 e 100)
+    private $nome_arquivo      = 'grafico';    // Nome do arquivo gerado
+    private $conversao_valores = false;        // Funcao para converter os valores
+    private $salvar            = false;        // Opcao para fazer download da imagem
+    private $cache             = false;        // Tempo da imagem em cache
 
 
     //
@@ -178,9 +175,19 @@ class grafico {
             $this->$campo = (bool)$valor;
             break;
 
+        // CALLBACK
+        case 'conversao_valores':
+            if (is_callable($valor)) {
+                $this->$campo = $valor;
+            }
+            break;
+
         // OUTROS
         default:
-            $this->$campo = $valor;
+            if (property_exists($this, $campo)) {
+                $this->$campo = $valor;
+            }
+            break;
         }
     }
 
@@ -198,25 +205,64 @@ class grafico {
         static $i = 1;
         if (GRAFICO_GD && (!$html)) {
             $parametros = array();
+
+            // Link da imagem
             $src = $link;
             if (is_array($dados) || is_object($dados)) {
                 foreach ($dados as $chave => $valor) {
-                    $src = link::adicionar_atributo($src, $chave, $valor);
+                    if (is_array($valor)) {
+                        foreach ($valor as $chave2 => $valor2) {
+                            if (is_array($valor2)) {
+                                foreach ($valor2 as $chave3 => $valor3) {
+                                    $src = link::adicionar_atributo($src, $chave.'['.$chave2.']['.$chave3.']', $valor3);
+                                }
+                            } else {
+                                $src = link::adicionar_atributo($src, $chave.'['.$chave2.']', $valor2);
+                            }
+                        }
+                    } else {
+                        $src = link::adicionar_atributo($src, $chave, $valor);
+                    }
                 }
             }
+
+            // Link de descricao
             $longdesc = link::adicionar_atributo($src, 'longdesc', 1);
+
+            // Link do mapa
             $mapa = 'mapa'.($i++);
+            $dados_src = parse_url($src);
+            if (!isset($dados_src['port'])) {
+                $dados_src['port'] = 80;
+            }
+            $dados_get = array();
+            if (isset($dados_src['query'])) {
+                $dados_src['query'] = str_replace('&amp;', '&', $dados_src['query']);
+                parse_str($dados_src['query'], $dados_get);
+            }
+            $dados_get['mapa'] = $mapa;
+            $resultado = http::get($dados_src['host'], $dados_src['port'], $dados_src['path'], $dados_get);
+            if ($resultado->cod_erro == 0) {
+                $conteudo_mapa = $resultado->conteudo_resposta;
+                if (stripos($conteudo_mapa, '<map') !== false) {
+                    $usemap = "usemap=\"#{$mapa}\"";
+                } else {
+                    $conteudo_mapa = false;
+                    $usemap = '';
+                }
+            } else {
+                $conteudo_mapa = false;
+                $usemap = '';
+            }
+
             echo "<div class=\"area_grafico\">\n";
-            echo "<img class=\"imagem\" src=\"{$src}\" longdesc=\"{$longdesc}\" usemap=\"#{$mapa}\" alt=\"{$nome}\" title=\"{$nome}\" />\n";
+            echo "<img class=\"imagem\" src=\"{$src}\" longdesc=\"{$longdesc}\" {$usemap} alt=\"{$nome}\" title=\"{$nome}\" />\n";
             echo "<p><a rel=\"blank\" href=\"{$longdesc}\" class=\"acessivel\">Resultado Textual</a></p>\n";
             echo "</div>\n";
 
-            $link_mapa = link::adicionar_atributo($src, 'mapa', $mapa);
-            $f = fopen(texto::decodificar($link_mapa), 'r');
-            while (!feof($f)) {
-                echo fgets($f, 1024);
+            if ($conteudo_mapa) {
+                echo $conteudo_mapa;
             }
-            fclose($f);
         } else {
             if (is_array($dados) || is_object($dados)) {
                 foreach ($dados as $chave => $valor) { $_GET[$chave] = $valor; }
@@ -625,16 +671,7 @@ class grafico {
 
         // Obter maior valor da escala vertical
         if ($this->valor_topo === false) {
-            if (is_array($valores[0])) {
-                $maior = 0;
-                foreach ($valores as $vet) {
-                    $vet = array_values($vet);
-                    $maior_vet = max($vet);
-                    $maior = ($maior_vet > $maior) ? $maior_vet : $maior;
-                }
-            } else {
-                $maior = max($valores);
-            }
+            $maior = $this->get_maior_valor($valores);
         } else {
             $maior = $this->valor_topo;
         }
@@ -648,6 +685,34 @@ class grafico {
 
         // Imprimir linhas extras
         $this->imprimir_linhas_extras($img, $maior, $ix + 1 - $div_h / 2, $iy, $fx - 1 + $div_h / 2, $fy);
+    }
+
+
+    //
+    //     Obtem o maior valor da lista
+    //
+    private function get_maior_valor($valores) {
+    // Array[Float] || Array[Array[Float]] $valores: valores do grafico
+    //
+        $maior = 0;
+        if (is_array($valores[0])) {
+            foreach ($valores as $vet) {
+                $vet = array_values($vet);
+                $maior_vet = 0;
+                foreach ($vet as $chave_vet => $valor_vet) {
+                    $maior_vet = $valor_vet > $maior_vet ? $valor_vet : $maior_vet;
+                }
+                $maior = ($maior_vet > $maior) ? $maior_vet : $maior;
+            }
+        } else {
+            foreach ($valores as $chave => $valor) {
+                $maior = $valor > $maior ? $valor : $maior;
+            }
+        }
+        foreach ($this->linhas as $valor) {
+            $maior = $valor > $maior ? $valor : $maior;
+        }
+        return $maior;
     }
 
 
@@ -689,7 +754,7 @@ class grafico {
                         $ponto_y = round($py);
                         $ponto_x2 = round($px2);
                         $ponto_y2 = round($fy);
-                        $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[$j].': '.$valor;
+                        $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[$j].': '.$this->converter_valor($valor);
                         echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" nohref=\"nohref\" title=\"{$title}\" />\n";
                     }
                     $px += $div_h;
@@ -710,7 +775,7 @@ class grafico {
                     $ponto_y = round($py);
                     $ponto_x2 = round($px2);
                     $ponto_y2 = round($fy);
-                    $title = $this->escala[$i].': '.$valor;
+                    $title = $this->escala[$i].': '.$this->converter_valor($valor);
                     echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" nohref=\"nohref\" title=\"{$title}\" />\n";
                 }
                 $px += $div_h;
@@ -735,16 +800,7 @@ class grafico {
 
         // Obter maior valor da escala vertical
         if ($this->valor_topo === false) {
-            if (is_array($valores[0])) {
-                $maior = 0;
-                foreach ($valores as $vet) {
-                    $vet = array_values($vet);
-                    $maior_vet = max($vet);
-                    $maior = ($maior_vet > $maior) ? $maior_vet : $maior;
-                }
-            } else {
-                $maior = max($valores);
-            }
+            $maior = $this->get_maior_valor($valores);
         } else {
             $maior = $this->valor_topo;
         }
@@ -805,7 +861,7 @@ class grafico {
                     $ponto_x2 = round($px + 5);
                     $ponto_y  = round($py - 5);
                     $ponto_y2 = round($py + 5);
-                    $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[0].': '.$primeiro;
+                    $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[0].': '.$this->converter_valor($primeiro);
                     echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" title=\"{$title}\" nohref=\"nohref\" />\n";
                 }
 
@@ -833,7 +889,7 @@ class grafico {
                         $ponto_x2 = round($px + $div_h + 5);
                         $ponto_y  = round($py2 - 5);
                         $ponto_y2 = round($py2 + 5);
-                        $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[$j + 1].': '.$valor;
+                        $title = ($this->legenda ? $this->legenda[$i].'/' : '').$this->escala[$j + 1].': '.$this->converter_valor($valor);
                         echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" title=\"{$title}\" nohref=\"nohref\" />\n";
                     }
                     $py = $py2;
@@ -864,7 +920,7 @@ class grafico {
                 $ponto_x2 = round($px + 5);
                 $ponto_y  = round($py - 5);
                 $ponto_y2 = round($py + 5);
-                $title = $this->escala[0].': '.$primeiro;
+                $title = $this->escala[0].': '.$this->converter_valor($primeiro);
                 echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" title=\"{$title}\" nohref=\"nohref\" />\n";
             }
 
@@ -892,7 +948,7 @@ class grafico {
                     $ponto_x2 = round($px + $div_h + 5);
                     $ponto_y  = round($py2 - 5);
                     $ponto_y2 = round($py2 + 5);
-                    $title = $this->escala[$i + 1].': '.$valor;
+                    $title = $this->escala[$i + 1].': '.$this->converter_valor($valor);
                     echo "<area shape=\"rect\" coords=\"{$ponto_x},{$ponto_y},{$ponto_x2},{$ponto_y2}\" title=\"{$title}\" nohref=\"nohref\" />\n";
                 }
                 $py = $py2;
@@ -933,7 +989,7 @@ class grafico {
             $soma_parcial += (double)$this->valores[$i];
             $angulo = ceil($this->valores[$i] * 360 / $soma);
             $porcentagem = round($this->valores[$i] * 100 / $soma, 2);
-            $texto_porcentagem = $porcentagem.'%';
+            $texto_porcentagem = texto::numero($porcentagem, 2, false, GRAFICO_LOCALIDADE).'%';
             $fim_angulo = $inicio_angulo + $angulo;
 
             // Imprimir Arco
@@ -964,7 +1020,7 @@ class grafico {
             $obj->texto = $texto_porcentagem;
             $obj->x = $x;
             $obj->y = $y;
-            $obj->title = $this->legenda[$i].': '.$this->valores[$i].' ('.$texto_porcentagem.')';
+            $obj->title = $this->legenda[$i].': '.$this->converter_valor($this->valores[$i]).' ('.$texto_porcentagem.')';
             $textos[] = $obj;
 
             // Reiniciar angulo
@@ -1056,14 +1112,17 @@ class grafico {
             $maior_altura_escala_h  += MARGEM;
         }
 
-        // Resolver problema com graficos com numeros pequenos
-        // Obter largura do texto da maior escala vertical
-        if ($maior < 10) {
-            $maior_largura_escala_v = $this->largura_texto($maior.',0');
-            $usar_virgula = true;
-        } else {
-            $maior_largura_escala_v = $this->largura_texto($maior);
-            $usar_virgula   = false;
+        // Calcular largura da maior escala vertical
+        $maior_largura_escala_v = 0;
+        $escala = 0;
+        $num_escala_estimado = 10;
+        $casas_decimais = 0.11;
+        $div_escala = ($fy - $iy) / $num_escala_estimado;
+        for ($i = $num_escala_estimado; $i > 0; $i--) {
+            $texto_escala = $this->converter_valor($escala, 2, true);
+            $largura_escala_v = $this->largura_texto(' '.$texto_escala.' ');
+            $maior_largura_escala_v = $largura_escala_v > $maior_largura_escala_v ? $largura_escala_v : $maior_largura_escala_v;
+            $escala += $div_escala + $casas_decimais;
         }
 
         // Em casos de escalas horizontais com angulo:
@@ -1099,18 +1158,19 @@ class grafico {
         $div        = $altura / $num_escala;
 
         // Imprimir escala vertical
-        $px = $ix + $maior_largura_escala_v - $this->largura_texto('0');
 
         // Imprimir o ponto zero
+        $texto_escala = $this->converter_valor(0);
+        $px = $ix + $maior_largura_escala_v - $this->largura_texto($texto_escala);
         if (!$mapa) {
-            imagettftext($img, ALTURA_TEXTO, 0, $px, $fgy + (ALTURA_TEXTO / 2), $this->cores['texto'], FONTE, '0');
+            imagettftext($img, ALTURA_TEXTO, 0, $px, $fgy + (ALTURA_TEXTO / 2), $this->cores['texto'], FONTE, $texto_escala);
         }
         $py = $fgy;
         $escala = 0;
         if (!$mapa && $div_escala) {
             for ($i = $num_escala; $i > 0; $i--) {
                 $escala += $div_escala;
-                $texto_escala = ($usar_virgula) ? round($escala, 1) : round($escala);
+                $texto_escala = $this->converter_valor($escala);
                 $py -= $div;
                 $px = $ix + $maior_largura_escala_v - $this->largura_texto($texto_escala);
                 imagettftext($img, ALTURA_TEXTO, 0, $px, $py + (ALTURA_TEXTO / 2), $this->cores['texto'], FONTE, $texto_escala);
@@ -1352,11 +1412,11 @@ class grafico {
         $cores[] = array( 50, 200, 200); // Ciano
         $cores[] = array(180, 180, 180); // Cinza
         $cores[] = array(100, 200, 100); // Verde
-        $cores[] = array(200, 100, 200); // Pink
         $cores[] = array(200, 100,   0); // Laranja
         $cores[] = array(170, 170,  70); // Marrom
         $cores[] = array(230, 230, 230); // Cinza Claro
         $cores[] = array( 51,   0, 102); // Roxo
+        $cores[] = array(200, 100, 200); // Pink
         $cores[] = array(187,   0,   0); // Vermelho escuro
         $cores[] = array(  0, 187,   0); // Verde escuro
         $cores[] = array(  0,   0,  85); // Azul escuro
@@ -1524,8 +1584,10 @@ class grafico {
                 echo '<div style="display: table-cell;">';
                 foreach ($valores as $j => $v) {
                     $valor = $v[$i];
+                    $valor_impressao = $this->converter_valor($valor);
+
                     $porcentagem = round($valor * 100 / max($maior, 1), 0);
-                    $texto = '<div style="display: none;">'.$this->legenda[$j].': '.$valor.'</div>';
+                    $texto = '<div style="display: none;">'.$this->legenda[$j].': '.$valor_impressao.'</div>';
                     $p = "<div style=\"width: {$porcentagem}%; border: 1px outset ".$this->cores[$j]."; ".
                          "background-color: ".$this->cores[$j]."; ".
                          "height: {$h}px; font-size: {$h}px;\" >{$texto}</div>";
@@ -1543,12 +1605,14 @@ class grafico {
         } else {
             $maior = max($valores);
             $w_escala = 80;
-            $w_valor  = 70;
+            $w_valor  = 100;
             $w = $this->largura - ($w_escala + 3 * MARGEM + $w_valor);
             $h = QUADRADO;
             $h2 = $h - 2;
             foreach ($valores as $i => $valor) {
+                $valor_impressao = $this->converter_valor($valor);
                 $porcentagem = round($valor * 100 / ($maior ? $maior : 1), 0);
+                $texto_porcentagem = texto::numero($porcentagem, 2, false, GRAFICO_LOCALIDADE).'%';
 
                 echo "<div style=\"clear: both;\">\n";
 
@@ -1565,7 +1629,7 @@ class grafico {
                      "background-color: #F5F5F5; width: {$w}px; height: {$h}px; line-height: 1px;".
                      "font-size: {$h}px;\">{$p}</div>\n";
 
-                echo "<div style=\"text-align: right; width: {$w_valor}px; float: left;\" >{$valor} ({$porcentagem}%)</div>";
+                echo "<div style=\"text-align: right; width: {$w_valor}px; float: left;\" >{$valor_impressao} ({$texto_porcentagem})</div>";
 
                 echo "</div>\n";
             }
@@ -1616,8 +1680,10 @@ class grafico {
                 echo '<ul>';
                 foreach ($valores as $j => $v) {
                     $valor = $v[$i];
+                    $texto_valor = $this->converter_valor($valor);
                     $porcentagem = round($valor * 100 / $subtotal[$i], 0);
-                    echo '<li><em>'.texto::codificar($this->legenda[$j]).':</em> '.texto::numero($valor).' ('.$porcentagem.'%)</li>';
+                    $texto_porcentagem = texto::numero($porcentagem, 2, false, GRAFICO_LOCALIDADE).'%';
+                    echo '<li><em>'.texto::codificar($this->legenda[$j]).':</em> '.$texto_valor.' ('.$texto_porcentagem.')</li>';
                 }
                 echo '</ul>';
                 echo '</p>';
@@ -1627,16 +1693,21 @@ class grafico {
         } else {
             $total = array_sum($valores);
             foreach ($valores as $i => $valor) {
+                $texto_valor = $this->converter_valor($valor);
                 $porcentagem = round($valor * 100 / $total, 0);
+                $texto_porcentagem = texto::numero($porcentagem, 2, false, GRAFICO_LOCALIDADE).'%';
 
                 echo '<p>';
                 if ($this->escala) {
                     echo '<strong>'.texto::codificar($this->escala[$i]).':</strong> ';
+                } elseif ($this->legenda) {
+                    echo '<strong>'.texto::codificar($this->legenda[$i]).':</strong> ';
                 }
-                echo texto::numero($valor).' ('.$porcentagem.'%)';
+                echo $texto_valor.' ('.$texto_porcentagem.')';
                 echo '</p>';
             }
-            echo '<p><strong>Total:</strong> '.texto::numero($total).'</p>';
+            $texto_total = $this->converter_valor($total);
+            echo '<p><strong>Total:</strong> '.$texto_total.'</p>';
         }
 
         if ($this->legenda_linhas) {
@@ -1685,5 +1756,21 @@ class grafico {
         imagedestroy($img);
     }
 
-}//class
 
+    //
+    //     Converte os valores para exibicao
+    //
+    public function converter_valor($valor, $casas_decimais = 2, $fixo = false) {
+    // Int || Float $valor: valor a ser convertido
+    // Int $casas_decimais: numero maximo de casas decimais apresentado
+    // Bool $fixo: indica se deve usar um numero fixo de casas decimais
+    //
+        if ($this->conversao_valores) {
+            $novo_valor = call_user_func($this->conversao_valores, $valor);
+        } else {
+            $novo_valor = texto::numero($valor, $casas_decimais, $fixo, GRAFICO_LOCALIDADE);
+        }
+        return $novo_valor;
+    }
+
+}//class

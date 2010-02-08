@@ -4,10 +4,10 @@
 // Descricao: Gera graficos de barra em HTML baseado em CSS e com acessibilidade
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.1
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.2
 // Data: 18/06/2008
-// Modificado: 31/07/2008
+// Modificado: 06/10/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -27,7 +27,7 @@ final class grafico_barra {
     // String $label: nome da estatistica apresentada
     // Float $porcentagem: valor percentual a ser apresentado
     //
-        $porcentagem = round($porcentagem, 2);
+        $porcentagem = texto::numero($porcentagem, 2, false);
         $p = max(0, min(100, $porcentagem)) * 0.25;
 
         return '<p class="grafico_barra">'.

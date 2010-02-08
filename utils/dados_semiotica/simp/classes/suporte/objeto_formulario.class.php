@@ -4,10 +4,10 @@
 // Descricao: Classe Abstrata Objeto Formulario, oferece formularios padrao para as entidades
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.3.0.30
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.3.0.36
 // Data: 27/08/2007
-// Modificado: 14/08/2009
+// Modificado: 26/01/2010
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -23,6 +23,7 @@ abstract class objeto_formulario extends objeto {
     //public function pode_ser_manipulado(&$usuario)
     //public function pode_acessar_formulario(&$usuario, &$motivo = '')
     //public function get_info_campo($campo)
+
 
 /// @ METODOS DE LOGICA
 
@@ -71,8 +72,9 @@ abstract class objeto_formulario extends objeto {
 
             // Se e' um atributo de um objeto filho
             } else {
-                $php = "\$salvar_campos['".implode("']['", $vt_campo)."'][] = \$campo;";
-                eval($php);
+                util::definir_vetor_nivel($salvar_campos, array_merge($vt_campo, array(null)), $campo);
+                //$php = "\$salvar_campos['".implode("']['", $vt_campo)."'][] = \$campo;";
+                //eval($php);
             }
         }
 
@@ -92,9 +94,11 @@ abstract class objeto_formulario extends objeto {
 
                 // Se e' um atributo de um objeto filho
                 } else {
-                    $php = '$dados->'.$classe.'->'.implode('->', $vt_campo).'->'.$campo.' = $valor;'.
-                           "\$salvar_campos['".implode("']['", $vt_campo)."'][] = \$campo;";
-                    eval($php);
+                    util::definir_atributo_nivel($dados->$classe, array_merge($vt_campo, array($campo)), $valor);
+                    util::definir_vetor_nivel($salvar_campos, array_merge($vt_campo, array(null)), $campo);
+                    //$php = '$dados->'.$classe.'->'.implode('->', $vt_campo).'->'.$campo.' = $valor;'.
+                    //       "\$salvar_campos['".implode("']['", $vt_campo)."'][] = \$campo;";
+                    //eval($php);
                 }
             }
         }
@@ -105,11 +109,12 @@ abstract class objeto_formulario extends objeto {
     //
     //     Faz a Logica de um formulario simples de insercao ou alteracao (null = nao fez nada / false = erro / true = sucesso)
     //
-    protected function logica_formulario($dados, $campos, $opcoes = false, $captcha = false) {
+    protected function logica_formulario($dados, $campos, $opcoes = false, $captcha = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos pelo formulario
     // Array[String] $campos: campos reais vindos do formulario
     // Array[String => String] $opcoes: opcoes adicionais a serem inseridas nos dados
     // Bool $captcha: indica se um campo captcha foi solicitado no formulario
+    // Int $modo_transacao: tipo de transacao
     //
         // Se nem submeteu dados, ignorar
         if (isset($dados->default) || $dados->id_form != $this->id_form) {
@@ -120,7 +125,8 @@ abstract class objeto_formulario extends objeto {
         // Montar vetor de opcoes adicionais e retorna o vetor de campos a serem salvos
         $salvar_campos = $this->montar_opcoes($dados, $campos, $opcoes);
         if (is_array($opcoes) && count($opcoes)) {
-            $this->names = util::array_unique_recursivo(array_merge($this->names, array_keys($opcoes)));
+            $opcoes_hierarquico = objeto::converter_notacao_vetor(array_keys($opcoes));
+            $this->names = util::array_unique_recursivo(array_merge_recursive($this->names, $opcoes_hierarquico));
         }
 
         // Se o formulario possui um campo captcha
@@ -129,8 +135,8 @@ abstract class objeto_formulario extends objeto {
         }
 
         // Se conseguir salvar
-        if ($this->set_valores($dados->$classe, util::array_unique_recursivo($this->names), true) &&
-            $this->salvar_completo($salvar_campos)) {
+        if ($this->set_valores($dados->$classe, $this->names, true) &&
+            $this->salvar_completo($salvar_campos, 'salvar', $modo_transacao)) {
             $this->imprimir_avisos();
             return true;
 
@@ -145,8 +151,9 @@ abstract class objeto_formulario extends objeto {
     //
     //     Faz a Logica de um formulario simples de exclusao
     //
-    protected function logica_formulario_excluir(&$dados) {
+    protected function logica_formulario_excluir(&$dados, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos pelo formulario
+    // Int $modo_transacao: tipo de transacao
     //
         // Se os dados nao foram submetidos
         if (!isset($dados->id_form) ||
@@ -181,7 +188,7 @@ abstract class objeto_formulario extends objeto {
 
         // Se nao conseguir apagar
         if (!$this->validacao_final($dados) ||
-            !$this->salvar_completo($salvar_campos, 'excluir')) {
+            !$this->salvar_completo($salvar_campos, 'excluir', $modo_transacao)) {
             $this->imprimir_erros();
             return false;
         }
@@ -195,12 +202,13 @@ abstract class objeto_formulario extends objeto {
     //
     //     Faz a Logica de um formulario simples de insercao ou alteracao
     //
-    protected function logica_formulario_relacionamento(&$dados, $chave_obj, $nome_vetor, &$vt_itens, &$disable) {
+    protected function logica_formulario_relacionamento(&$dados, $chave_obj, $nome_vetor, &$vt_itens, &$disable, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // String $chave_obj: nome do vetor submetido pelo formulario
     // String $nome_vetor: nome do vetor para listar os elementos
     // Array[Mixed => String] $vt_itens: vetor de itens possiveis
     // Array[Bool] $disable: vetor de itens desabilitados (nao podem mudar)
+    // Int $modo_transacao: tipo de transacao
     //
         // Se os dados nao foram submetidos
         if (!isset($dados->id_form)) {
@@ -251,8 +259,12 @@ abstract class objeto_formulario extends objeto {
                 return false;
             }
 
+            // Iniciar transacao
+            $r = $r && objeto::inicio_transacao($modo_transacao);
+
             // Operacoes pre-salvar
             if (!$this->pre_salvar($salvar_campos)) {
+                objeto::fim_transacao(true);
                 $this->imprimir_erros();
                 return false;
             }
@@ -277,9 +289,13 @@ abstract class objeto_formulario extends objeto {
 
             // Operacoes pos-salvar
             if (!$this->pos_salvar()) {
+                objeto::fim_transacao(true);
                 $this->imprimir_erros();
                 return false;
             }
+
+            // Encerrar transacao
+            $r = objeto::fim_transacao(!$r) && $r;
 
             // Gerar mensagem
             if ($r) {
@@ -304,11 +320,12 @@ abstract class objeto_formulario extends objeto {
     //
     //     Faz a Logica de um formulario de importacao de dados de arquivos XML
     //
-    protected function logica_formulario_importar_xml(&$dados, &$arquivos, &$obrigatorios, &$opcoes) {
+    protected function logica_formulario_importar_xml(&$dados, &$arquivos, &$obrigatorios, &$opcoes, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String => Object] $arquivos: vetor com os arquivos submetidos
     // Array[String] $obrigatorios: vetor com os nomes dos campos obrigatorios
     // Array[String => String] $opcoes: opcoes adicionais a serem inseridas em cada registro
+    // Int $modo_transacao: tipo de transacao
     //
         // Se os dados nao foram submetidos
         if (!isset($dados->id_form)) {
@@ -349,7 +366,7 @@ abstract class objeto_formulario extends objeto {
         }
 
         // Tudo pronto, vamos importa'-los!
-        $this->importar_entidades($entidades, $dados->direto_bd);
+        $this->importar_entidades($entidades, $dados->direto_bd, $modo_transacao);
 
         // Se deu tudo certo
         if (!$this->possui_erros()) {
@@ -365,11 +382,12 @@ abstract class objeto_formulario extends objeto {
     //
     //     Faz a Logica de um formulario de importacao de dados de arquivos CSV
     //
-    protected function logica_formulario_importar_csv(&$dados, &$arquivos, &$obrigatorios, &$opcoes) {
+    protected function logica_formulario_importar_csv(&$dados, &$arquivos, &$obrigatorios, &$opcoes, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String => Object] $arquivos: vetor com os arquivos submetidos
     // Array[String] $obrigatorios: vetor com os nomes dos campos obrigatorios
     // Array[String => String] $opcoes: opcoes adicionais a serem inseridas em cada registro
+    // Int $modo_transacao: tipo de transacao
     //
         // Se os dados nao foram submetidos
         if (!isset($dados->id_form)) {
@@ -411,7 +429,7 @@ abstract class objeto_formulario extends objeto {
         }
 
         // Tudo pronto, vamos importa'-los!
-        $this->importar_entidades($entidades, $dados->direto_bd);
+        $this->importar_entidades($entidades, $dados->direto_bd, $modo_transacao);
 
         // Se deu tudo certo
         if (!$this->possui_erros()) {
@@ -656,9 +674,10 @@ abstract class objeto_formulario extends objeto {
     //
     //     Importa as entidades para o BD
     //
-    private function importar_entidades(&$entidades, $direto_bd = false) {
+    private function importar_entidades(&$entidades, $direto_bd = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Array[Object] $entidades: vetor de objeto com os dados a serem inseridos
     // Bool $direto_bd: indica se os dados devem ser inseridos diretamente no BD ou passar pelas validacoes
+    // Int $modo_transacao: tipo de transacao
     //
         $r = true;
 
@@ -666,7 +685,10 @@ abstract class objeto_formulario extends objeto {
         if ($direto_bd) {
             $n = 1;
             $classe = $this->get_classe();
-            $r = objeto::inicio_transacao();
+
+            $ignore_user_abort = ini_get('ignore_user_abort');
+            ini_set('ignore_user_abort', 1);
+            $r = objeto::inicio_transacao($modo_transacao);
             foreach ($entidades->$classe as $entidade) {
                 $inseriu = self::$dao->insert($this, $entidade);
                 $r = $r && $inseriu;
@@ -676,6 +698,7 @@ abstract class objeto_formulario extends objeto {
                 $n++;
             }
             $r = objeto::fim_transacao(!$r) && $r;
+            ini_set('ignore_user_abort', $ignore_user_abort);
 
         // Salvar no BD como se estivesse inserindo entidade por entidade
         } else {
@@ -683,7 +706,9 @@ abstract class objeto_formulario extends objeto {
             $obj    = new $classe();
             $n      = 1;
 
-            $r = objeto::inicio_transacao();
+            $ignore_user_abort = ini_get('ignore_user_abort');
+            ini_set('ignore_user_abort', 1);
+            $r = objeto::inicio_transacao($modo_transacao);
             foreach ($entidades->$classe as $entidade) {
                 $obj->limpar_objeto();
                 $obj->set_id_form($this->id_form);
@@ -691,7 +716,7 @@ abstract class objeto_formulario extends objeto {
                 $campos_entidade = array_keys((array)$entidade);
 
                 // Se nao salvou
-                if (!$obj->salvar_completo($campos_entidade)) {
+                if (!$obj->salvar_completo($campos_entidade, 'salvar')) {
                     $r = false;
                     $this->erros[] = 'Erro ao importar '.$this->get_entidade()." (registro {$n})";
                     $this->erros[] = $obj->get_erros();
@@ -699,6 +724,7 @@ abstract class objeto_formulario extends objeto {
                 $n++;
             }
             $r = objeto::fim_transacao(!$r) && $r;
+            ini_set('ignore_user_abort', $ignore_user_abort);
 
             if (!$r) {
                 $this->erros[] = 'Alguma opera&ccedil;&atilde;o falhou e todo processo foi cancelado';
@@ -936,7 +962,7 @@ abstract class objeto_formulario extends objeto {
                 $metodo = 'get_vetor_'.$atributo->nome;
                 if (method_exists($this, $metodo)) {
                     $vetor = $this->$metodo();
-                } elseif ($atributo->chave == 'FK' || $atributo->chave = 'OFK') {
+                } elseif ($atributo->chave == 'FK' || $atributo->chave == 'OFK') {
                     $obj = $this->get_objeto_rel_uu($atributo->nome, false);
                     $vetor = $obj->vetor_associativo();
                     if ($atributo->chave == 'OFK') {
@@ -1100,7 +1126,6 @@ abstract class objeto_formulario extends objeto {
                     break;
                 }
             }
-
             $data = objeto::parse_data($valor, false);
             $prefixo = $atributo->nome;
 
@@ -1109,12 +1134,10 @@ abstract class objeto_formulario extends objeto {
                 $form->campo_data($prefixo, $data['dia'], $data['mes'], $data['ano'], $atributo->get_label(), $anos_passado, $anos_futuro, $atributo->pode_vazio, 0, $atributo->ajuda);
                 return true;
             case 'hora':
-                $prefixo = $atributo->nome;
                 $form->campo_hora($prefixo, $data['hora'], $data['minuto'], $data['segundo'], $atributo->get_label(), 0, $atributo->ajuda);
                 return true;
             case 'data_hora':
             default:
-                $prefixo = $atributo->nome;
                 $form->inicio_bloco($atributo->get_label());
                 $form->campo_data($prefixo, $data['dia'], $data['mes'], $data['ano'], 'Data', $anos_passado, $anos_futuro, $atributo->pode_vazio, 0, $atributo->ajuda);
                 $form->campo_hora($prefixo, $data['hora'], $data['minuto'], $data['segundo'], 'Hora', 0, $atributo->ajuda);
@@ -1263,7 +1286,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Logica de geracao de um formulario de cadastro de dados
     //
-    public function formulario_inserir(&$dados, &$campos, $action, $prefixo_id = '', $opcoes = false, $class = false, $ajax = true, $outro = true, $nome_botao = false) {
+    public function formulario_inserir(&$dados, &$campos, $action, $prefixo_id = '', $opcoes = false, $class = false, $ajax = true, $outro = true, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String || String => Array[String]] || Bool $campos: campos do formulario de forma hierarquica (vetor de vetores) ou true (todos)
     // String $action: endereco para envio dos dados
@@ -1273,6 +1296,7 @@ abstract class objeto_formulario extends objeto {
     // Bool $ajax: usar ajax ou nao
     // Bool $outro: imprime um link para cadastrar outro elemento
     // String $nome_botao: nome do botao de inserir dados
+    // Int $modo_transacao: tipo de transacao
     //
         global $USUARIO;
 
@@ -1312,7 +1336,7 @@ abstract class objeto_formulario extends objeto {
 
         $form = $this->montar_formulario($action, $this->id_form, $class, $campos, $dados, $opcoes, $nome_botao, $ajax);
 
-        $r = $this->logica_formulario($dados, $vt_campos, $opcoes, $captcha);
+        $r = $this->logica_formulario($dados, $vt_campos, $opcoes, $captcha, $modo_transacao);
         if ($r === true) {
             $this->imprimir_dados($campos, false, false);
             if ($outro) {
@@ -1346,7 +1370,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Logica de geracao de um formulario de alteracao de dados
     //
-    public function formulario_alterar(&$dados, &$campos, $action, $prefixo_id = '', $opcoes = false, $class = false, $ajax = true, $nome_botao = false) {
+    public function formulario_alterar(&$dados, &$campos, $action, $prefixo_id = '', $opcoes = false, $class = false, $ajax = true, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String || String => Array[String]] || Bool $campos: campos do formulario de forma hierarquica (vetor de vetores) ou true (todos)
     // String $action: endereco para envio dos dados
@@ -1355,6 +1379,7 @@ abstract class objeto_formulario extends objeto {
     // String $class: nome da classe CSS utilizada
     // Bool $ajax: usar ajax ou nao
     // String $nome_botao: nome do botado de alterar os dados
+    // Int $modo_transacao: tipo de transacao
     //
         global $USUARIO;
 
@@ -1399,7 +1424,7 @@ abstract class objeto_formulario extends objeto {
         $this->consultar_campos($vt_campos);
         $form = $this->montar_formulario($action, $this->id_form, $class, $campos, $dados, $opcoes, $nome_botao, $ajax);
 
-        $r = $this->logica_formulario($dados, $vt_campos, $opcoes, $captcha);
+        $r = $this->logica_formulario($dados, $vt_campos, $opcoes, $captcha, $modo_transacao);
         $classe_formulario = 'formulario';
         if ($form instanceof $classe_formulario) {
             if ($r === true) {
@@ -1417,7 +1442,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Logica de geracao de um formulario de exclusao
     //
-    public function formulario_excluir(&$dados, &$campos, $action, $prefixo_id = '', $class = false, $ajax = true, $nome_botao = false) {
+    public function formulario_excluir(&$dados, &$campos, $action, $prefixo_id = '', $class = false, $ajax = true, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String || String => Array[String]] $campos: campos do formulario (true = todos)
     // String $action: endereco para envio dos dados
@@ -1425,6 +1450,7 @@ abstract class objeto_formulario extends objeto {
     // String $class: nome da classe CSS utilizada
     // Bool $ajax: usar ajax ou nao
     // String $nome_botao: nome do botao de excluir os dados
+    // Int $modo_transacao: tipo de transacao
     //
         global $USUARIO;
 
@@ -1455,7 +1481,7 @@ abstract class objeto_formulario extends objeto {
             return null;
         }
 
-        $r = $this->logica_formulario_excluir($dados);
+        $r = $this->logica_formulario_excluir($dados, $modo_transacao);
 
         if (!$r) {
 
@@ -1535,7 +1561,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Imprime um formulario (com checkbox) para adicionar ou remover relacionamentos 1:N simples
     //
-    public function formulario_relacionamento(&$dados, $action, $nome_vetor, $classe_relacionada, $prefixo_id = '', $condicoes = null, $disable = array(), $class = false, $ajax = true, $nome_botao = false) {
+    public function formulario_relacionamento(&$dados, $action, $nome_vetor, $classe_relacionada, $prefixo_id = '', $condicoes = null, $disable = array(), $class = false, $ajax = true, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // String $action: endereco de destino dos dados
     // String $nome_vetor: nome do vetor para listar os elementos
@@ -1546,6 +1572,7 @@ abstract class objeto_formulario extends objeto {
     // String $class: nome da classe CSS usada
     // Bool $ajax: usar Ajax ou nao
     // String $nome_botao: nome do botao de salvar os dados
+    // Int $modo_transacao: tipo de transacao
     //
         global $USUARIO;
 
@@ -1596,7 +1623,7 @@ abstract class objeto_formulario extends objeto {
 
         // [3] LOGICA DE NEGOCIOS PARA RELACIONAMENTOS
         $vt_chaves = array_keys($vt_itens);
-        $r = $this->logica_formulario_relacionamento($dados, $chave_obj, $nome_vetor, $vt_chaves, $disable);
+        $r = $this->logica_formulario_relacionamento($dados, $chave_obj, $nome_vetor, $vt_chaves, $disable, $modo_transacao);
 
         // [4] VETOR DE ITENS CHECADOS
         $vt_check = array();
@@ -1621,7 +1648,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Logica de geracao de formulario de Importacao de Dados por arquivos XML
     //
-    public function formulario_importar_xml(&$dados, &$arquivos, $action, $prefixo_id = '', $obrigatorios = false, $opcoes = false, $class = false, $nome_botao = false) {
+    public function formulario_importar_xml(&$dados, &$arquivos, $action, $prefixo_id = '', $obrigatorios = false, $opcoes = false, $class = false, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String => Object] $arquivos: vetor com os arquivos submetidos
     // String $action: endereco de destino dos dados
@@ -1630,7 +1657,13 @@ abstract class objeto_formulario extends objeto {
     // Array[String => String] $opcoes: opcoes adicionais a serem inseridas em cada registro
     // String $class: classe CSS usada no formulario
     // String $nome_botao: nome do botao de enviar os dados
+    // Int $modo_transacao: tipo de transacao
     //
+        if (!ini_get('file_uploads')) {
+            echo '<p>Este sistema n&atilde;o est&aacute; configurado para aceitar o envio de arquivos.</p>';
+            return false;
+        }
+
         if ($nome_botao === false) {
             $nome_botao = 'Enviar';
         }
@@ -1640,7 +1673,7 @@ abstract class objeto_formulario extends objeto {
         }
 
         $this->set_id_form($this->id_formulario_importar_xml(), $prefixo_id);
-        $r = $this->logica_formulario_importar_xml($dados, $arquivos, $obrigatorios, $opcoes);
+        $r = $this->logica_formulario_importar_xml($dados, $arquivos, $obrigatorios, $opcoes, $modo_transacao);
 
         // Imprimir o formulario
         $form = new formulario($action, $this->id_form, $class, 'post', false);
@@ -1657,7 +1690,7 @@ abstract class objeto_formulario extends objeto {
     //
     //     Logica de geracao de formulario de Importacao de Dados por arquivos CSV
     //
-    public function formulario_importar_csv(&$dados, &$arquivos, $action, $prefixo_id = '', $obrigatorios = false, $opcoes = false, $class = false, $nome_botao = false) {
+    public function formulario_importar_csv(&$dados, &$arquivos, $action, $prefixo_id = '', $obrigatorios = false, $opcoes = false, $class = false, $nome_botao = false, $modo_transacao = DRIVER_BASE_MODO_PADRAO) {
     // Object $dados: dados submetidos
     // Array[String => Object] $arquivos: vetor com os arquivos submetidos
     // String $action: endereco de destino dos dados
@@ -1666,7 +1699,13 @@ abstract class objeto_formulario extends objeto {
     // Array[String => String] $opcoes: opcoes adicionais a serem inseridas em cada registro
     // String $class: classe CSS usada no formulario
     // String $nome_botao: nome do botao de enviar os dados
+    // Int $modo_transacao: tipo de transacao
     //
+        if (!ini_get('file_uploads')) {
+            echo '<p>Este sistema n&atilde;o est&aacute; configurado para aceitar o envio de arquivos.</p>';
+            return false;
+        }
+
         if ($nome_botao === false) {
             $nome_botao = 'Enviar';
         }
@@ -1676,7 +1715,7 @@ abstract class objeto_formulario extends objeto {
         }
 
         $this->set_id_form($this->id_formulario_importar_csv(), $prefixo_id);
-        $r = $this->logica_formulario_importar_csv($dados, $arquivos, $obrigatorios, $opcoes);
+        $r = $this->logica_formulario_importar_csv($dados, $arquivos, $obrigatorios, $opcoes, $modo_transacao);
 
         // Imprimir o formulario
         $form = new formulario($action, $this->id_form, $class, 'post', false);
@@ -1751,15 +1790,21 @@ abstract class objeto_formulario extends objeto {
         $form = new formulario($action, $id_form, $class, 'post', $ajax);
         foreach ($campos as $chave => $campo) {
             if (is_array($campo)) {
-                $form->inicio_bloco($chave);
+                $form->inicio_bloco($chave, false, false, 'fieldset_'.md5($chave));
                 foreach ($campo as $c) {
-                    if (!$this->inserir_campo_formulario($form, $c, $valores, $id_form)) {
+                    if ($c == '-') {
+                        $form->campo_generico('<hr />');
+                    } elseif (!$this->inserir_campo_formulario($form, $c, $valores, $id_form)) {
                         return false;
                     }
                 }
                 $form->fim_bloco();
-            } elseif (!$this->inserir_campo_formulario($form, $campo, $valores, $id_form)) {
-                return false;
+            } else {
+                if ($campo == '-') {
+                    $form->campo_generico('<hr />');
+                } elseif (!$this->inserir_campo_formulario($form, $campo, $valores, $id_form)) {
+                    return false;
+                }
             }
         }
         $form->set_nome(array());
@@ -1800,7 +1845,7 @@ abstract class objeto_formulario extends objeto {
             $form->set_nome($this->get_classe());
             $inseriu_campo = $this->campo_formulario($form, $nome_campo, $valor);
             if (!$inseriu_campo) {
-                trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo deveria retornar um valor "bool" e esta retornando um "'.gettype($inseriu_campo).'")', E_USER_ERROR);
+                trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo deveria retornar um valor "bool" e esta retornando um "'.util::get_tipo($inseriu_campo).'")', E_USER_ERROR);
             } else {
                 $this->names[] = $nome_campo;
                 if (FORMULARIO_AJAX && $this->get_info_campo($nome_campo)) {
@@ -1826,15 +1871,17 @@ abstract class objeto_formulario extends objeto {
 
                 $inseriu_campo = $this->get_objeto_rel_uu($nome_objeto)->campo_formulario($form, $nome_campo, $valor);
                 if (!$inseriu_campo) {
-                    trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo retorou um tipo "'.gettype($inseriu_campo).'" e deveria retornar um "bool")', E_USER_ERROR);
+                    trigger_error('O campo "'.$nome_campo.'" nao foi especificado na entidade, nem no metodo campo_formulario (o metodo retorou um tipo "'.util::get_tipo($inseriu_campo).'" e deveria retornar um "bool")', E_USER_ERROR);
                 } else {
                     if (FORMULARIO_AJAX && $this->get_objeto_rel_uu($nome_objeto)->get_info_campo($nome_campo)) {
                         $id_campo = $form->montar_id($nome_campo);
                         $meta_valor = base64_encode($this->get_objeto_rel_uu($nome_objeto)->get_classe().':'.$nome_campo.':'.$this->id_form);
                         $form->meta_informacao($id_campo, $meta_valor);
                     }
-                    $php = '$this->names["'.implode('"]["', $vt_atributo).'"][] = $nome_campo;';
-                    eval($php);
+
+                    util::definir_vetor_nivel($this->names, array_merge($vt_atributo, array(null)), $nome_campo);
+                    //$php = '$this->names["'.implode('"]["', $vt_atributo).'"][] = $nome_campo;';
+                    //eval($php);
                 }
             }
         }

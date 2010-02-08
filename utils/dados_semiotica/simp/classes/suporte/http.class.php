@@ -4,10 +4,10 @@
 // Descricao: Classe de requisicoes HTTP
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.10
 // Data: 23/01/2008
-// Modificado: 02/06/2009
+// Modificado: 28/10/2009
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -18,6 +18,37 @@ final class http {
     //     Construtor privado: utilize os metodos estaticos
     //
     private function __construct() {}
+
+
+    //
+    //     Atalho para obter o conteudo de um link especifico
+    //
+    static public function get_conteudo_link($link) {
+    // String $link: link a ser aberto
+    //
+        $dados_link = parse_url($link);
+        $padrao = array('host' => 'localhost',
+                        'port' => 80,
+                        'path' => '/');
+        foreach ($padrao as $chave => $valor) {
+            if (!isset($dados_link[$chave])) {
+                $dados_link[$chave] = $valor;
+            }
+        }
+
+        if (isset($dados_link['query'])) {
+            $dados_link['query'] = str_replace('&amp;', '&', $dados_link['query']);
+            parse_str($dados_link['query'], $dados);
+        } else {
+            $dados = null;
+        }
+
+        $resultado = self::get($dados_link['host'], $dados_link['port'], $dados_link['path'], $dados);
+        if ($resultado->cod_erro != 0) {
+            return false;
+        }
+        return $resultado->conteudo_resposta;
+    }
 
 
     //
@@ -94,28 +125,49 @@ final class http {
     // String $path: caminho relativo do endereco para envio dos dados
     // Object || Array[String => Mixed] $dados: dados a serem submetidos
     //
-        if ($path[0] != '/') { $path = '/'.$path; }
+        if ($path[0] != '/') {
+            $path = '/'.$path;
+        }
         $metodo = strtoupper($metodo);
-        $len = 0;
-        switch ($metodo) {
-        case 'GET':
-        case 'POST':
-            if (!$dados) {
-                $dados  = http_build_query((array)$dados);
-                $len = strlen($dados);
-            }
-            break;
-        default:
-            $dados = false;
+
+        if ($dados) {
+            $query = http_build_query((array)$dados, '', '&');
+            $len = strlen($query);
+        } else {
+            $query = '';
+            $len = 0;
         }
 
-        $h = "{$metodo} {$path} HTTP/1.1\n".
-             "Host: {$host}\n".
-             (($metodo == 'POST') ? "Content-Type: application/x-www-form-urlencoded\n" : '').
-             "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\n".
-             ($len ? "Content-Length: {$len}" : '').
-             "Connection: close\n\n".
-             ($dados ? $dados : '');
+        switch ($metodo) {
+        case 'GET':
+            $h = "GET {$path}?{$query} HTTP/1.1\n".
+                 "Host: {$host}\n".
+                 "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\n".
+                 "Connection: close\n".
+                 "\n";
+             break;
+
+        case 'POST':
+            $h = "POST {$path} HTTP/1.1\n".
+                 "Host: {$host}\n".
+                 "Content-Type: application/x-www-form-urlencoded\n".
+                 "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\n".
+                 "Content-Length: {$len}\n".
+                 "Connection: close\n".
+                 "\n".
+                 $query;
+            break;
+        default:
+            $h = "{$metodo} {$path} HTTP/1.1\n".
+                 "Host: {$host}\n".
+                 ($len ? "Content-Type: application/x-www-form-urlencoded\n" : '').
+                 "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\n".
+                 ($len ? "Content-Length: {$len}\n" : '').
+                 "Connection: close\n".
+                 "\n".
+                 ($len ? $query : '');
+            break;
+        }
         return $h;
     }
 

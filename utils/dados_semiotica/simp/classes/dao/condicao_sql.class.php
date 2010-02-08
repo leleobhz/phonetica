@@ -4,10 +4,10 @@
 // Descricao: Metodos uteis para montar condicoes SQL genericas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.1.1
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.4
 // Data: 17/04/2008
-// Modificado: 29/07/2009
+// Modificado: 25/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -19,47 +19,56 @@ define('CONDICAO_SQL_COMPOSTA',    2); // N operandos
 define('CONDICAO_SQL_UNITARIA',    3); // 1 operando
 define('CONDICAO_SQL_AGRUPAMENTO', 4); // N consultas
 
+// Possiveis valores dos indices tipo1 e tipo2 do vetor de flags das condicoes simples (CONDICAO_SQL_SIMPLES)
+define('CONDICAO_SQL_TIPO_ATRIBUTO', 1);
+define('CONDICAO_SQL_TIPO_VALOR',    2);
+
 final class condicao_sql {
 
     // Vetor de atributos da condicao (variam de acordo com o tipo de condicao, conforme definido abaixo)
     private $valores;
 
     // CONDICAO_SQL_VAZIA: consulta incondicional
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
 
     // CONDICAO_SQL_SIMPLES: %operando1 %operador %operando2
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
-    // - String $operando1           // Operando da esquerda (um atributo)
-    // - String || Null $operando2   // Operando da direita (um atributo ou um valor ou null)
-    // - String $operador            // Operador: < <= > >= = <> LIKE UNLIKE
-    // - Bool $entre_atributos       // Flag indicando se o segundo operando e' um atributo (true) ou um valor (false)
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
+    // - String $operando1             // Operando da esquerda (um atributo)
+    // - Scalar || Null $operando2     // Operando da direita (um atributo ou um valor [string, int, float, bool ou null])
+    // - String $operador              // Operador: < <= > >= = <> LIKE UNLIKE
+    // - Array[String => Mixed] $flag  // Flag com caracteristicas dos operandos
+    //   - Int tipo1                   // Indica o que e' o primeiro operando (padrao CONDICAO_SQL_TIPO_ATRIBUTO)
+    //   - Int tipo2                   // Indica o que e' o segundo operando (padrao CONDICAO_SQL_TIPO_VALOR)
+    //   - String funcao1              // Funcao aplicada sobre o primeiro operando (dia, mes, ano, hora, minuto, segundo) (padrao vazio)
+    //   - String funcao2              // Funcao aplicada sobre o segundo operando (dia, mes, ano, hora, minuto, segundo) (padro vazio)
 
     // CONDICAO_SQL_COMPOSTA: ( %condicao{1} [ %operador %condicao{2} ... ] )
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
-    // - String $operador            // Operador: AND OR
-    // - Array[condicao_sql] $vetor  // Vetor de condicoes concatenadas sob o operador
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
+    // - String $operador              // Operador: AND OR
+    // - Array[condicao_sql] $vetor    // Vetor de condicoes concatenadas sob o operador
 
     // CONDICAO_SQL_UNITARIA: %operador (%condicao)
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
-    // - String $operador            // Operador: NOT
-    // - condicao_sql $condicao      // Condicao que serve de operando para o operador
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
+    // - String $operador              // Operador: NOT
+    // - condicao_sql $condicao        // Condicao que serve de operando para o operador
 
     // CONDICAO_SQL_AGRUPAMENTO: (%consulta) [ %operador (%consulta) ... ]
-    // - Int $tipo                   // Tipo de condicao
-    // - String $id                  // Identificador unico da condicao (nao obrigatorio)
-    // - String $operador            // Operador: UNION
-    // - Array[condicao_sql] $vetor  // Vetor de condicoes das consultas a serem agrupadas sob o operador
+    // - Int $tipo                     // Tipo de condicao
+    // - String $id                    // Identificador unico da condicao (nao obrigatorio)
+    // - String $operador              // Operador: UNION
+    // - Array[condicao_sql] $vetor    // Vetor de condicoes das consultas a serem agrupadas sob o operador
 
 
     //
     //     Construtor padrao (prefira utilizar os metodos factory)
     //
-    public function __construct($tipo = CONDICAO_SQL_VAZIA) {
+    public function __construct($tipo = CONDICAO_SQL_VAZIA, $id = null) {
     // Int $tipo: tipo de condicao (vazia, simples, composta, unitaria ou de agrupamento)
+    // String $id: identificador unico da condicao
     //
         $this->valores = array();
         $tipo = abs($tipo);
@@ -77,6 +86,9 @@ final class condicao_sql {
             $this->valores['tipo'] = CONDICAO_SQL_VAZIA;
             trigger_error('Valor invalido para o tipo de condicao ('.util::exibir_var($tipo).')', E_USER_NOTICE);
             break;
+        }
+        if (is_scalar($id)) {
+            $this->__set('id', strval($id));
         }
     }
 
@@ -115,14 +127,7 @@ final class condicao_sql {
     public function &__get($atributo) {
     // String $atributo: nome do atributo desejado
     //
-        $atributo = strtolower($atributo);
-        if (isset($this->valores[$atributo])) {
-            return $this->valores[$atributo];
-        }
-        if ($atributo == 'operando2') {
-            return $this->valores[$atributo];
-        }
-        throw new Exception("N&atilde;o existe o atributo {$atributo}");
+        return $this->valores[$atributo];
     }
 
 
@@ -139,18 +144,37 @@ final class condicao_sql {
             $id = $id ? ", '{$id}'" : '';
             $operando1 = texto::codificar($this->valores['operando1']);
             if (is_null($this->valores['operando2'])) {
+                $id = $id ? ', false, '.$id : '';
                 switch ($this->valores['operador']) {
                 case '=':
-                    return "condicao_sql::montar('{$operando1}', '=', null, false{$id})";
+                    return "condicao_sql::montar('{$operando1}', '=', null{$id})";
                 case '<>':
-                    return "condicao_sql::montar('{$operando1}', '&lt;&gt;', null, false{$id})";
+                    return "condicao_sql::montar('{$operando1}', '&lt;&gt;', null{$id})";
                 }
             } else {
-                $operando2 = str_replace("'", "\\'", texto::codificar($this->valores['operando2']));
+                $vt_constantes = array(CONDICAO_SQL_TIPO_ATRIBUTO => 'CONDICAO_SQL_TIPO_ATRIBUTO',
+                                       CONDICAO_SQL_TIPO_VALOR => 'CONDICAO_SQL_TIPO_VALOR');
+
+                $operando2 = util::exibir_var($this->valores['operando2'], UTIL_EXIBIR_PHP, true);
                 $operador = texto::codificar($this->valores['operador']);
-                $entre_atributos = $this->valores['entre_atributos'] ? 'true' : 'false';
-                return "condicao_sql::montar('{$operando1}', '{$operador}', '{$operando2}', {$entre_atributos}{$id})";
+                $vt_flags = array();
+                if (isset($this->valores['flags']['tipo1']) && $this->valores['flags']['tipo1'] != CONDICAO_SQL_TIPO_ATRIBUTO) {
+                    $vt_flags[] = "'tipo1' => ".$vt_constantes[$this->valores['flags']['tipo1']];
+                }
+                if (isset($this->valores['flags']['tipo2']) && $this->valores['flags']['tipo2'] != CONDICAO_SQL_TIPO_VALOR) {
+                    $vt_flags[] = "'tipo2' => ".$vt_constantes[$this->valores['flags']['tipo2']];
+                }
+                if (isset($this->valores['flags']['funcao1'])) {
+                    $vt_flags[] = "'funcao1' => '".$this->valores['flags']['funcao1']."'";
+                }
+                if (isset($this->valores['flags']['funcao2'])) {
+                    $vt_flags[] = "'funcao2' => '".$this->valores['flags']['funcao2']."'";
+                }
+                $flags = count($vt_flags) ? ', array('.implode(', ', $vt_flags).')' : '';
+
+                return "condicao_sql::montar('{$operando1}', '{$operador}', {$operando2}{$flags}{$id})";
             }
+            break;
         case CONDICAO_SQL_COMPOSTA:
             $id = $id ? ", '{$id}'" : '';
             $operador = $this->valores['operador'];
@@ -172,7 +196,7 @@ final class condicao_sql {
             $id = $id ? ", '{$id}'" : '';
             $operador = $this->valores['operador'];
             $vetor = "array(\n".implode(",\n", array_map('strval', $this->valores['vetor'])).")\n";
-            if ($operador = 'UNION') {
+            if ($operador == 'UNION') {
                 return "condicao_sql::sql_union({$vetor}{$id})";
             }
             break;
@@ -190,48 +214,47 @@ final class condicao_sql {
     static public function vazia($id = '') {
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
-        $condicao = new $classe(CONDICAO_SQL_VAZIA);
-        $condicao->id = $id;
-        return $condicao;
+        return new self(CONDICAO_SQL_VAZIA, $id);
     }
 
 
     //
     //     Cria uma nova condicao simples
+    //     As flags possiveis sobre as caracteristicas dos operandos sao:
+    //     Int tipo1: indica o que e' o primeiro operando (padrao CONDICAO_SQL_TIPO_ATRIBUTO)
+    //     Int tipo2: indica o que e' o segundo operando (padrao CONDICAO_SQL_TIPO_VALOR)
+    //     String funcao1: indica a funcao sobre o primeiro operando (dia, mes, ano, hora, minuto, segundo)
+    //     String funcao2: indica a funcao sobre o segundo operando (dia, mes, ano, hora, minuto, segundo)
     //
-    static public function montar($operando1, $operador, $operando2, $entre_atributos = false, $id = '') {
+    static public function montar($operando1, $operador, $operando2, $flags = false, $id = '') {
     // String $operando1: operando 1 (sempre um atributo)
     // String $operador: codigo da operacao
-    // String || Null $operando2: operando 2 (um atributo ou um valor ou null)
-    // Bool $entre_atributos: indica se o operando2 e' um atributo (true) ou um valor (false)
+    // String || Int || Float || Bool || Null $operando2: operando 2 (um atributo ou um valor ou null)
+    // Array[String => Mixed] $flags: vetor com caracteristicas dos operandos
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
 
         // Operadores especiais
         switch ($operador) {
         case '!~':
         case 'UNLIKE':
             $operador = 'LIKE';
-            $condicao = new $classe(CONDICAO_SQL_SIMPLES);
-            $condicao->operando1       = $operando1;
-            $condicao->operador        = $operador;
-            $condicao->operando2       = $operando2;
-            $condicao->entre_atributos = $entre_atributos;
-            $condicao->id              = $id;
+            $condicao = new self(CONDICAO_SQL_SIMPLES, $id);
+            $condicao->operando1 = $operando1;
+            $condicao->operador  = $operador;
+            $condicao->operando2 = $operando2;
+            $condicao->flags     = $flags;
             if ($condicao->possui_erros()) {
                 return false;
             }
             return self::sql_not($condicao);
         }
 
-        $condicao = new $classe(CONDICAO_SQL_SIMPLES);
-        $condicao->operando1       = $operando1;
-        $condicao->operador        = $operador;
-        $condicao->operando2       = $operando2;
-        $condicao->entre_atributos = $entre_atributos;
-        $condicao->id              = $id;
+        $condicao = new self(CONDICAO_SQL_SIMPLES, $id);
+        $condicao->operando1 = $operando1;
+        $condicao->operador  = $operador;
+        $condicao->operando2 = $operando2;
+        $condicao->flags     = $flags;
         if ($condicao->possui_erros()) {
             return false;
         }
@@ -246,18 +269,16 @@ final class condicao_sql {
     // Array[condicao_sql] $vt_condicoes: vetor de condicoes a serem agrupadas
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
         if (count($vt_condicoes) == 1) {
             $condicao = array_pop($vt_condicoes);
-            if (!($condicao instanceof $classe)) {
+            if (!($condicao instanceof self)) {
                 trigger_error('Tipo invalido para a condicao ('.util::get_tipo($condicao).')', E_USER_WARNING);
                 return false;
             }
         } else {
-            $condicao = new $classe(CONDICAO_SQL_COMPOSTA);
+            $condicao = new self(CONDICAO_SQL_COMPOSTA, $id);
             $condicao->operador = 'AND';
             $condicao->vetor    = $vt_condicoes;
-            $condicao->id       = $id;
         }
         if ($condicao->possui_erros()) {
             return false;
@@ -273,18 +294,16 @@ final class condicao_sql {
     // Array[condicao_sql] $vt_condicoes: vetor de condicoes a serem agrupadas
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
         if (count($vt_condicoes) == 1) {
             $condicao = array_pop($vt_condicoes);
-            if (!($condicao instanceof $classe)) {
+            if (!($condicao instanceof self)) {
                 trigger_error('Tipo invalido para a condicao ('.util::get_tipo($condicao).')', E_USER_WARNING);
                 return false;
             }
         } else {
-            $condicao = new $classe(CONDICAO_SQL_COMPOSTA);
+            $condicao = new self(CONDICAO_SQL_COMPOSTA, $id);
             $condicao->operador = 'OR';
             $condicao->vetor    = $vt_condicoes;
-            $condicao->id       = $id;
         }
         if ($condicao->possui_erros()) {
             return false;
@@ -300,11 +319,9 @@ final class condicao_sql {
     // condicao_sql $condicao_original: condicao a ser negada
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
-        $condicao = new $classe(CONDICAO_SQL_UNITARIA);
+        $condicao = new self(CONDICAO_SQL_UNITARIA, $id);
         $condicao->operador = 'NOT';
         $condicao->condicao = $condicao_original;
-        $condicao->id       = $id;
         return $condicao;
     }
 
@@ -316,18 +333,16 @@ final class condicao_sql {
     // Array[condicao_sql] $vt_condicoes: vetor de condicoes a serem agrupadas
     // String $id: identificador unico da condicao
     //
-        $classe = __CLASS__;
         if (count($vt_condicoes) == 1) {
             $condicao = array_pop($vt_condicoes);
-            if (!($condicao instanceof $classe)) {
+            if (!($condicao instanceof self)) {
                 trigger_error('Tipo invalido para a condicao ('.util::get_tipo($condicao).')', E_USER_WARNING);
                 return false;
             }
         } else {
-            $condicao = new $classe(CONDICAO_SQL_AGRUPAMENTO);
+            $condicao = new self(CONDICAO_SQL_AGRUPAMENTO, $id);
             $condicao->operador = 'UNION';
             $condicao->vetor    = $vt_condicoes;
-            $condicao->id       = $id;
         }
         if ($condicao->possui_erros()) {
             return false;
@@ -364,8 +379,8 @@ final class condicao_sql {
     // String $id: identificador unico da condicao
     //
         $condicoes = array();
-        $condicoes[] = self::montar($operando, '>=', $inicio, false);
-        $condicoes[] = self::montar($operando, '<=', $fim, false);
+        $condicoes[] = self::montar($operando, '>=', $inicio);
+        $condicoes[] = self::montar($operando, '<=', $fim);
         return self::sql_and($condicoes, $id);
     }
 
@@ -380,7 +395,7 @@ final class condicao_sql {
     //
         $condicoes = array();
         foreach ($valores as $valor) {
-            $condicoes[] = self::montar($operando, '=', $valor, false);
+            $condicoes[] = self::montar($operando, '=', $valor);
         }
         return self::sql_or($condicoes, $id);
     }
@@ -396,7 +411,7 @@ final class condicao_sql {
     //
         $condicoes = array();
         foreach ($valores as $valor) {
-            $condicoes[] = self::montar($operando, '<>', $valor, false);
+            $condicoes[] = self::montar($operando, '<>', $valor);
         }
         return self::sql_and($condicoes, $id);
     }
@@ -438,6 +453,40 @@ final class condicao_sql {
 
 
     //
+    //     Obtem o valor de uma flag da condicao simples
+    //
+    static public function get_flag($condicao, $flag) {
+    // stdClass || condicao_sql $condicao: condicao do tipo simples
+    // String $flag: nome da flag a ser consultada
+    //
+        if ($condicao->tipo != CONDICAO_SQL_SIMPLES) {
+            return null;
+        }
+        switch ($flag) {
+        case 'tipo1':
+            if (isset($condicao->flags[$flag])) {
+                return $condicao->flags[$flag];
+            }
+            return CONDICAO_SQL_TIPO_ATRIBUTO;
+            
+        case 'tipo2':
+            if (isset($condicao->flags[$flag])) {
+                return $condicao->flags[$flag];
+            }
+            return CONDICAO_SQL_TIPO_VALOR;
+
+        case 'funcao1':
+        case 'funcao2':
+            if (isset($condicao->flags[$flag])) {
+                return $condicao->flags[$flag];
+            }
+            return '';
+        }
+        return null;
+    }
+
+
+    //
     //     Define um atributo de uma condicao vazia
     //
     private function set_atributo_sql_vazia($atributo, $valor) {
@@ -466,8 +515,8 @@ final class condicao_sql {
             $this->valores[$atributo] = (string)$valor;
             return;
         case 'operando2':
-            if (is_null($valor)) {
-                $this->valores[$atributo] = null;
+            if (is_string($valor) || is_int($valor) || is_float($valor) || is_bool($valor) || is_null($valor)) {
+                $this->valores[$atributo] = $valor;
             } else {
                 $this->valores[$atributo] = (string)$valor;
             }
@@ -478,8 +527,8 @@ final class condicao_sql {
                 $this->valores[$atributo] = $valor;
             }
             return;
-        case 'entre_atributos':
-            $this->valores[$atributo] = (bool)$valor;
+        case 'flags':
+            $this->valores[$atributo] = (array)$valor;
             return;
         }
         trigger_error('Atributo "'.util::exibir_var($atributo).'" nao pode ser atribuido a uma condicao simples', E_USER_NOTICE);
@@ -533,8 +582,7 @@ final class condicao_sql {
             }
             return;
         case 'condicao':
-            $classe = __CLASS__;
-            if ($valor instanceof $classe) {
+            if ($valor instanceof self) {
                 $this->valores[$atributo] = $valor;
             }
             return;
@@ -589,7 +637,7 @@ final class condicao_sql {
             // Checar IS NULL e IS NOT NULL
             $vt_operadores = array('=', '<>');
             if (is_null($this->valores['operando2']) && !in_array($this->valores['operador'], $vt_operadores)) {
-                trigger_error('A condicao de comparacao com valor nulo so aceita os operadores "igual" e "diferente"');
+                trigger_error('A condicao de comparacao com valor nulo so aceita os operadores "igual" e "diferente"', E_USER_ERROR);
             }
             break;
         case CONDICAO_SQL_COMPOSTA:
@@ -710,11 +758,33 @@ final class condicao_sql {
 
 
     //
+    //    Escapa um texto para o parser
+    //
+    public static function escape($valor) {
+    // String $valor: valor a ser escapado
+    //
+        if (is_string($valor)) {
+            return "'".str_replace("'", "\\'", $valor)."'";
+        }
+        return util::exibir_var($valor, UTIL_EXIBIR_PHP, false);
+    }
+
+
+    //
     //     Cria uma condicao a partir de uma string "SIMP SQL"
     //
-    public static function parse($simp_sql) {
+    public static function parse($simp_sql, $dados = null) {
     // String $simp_sql: SQL especial do Simp
+    // Array[String => Mixed] $dados: dados da SQL
     //
+        if ($dados !== null) {
+            $tr = array();
+            foreach ($dados as $chave => $valor) {
+                $tr[$chave] = self::escape($valor);
+            }
+            $simp_sql = strtr($simp_sql, $tr);
+        }
+
         // Quebrar a string em tokens
         $tokens = self::get_tokens($simp_sql);
 
@@ -945,8 +1015,19 @@ final class condicao_sql {
                         case 'LIKE':
                         case 'UNLIKE':
                             $operando2 = array_shift($tokens);
-                            $entre_atributos = $operando2->tipo == TOKEN_SQL_STRING && !is_numeric($operando2->valor);
-                            $vt_condicoes[] = self::montar($operando1->valor, $nome_operador, $operando2->valor, $entre_atributos);
+                            $flags = array();
+                            if ($operando2->tipo == TOKEN_SQL_STRING) {
+                                if (is_numeric($operando2->valor)) {
+                                    $operando2->valor = floatval($operando2->valor);
+                                } elseif ($operando2->valor == 'true' || $operando2->valor == 'false') {
+                                    $operando2->valor = (bool)$operando2->valor;
+                                } else {
+                                    $flags['tipo2'] = CONDICAO_SQL_TIPO_ATRIBUTO;
+                                }
+                            } elseif ($operando2->tipo == TOKEN_SQL_STRING_ASPAS) {
+                                //$flags['tipo2'] = CONDICAO_SQL_TIPO_VALOR;
+                            }
+                            $vt_condicoes[] = self::montar($operando1->valor, $nome_operador, $operando2->valor, $flags);
                             break;
 
                         case 'IS':

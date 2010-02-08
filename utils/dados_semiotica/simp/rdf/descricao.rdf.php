@@ -4,10 +4,10 @@
 // Descricao: Arquivo RDF com a descricao do Sistema (Veja: http://dublincore.org/)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.1.0.3
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.1.0.5
 // Data: 06/11/2007
-// Modificado: 02/03/2009
+// Modificado: 25/11/2009
 // License: LICENSE.TXT
 // Copyright (C) 2007  Rubens Takiguti Ribeiro
 //
@@ -30,9 +30,9 @@ $ano   = strftime('%Y', $time);
 $data_criacao = strftime('%Y-%m-%d', $CFG->instalacao);
 
 $vt_condicoes = array();
-$vt_condicoes[] = condicao_sql::montar('entidade', '=', 'config', false);
-$vt_condicoes[] = condicao_sql::montar('operacao', '=', LOG_UPDATE, false);
-$vt_condicoes[] = condicao_sql::montar('erro', '=', '0', false);
+$vt_condicoes[] = condicao_sql::montar('entidade', '=', 'config');
+$vt_condicoes[] = condicao_sql::montar('operacao', '=', LOG_UPDATE);
+$vt_condicoes[] = condicao_sql::montar('erro', '=', false);
 $condicoes = condicao_sql::sql_and($vt_condicoes);
 $campos = array('data');
 

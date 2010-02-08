@@ -4,10 +4,10 @@
 // Descricao: Realiza consultas genericas
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.9
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.1.3
 // Data: 16/05/2008
-// Modificado: 09/09/2009
+// Modificado: 29/01/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -163,7 +163,17 @@ function logica_consulta(&$dados) {
                 $condicao = condicao_sql::montar($d->operando1, '<>', null, false, $id);
                 break;
             default:
-                $condicao = condicao_sql::montar($d->operando1, $d->operador, $d->operando2, $d->entre_atributos, $id);
+                $flags = array();
+                $flags['tipo1'] = $d->tipo1;
+                $flags['tipo2'] = $d->tipo2;
+                if ($d->funcao1) {
+                    $flags['funcao1'] = $d->funcao1;
+                }
+                if ($d->funcao2) {
+                    $flags['funcao2'] = $d->funcao2;
+                }
+
+                $condicao = condicao_sql::montar($d->operando1, $d->operador, $d->operando2, $flags, $id);
                 break;
             }
             $sessao['condicao']['condicoes'][] = $condicao;
@@ -512,8 +522,9 @@ function imprimir_formulario(&$dados, &$sessao) {
                  '      <li>Selecione o primeiro operando no quadro abaixo</li>'.
                  '      <li>Selecione o segundo operando ou digite um valor de compara&ccedil;&atilde;o</li>'.
                  '      <li>Selecione o operador desejado</li>'.
-                 '      <li>Selecione o tipo de compara&ccedil;&atilde;o: entre dois atributos ou entre um atributo e um valor</li>'.
-                 '      <li>Clique em "Incluir"</li>'.
+                 '      <li>Selecione o tipo de operadores</li>'.
+                 '      <li>Selecione a fun&ccedil;&atilde;o a ser aplicada sobre os operadores</li>'.
+                 '      <li>Clique na a&ccedil;&atilde;o "Incluir"</li>'.
                  '    </ol>'.
                  '  </li>'.
                  '  <li>Agrupe as condi&ccedil;&otilde;es de forma hier&aacute;rquica:'.
@@ -560,9 +571,28 @@ function imprimir_formulario(&$dados, &$sessao) {
         echo '<form id="form_nova_condicao" action="'.$link_base.'" method="post" onsubmit="return submeter(this, 1);">';
         echo '<fieldset>';
         echo '<legend>Nova condi&ccedil;&atilde;o simples</legend>';
-        echo '<p>';
+
+        // Tabela de criacao de condicao simples
+        echo '<table id="insercao_condicao">';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th scope="col">Propriedade</th>';
+        echo '<th scope="col">Operando 1</th>';
+        echo '<th scope="col">Operador</th>';
+        echo '<th scope="col">Operando 2</th>';
+        echo '<th scope="col">A&ccedil;&atilde;o</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+
+        // Linha: VALOR
+        echo '<tr>';
+        echo '<th scope="row">Valor</th>';
+        echo '<td>';
         $class = ($sessao['condicao']['operando'] == 0) ? 'class="ativo"' : '';
         echo '<input type="text" name="operacao[incluir][operando1]" value="'.$operando1.'" size="10" '.$class.'/>';
+        echo '</td>';
+        echo '<td>';
         echo '<select name="operacao[incluir][operador]">';
         echo '  <option value="=">igual a (=)</option>';
         echo '  <option value="&lt;&gt;">diferente de (&ne;)</option>';
@@ -574,12 +604,68 @@ function imprimir_formulario(&$dados, &$sessao) {
         echo '  <option value="ISNULL">&eacute; nulo</option>';
         echo '  <option value="ISNOTNULL">n&atilde;o &eacute; nulo</option>';
         echo '</select>';
+        echo '</td>';
+        echo '<td>';
         $class = ($sessao['condicao']['operando'] == 1) ? 'class="ativo"' : '';
         echo '<input type="text" name="operacao[incluir][operando2]" value="'.$operando2.'" size="10" '.$class.'/>';
+        echo '</td>';
+        echo '<td rowspan="3">';
         echo '<input name="operacao[incluir][submit]" type="submit" value="Incluir" class="botao" />';
-        echo '</p>';
-        echo '<p><label><input type="radio" value="0" name="operacao[incluir][entre_atributos]" checked="checked" /> Compara&ccedil;&atilde;o com um valor</label></p>';
-        echo '<p><label><input type="radio" value="1" name="operacao[incluir][entre_atributos]" /> Compara&ccedil;&atilde;o entre atributos</label></p>';
+        echo '</td>';
+        echo '</tr>';
+
+        // Linha: TIPO
+        echo '<tr>';
+        echo '<th scope="row">Tipo</th>';
+        echo '<td>';
+        echo '<select name="operacao[incluir][tipo1]">';
+        echo '  <option value="'.CONDICAO_SQL_TIPO_ATRIBUTO.'" selected="selected">Atributo</option>';
+        echo '  <option value="'.CONDICAO_SQL_TIPO_VALOR.'">Valor</option>';
+        echo '</select>';
+        echo '</td>';
+        echo '<td>-</td>';
+        echo '<td>';
+        echo '<select name="operacao[incluir][tipo2]">';
+        echo '  <option value="'.CONDICAO_SQL_TIPO_ATRIBUTO.'">Atributo</option>';
+        echo '  <option value="'.CONDICAO_SQL_TIPO_VALOR.'" selected="selected">Valor</option>';
+        echo '</select>';
+        echo '</td>';
+        echo '</tr>';
+
+        // Linha: FUNCAO
+        echo '<tr>';
+        echo '<th scope="row">Fun&ccedil;&atilde;o</th>';
+        echo '<td>';
+        echo '<select name="operacao[incluir][funcao1]">';
+        echo '  <option value="" selected="selected">Nenhuma</option>';
+        foreach (driver_objeto::get_funcoes(true) as $grupo => $funcoes) {
+            echo '  <optgroup label="'.$grupo.'">';
+            foreach ($funcoes as $funcao => $descricao) {
+                echo '    <option value="'.$funcao.'">'.$descricao.'</option>';
+            }
+            echo '  </optgroup>';
+        }
+        echo '</select>';
+        echo '</td>';
+        echo '<td>-</td>';
+        echo '<td>';
+        echo '<select name="operacao[incluir][funcao2]">';
+        echo '  <option value="" selected="selected">Nenhuma</option>';
+        echo '  <option value="" selected="selected">Nenhuma</option>';
+        foreach (driver_objeto::get_funcoes(true) as $grupo => $funcoes) {
+            echo '  <optgroup label="'.$grupo.'">';
+            foreach ($funcoes as $funcao => $descricao) {
+                echo '    <option value="'.$funcao.'">'.$descricao.'</option>';
+            }
+            echo '  </optgroup>';
+        }
+        echo '</select>';
+        echo '</td>';
+        echo '</tr>';
+
+        echo '</tbody>';
+        echo '</table>';
+
         echo '<p>';
         link::texto(link::adicionar_atributo($link_base, 'op', 'limpar_condicao_simples'), 'Limpar', false, false, false, false, false, false);
         echo '</p>';
@@ -686,15 +772,16 @@ function imprimir_condicoes(&$condicoes) {
     case 'object':
         if ($condicoes->tipo == CONDICAO_SQL_SIMPLES) {
             $c = &$condicoes;
-            $operando1 = $c->operando1;
-            $operador = converter_operador($c->operador);
-            $operando2 = $c->operando2;
+
+            $operando1 = converter_operando($c->operando1, condicao_sql::get_flag($c, 'tipo1'), condicao_sql::get_flag($c, 'funcao1'));
+            $operador  = converter_operador($c->operador);
+            $operando2 = converter_operando($c->operando2, condicao_sql::get_flag($c, 'tipo2'), condicao_sql::get_flag($c, 'funcao2'));
             $id = $c->id;
 
             echo '<div class="linha">';
             echo '<span class="celula"><input type="checkbox" id="condicao_'.$id.'" name="condicoes['.$id.']" value="'.$id.'" /></span>';
             echo '<span class="abre"></span>';
-            if (is_null($operando2)) {
+            if (is_null($c->operando2)) {
                 switch ($c->operador) {
                 case '=':
                     echo '<span class="condicao"><label for="condicao_'.$id.'">'.$operando1.' IS NULL</label></span>';
@@ -784,7 +871,7 @@ function imprimir_resultado(&$dados, &$sessao) {
             $condicoes = condicao_sql::vazia();
             break;
         case 1:
-            $condicoes = $sessao['condicao']['condicoes'][0];
+            $condicoes = $condicoes_sessao[0];
             break;
         default:
             $condicoes = condicao_sql::sql_union($condicoes_sessao);
@@ -810,9 +897,9 @@ function imprimir_resultado(&$dados, &$sessao) {
         $inicio = false;
     }
 
-    $ordem = array();
+    $simp_ordem = array();
     foreach ($sessao['ordem'] as $campo => $tipo_ordem) {
-        $ordem[] = "'{$campo}' => ".($tipo_ordem ? 'true' : 'false');
+        $simp_ordem[] = "'{$campo}' => ".($tipo_ordem ? 'true' : 'false');
     }
 
     // Exibir a SQL usada
@@ -834,7 +921,7 @@ function imprimir_resultado(&$dados, &$sessao) {
     echo '<p><strong>Campos de Ordena&ccedil;&atilde;o:</strong></p>';
     echo '<code>';
     echo 'array(';
-    echo count($ordem) ? '<br />'.implode(',<br />', $ordem).'<br />' : '';
+    echo count($simp_ordem) ? '<br />'.implode(',<br />', $simp_ordem).'<br />' : '';
     echo ')';
     echo '</code>';
     echo '</div>';
@@ -947,6 +1034,35 @@ function listar_opcoes(&$sessao) {
     $links[] = link::texto($link, 'Limpar Consulta', 'Limpar todos os dados da consulta', false, false, true, false, false);
 
     $pagina->listar_opcoes($links);
+}
+
+
+//
+//     Converte um operando para a notacao HTML
+//
+function converter_operando($operando, $tipo, $funcao) {
+// String $operando: nome ou valor do operando
+// Int $tipo: tipo de operando
+// String $funcao: funcao aplicada sobre o operando
+//
+    $r = '';
+    switch ($tipo) {
+    case CONDICAO_SQL_TIPO_ATRIBUTO:
+        if ($funcao) {
+            $r = $funcao.'('.$operando.')';
+        } else {
+            $r = $operando;
+        }
+        break;
+    case CONDICAO_SQL_TIPO_VALOR:
+        if ($funcao) {
+            $r = $funcao.'('.$operando.')';
+        } else {
+            $r = $operando;
+        }
+        break;
+    }
+    return $r;
 }
 
 

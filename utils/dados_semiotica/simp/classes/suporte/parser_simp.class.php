@@ -4,10 +4,10 @@
 // Descricao: Parser da estrutura do Simp (reflexao)
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
-// Versao: 1.0.0.8
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.11
 // Data: 19/05/2008
-// Modificado: 24/06/2009
+// Modificado: 03/02/2010
 // Copyright (C) 2008  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
@@ -31,7 +31,7 @@ final class parser_simp {
             return false;
         }
         $tokens = token_get_all(file_get_contents($arquivo));
-        $ignore_doc = (isset($tokens[1]) && substr($tokens[1][1], 0, 12) == '//@ignoredoc');
+        $ignore_doc = (isset($tokens[1]) && substr($tokens[1][1], 0, 12) == '//@ignoredoc') || is_file(dirname($arquivo).'/.ignoredoc');
         $funcoes = array();
         foreach ($tokens as $i => $token) {
             if ($token[0] == T_FUNCTION) {
@@ -55,7 +55,7 @@ final class parser_simp {
             return false;
         }
         $tokens = token_get_all(file_get_contents($arquivo));
-        $ignore_doc = (isset($tokens[1]) && substr($tokens[1][1], 0, 12) == '//@ignoredoc');
+        $ignore_doc = (isset($tokens[1]) && substr($tokens[1][1], 0, 12) == '//@ignoredoc') || is_file(dirname($arquivo).'/.ignoredoc');
         $final = count($tokens);
         for ($i = 0; $i < $final; $i++) {
             if ($tokens[$i][0] == T_FUNCTION) {
@@ -223,14 +223,18 @@ final class parser_simp {
                         return $obj;
                     }
                     $obj->parametros[$parametro]->tipo = $tipo;
-                    if (!$ignore_doc && !self::validar_tipo($tipo)) {
-                        $obj->erro = "Tipo desconhecido \"{$tipo}\" para o par&acirc;metro {$parametro}";
+                    if (!self::validar_tipo($tipo)) {
+                        if (!$ignore_doc) {
+                            $obj->erro = "Tipo desconhecido \"{$tipo}\" para o par&acirc;metro {$parametro}";
+                        }
                         return $obj;
                     }
 
                     $obj->parametros[$parametro]->descricao = $descricao;
-                    if (!$ignore_doc && empty($descricao)) {
-                        $obj->erro = "O par&acirc;metro {$p->nome} n&atilde;o tem descri&ccedil;&atilde;o";
+                    if (empty($descricao)) {
+                        if (!$ignore_doc) {
+                            $obj->erro = "O par&acirc;metro {$p->nome} n&atilde;o tem descri&ccedil;&atilde;o";
+                        }
                         return $obj;
                     }
                     break;
@@ -271,6 +275,8 @@ final class parser_simp {
         if (trim($linha) == '//') {
             $linha = fgets($arq, 1024);
             $obj->sistema = substr(trim($linha), 3);
+        } elseif (trim($linha) == '//@ignoredoc') {
+            $ignore_doc = true;
         }
         while (!feof($arq)) {
             $linha = fgets($arq, 1024);
@@ -342,22 +348,44 @@ final class parser_simp {
         $tokens = token_get_all(file_get_contents($arquivo));
         $total = count($tokens);
         $i = 0;
+        $linha_comentario = 0;
+        $linha_constante = 0;
+        $buffer_comentario = '';
         while ($i < $total) {
             switch ($tokens[$i][0]) {
             case T_COMMENT:
+
+                // Mesma linha que a ultima constante
+                if ($tokens[$i][2] == $linha_constante) {
+                    $i++;
+                    break;
+                }
+
                 $comentario = $tokens[$i][1];
                 $pos = 0;
                 while ($comentario[$pos] == '/') {
                     $pos++;
                 }
                 $comentario = trim(substr($comentario, $pos));
+
+                // Continuacao de comentario
+                if ($linha_comentario == $tokens[$i][2] - 1) {
+                    $buffer_comentario .= ' / '.$comentario;
+
+                // Novo comentario
+                } else {
+                    $buffer_comentario = $comentario;
+                }
+                $linha_comentario = $tokens[$i][2];
                 $i++;
                 break;
             case T_STRING:
                 if ($tokens[$i][1] == 'define') {
+                    $linha_constante = $tokens[$i][2];
+                    $linha_comentario = 0;
                     list($constante, $valor) = self::parse_constante($tokens, $i);
                     if ($agrupar) {
-                        $vt_constantes[$comentario][$constante] = $valor;
+                        $vt_constantes[$buffer_comentario][$constante] = $valor;
                     } else {
                         $vt_constantes[$constante] = $valor;
                     }

@@ -4,7 +4,7 @@
 // Descricao: Parser de conversao de HTML para XHTML
 // Autor: Rubens Takiguti Ribeiro
 // Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
-// E-mail: rubens@tecnolivre.ufla.br
+// E-mail: rubens@tecnolivre.com.br
 // Versao: 1.0.0.3
 // Data: 28/01/2008
 // Modificado: 22/06/2009
