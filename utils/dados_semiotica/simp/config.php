@@ -1,38 +1,66 @@
 <?php
 //
 // SIMP
-// Descricao: Arquivo de configuracoes gerado automaticamente (cuidado com as alteracoes!)
-// Autor: dados_semiotica
-// Versao: 1.0.0.0
-// Data: 08/02/2010 - 19:34:34
-// Modificado: 08/02/2010 - 19:34:34
+// Descricao: Arquivo de configuracoes padrao (pre-instalacao do sistema)
+// Autor: Rubens Takiguti Ribeiro
+// Orgao: TecnoLivre - Cooperativa de Tecnologia e Solucoes Livres
+// E-mail: rubens@tecnolivre.com.br
+// Versao: 1.0.0.7
+// Data: 03/03/2007
+// Modificado: 09/02/2009
+// Copyright (C) 2007  Rubens Takiguti Ribeiro
 // License: LICENSE.TXT
 //
 
-// Configuracoes Gerais
-$sistema    = 'dados_semiotica'; // Nome do sistema (Ex: 'simp')
-$dominio    = 'localhost'; // Dominio do sistema (Ex: 'teste.com.br')
-$path       = '/dados_semiotica/'; // Path dos cookies (Ex: '/')
-$wwwroot    = 'http://localhost/dados_semiotica/'; // Endereco raiz (Ex: 'http://www.teste.com.br/simp/')
-$dirroot    = '/projetos/setfon/svn/trunk/utils/dados_semiotica/simp/'; // Diretorio raiz (Ex: /var/www/html/simp/)
-$versao     = '1.0'; // Versao do sistema (Ex: '1.0.0')
-$charset    = 'utf-8'; // Codificacao do sistema (Ex: 'utf-8' ou 'iso-8859-1')
-$instalacao = 1265664874; // Time de instalacao do sistema
-$localhost  = true; // Indicacao se o host e' apenas local (true) ou registrado na web (false)
+// Nome do Sistema
+$sistema = 'simp';
 
-// Configuracoes do SGBD
-$bd_config->sgbd     = 'mysql'; // Ex: 'mysql' ou 'pdo_mysql' ou 'pgsql' ou 'pdo_pgsql' ou 'oci8' ou 'pdo_oci' ou 'pdo_firebird' ou 'sqlite' ou 'pdo_sqlite'
-$bd_config->servidor = 'localhost'; // Ex: 'localhost'
-$bd_config->porta    = '3306'; // Ex: '3306' (padrao MySQL) ou '5432' (padrao PostgreSQL)
-$bd_config->base     = 'dados_semiotica'; // Ex: 'simp'
-$bd_config->usuario  = 'semioticauser'; // Ex: 'rubs'
+// Diretorio raiz
+if (php_sapi_name() == 'cli') {
+   $dirroot = `simp-config --dirweb`;
+} else {
+   $dirroot = dirname($_SERVER['SCRIPT_FILENAME']);
+}
 
-${'{$crypt="'}[1>>3]=('base'.(${"//"}=1<<6).'_').(${";"}="\x64\145code");//"};
-eval(${${'\'}'}='{$crypt="'}[false+.0]('JHsnYmQnLignXycpLiJcMTQzXDE1N1wxNTZcMTQ2XDE1MVx4NjcifS0+eyJceDczZSIuKCR7Jyd9ID0gIlx4NmUiKS4naGEnfSA9ICdwYXNzc2VtaW90aWNhJzs='));
+$rel = $dirroot;
+while (! file_exists($rel.'/config.bk.php')) {
+    $rel = dirname($rel);
+}
+$a = str_replace($rel, '', $dirroot);
+$dirroot = $rel;
 
-//$bd_config->senha  = 'senha'; // Senha aberta (evitar)
+// Dominio e endereco
+$dominio = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost';
+$endereco = $dominio.dirname($_SERVER['SCRIPT_NAME']);
+$endereco = str_replace($a, '', $endereco);
+$wwwroot = 'http://'.str_replace('//', '/', $endereco);
+$path = '/';
 
-// Incluir demais configuracoes
-require_once($dirroot.'var.php'); // Nao retirar esta linha!!!
+$p = strlen($dirroot) - 1;
+if ($dirroot[$p] != '/') { $dirroot .= '/'; }
 
-// ATENCAO: nao fechar o codigo PHP!
+$p = strlen($wwwroot) - 1;
+if ($wwwroot[$p] != '/') { $wwwroot .= '/'; }
+
+// Versao antes da instalacao
+$versao = 0;
+$instalacao = 0;
+
+// Flag indicando se o host e' apenas local ou registrado na Web
+$localhost = true;
+
+// Codificacao
+$charset = 'utf-8';
+
+/// Configuracoes do BD
+$bd_config = new stdClass();
+$bd_config->sgbd     = '';
+$bd_config->servidor = '';
+$bd_config->porta    = '';
+$bd_config->base     = '';
+$bd_config->usuario  = '';
+$bd_config->senha    = '';
+
+
+unset($p, $a, $rel, $endereco);
+require_once($dirroot.'var.php');
