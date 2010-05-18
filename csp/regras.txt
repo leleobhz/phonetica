@@ -1,49 +1,104 @@
-//
 // Formato das regras:
-//
 // pre:exp:pos=res
-//
 // onde:
-//
 // pre = expressão regular a ser encontrada imediatamente antes do ponto analisado
 // exp = expressão regular a ser encontrada no ponto analisado
 // pos = expressão regular a ser encontrada após o ponto analisado
-//
-// se forem encontradas as 3 expressões, então saída+=res e o ponto analisado passa 
+// sintaxe das expressões regulares java: http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
+// se forem encontradas as 3 expressões, então saída+=res e o ponto analisado passa
 // para depois da exp encontrada.
-//
 // exemplo:
 // nhaca
 // |
 // passa pela regra ":nh:a=rr", saída = rr e
 // nhaca
 //   |
-//
-// --- separa um conjunto de regras (4 grupos no máximo)
-//
+// --- separa um conjunto de regras (10 grupos no máximo)
 // as regras são efetuadas até que uma regra seja encontrada, então passa-se para o
 // próximo conjunto de regras.
 // o processamento para quando nenhuma regra for encontrada para o ponto.
 //
-//
 // 'macros' usadas nas expressões regulares:
-V=[aeiouãõâêôüáéíóúà]
-C=[bcdfghjklmnpqrstvwxyzç]
-L=[VC]
-// macro para início de palavra
-<=(?:^|\b)
-// macro para fim de palavra
->=(?:$|\b)
+// vogal
+V=[aeiouãõáéíóúâêô]
+// consoante
+C=[bcdfgjklmnpqrstvwxzç]
+// e ou i
+E=[eiéíê]
+//
+// Se 'res' possuir dígito, troca dígito pela expressão encontrada no 'n'éssimo grupo de exp
+//
+// :<(C?C?)(V)(C?)>:=12'3
+//
 ---
-//
-// 'macros' usadas em 'res':
-// 1 = primeiro carater do texto encontrado (em exp)
-// 2 = segundo carater do texto encontrado (em exp)
-//
-//
-//
-:<([a-z]*)([áéíóúàâêô])([a-z]*)>:=12'3
-:<alex>:=ale'x
-:<(C?C?)(V)(C?)>:=12'3
-:<(C)(V)(CC)>:=12'3
-:(\s):=1
+//==========================
+// Exceções
+//============
+:dez:\z=deh's
+//==========================
+// Consoantes com mudança
+//============
+:c:E=s
+:ch:=sh
+:c:=k
+:ç:=s
+:gü:=gU
+:g:E=zh
+:gu:=g
+:g:=g
+:j:=zh
+:h:=
+:lh:=lh
+:l:=l
+:nh:=nh
+:n:=n
+:qü:=kU
+:q.:E=k
+:q.:=kU
+:w:=v
+V'?:r:V=R
+:rr:=r
+:r:=r
+V'?:s:V=z
+:s[cçs]:=s
+:s:=s
+abaca:x:i=sh
+m[eé]'?:x:=sh
+pr[oó]'?:x:=s
+ine:x:o=Ks
+[aáoó]'?:x:[ií]=Ks
+e:x:ã'o=Ks
+se'?:x:=Ks
+ne':x:=Ks
+l[eé]'?:x:=Ks
+do':x:=Ks
+sinta':x:=Ks
+fi'?:x:=Ks
+au:x:=s
+V':x:=sh
+V[aiouãõáíóúâôéê]:x:V=sh
+\A[mx].*V'?:x:V=z
+n:x:=sh
+\A[.^x].*e'?:x:o=Ks
+:xc:ie=s
+:x:C=s
+
+//==========================
+// Consoantes sem mudança
+//============
+:[bdfkmptvz]:=1
+
+//==========================
+// Vogais ????
+//============
+'.*:i:V=I
+:iV:'=I2
+:uV:'=U2
+:[aáâ]':=a'
+'.*:[aáâ]:=a
+:[aáâ]:=A
+:e':.*x=eh'
+d:e':z\z=eh'
+:e':C[Ch]?u?([aeo]s?)?=eh'
+:[eê]':=e'
+:[eê]:.*'=e
