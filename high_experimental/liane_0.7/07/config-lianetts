@@ -1,0 +1,195 @@
+#!/bin/bash
+# script para configuração das entradas das listas de excessões e abreviaturas do LianeTTS
+#Este é um script desenvolvido pelo SIEID/SUPSI/SERPRO
+# deselvolvedor: Francisco Amaro - francisco.amaro@serpro.gov.br
+
+
+#função para cópia de segurança dos arquivos de excessões e abreviaturas
+backup (){
+if [ "$1" == "-e" ]; then 
+shift
+	arquivo="lianetts.exc"
+else
+shift
+	arquivo="lianetts.abr"
+fi
+	
+	if [ -f "/tmp$arquivo.bkp" ]; then
+		Msg="Arquivo de segurança já existe!"
+		zenity --info --title 'Backup' --text "$Msg" 
+	else
+	if [ -f "/usr/share/lianetts/liane/$arquivo" ]; then
+		Msg="Copiando Arquivo de segurança!"
+		zenity --info --title 'Backup' --text "$Msg" 
+		cp /usr/share/lianetts/liane/$arquivo /tmp/$arquivo.bkp || zenity --error --text "Erro ao copiar para arquivo temporário"
+	else
+		Msg="Arquivo de exceções nao foi encontrado!"
+		zenity --info --title 'Backup' --text "$Msg"
+	fi
+fi
+}
+
+#função para restaurar os arquivos de exceções e abreviaturas
+restaurar (){
+if [ "$1" == "-e" ]; then
+        arquivo="lianetts.exc"
+else
+        arquivo="lianetts.abr"
+fi
+
+	if [ -f "/tmp/$arquivo.bkp" ]; then
+		Msg="Restaurando Arquivo de exceções"
+		zenity --info --title 'Backup' --text "$Msg" 
+		cp /tmp/$arquivo.bkp /usr/share/lianetts/liane/$arquivo || zenity --error --text "Erro ao copiar para arquivo temporário"
+		rm $arquivo.bkp  
+		menu
+	else
+		Msg="Arquivo de backup nao foi encontrado"
+		zenity --info --title 'Backup' --text "$Msg" 
+		menu
+fi
+}
+
+verifica_sinal (){
+	palavra=$(zenity --entry --title 'Adicionar' --text "$Msg") || menu 
+	sinal=$(echo "$palavra" |grep -o '=' && echo "$palavra" |grep -o '[a-zA-Z0-9]* [a-zA-Z0-9]*') || menu
+ 	if [ "$sinal" == "=" ]; then
+		return 0
+ 	else
+ 		return 1
+ 	fi
+}
+
+
+#menu inicial do configurador
+menu () {
+	Msg=""
+	abertura=$(zenity --list --height 300 --width 300 --title "CONFIGURAÇÕES do LIANETTS" \
+	--text "Ferramenta de Configurações do LianeTTS" --column Número --column Opção  1 'ADICIONAR PALAVRAS' \
+	2 'REMOVER PALAVRAS' 3 'RESTAURAR ARQUIVO' 4 'FECHAR') || exit 1
+
+###################################################################################
+# uma zez que tenha sido escolhido a adição este é um sub-menu para escolha da lista
+	if [ "$abertura" == "1" ]; then	
+		Msg="Escolha a lista que deseja adicionar palavras"	
+      		tipopalavra=$(zenity --list --height 300 --width 300 --title 'Adicionar' --text "$Msg" --column Número --column Opção 1 'ADICINAR EXCEÇÕES' 2 'ADICIONAR ABREVIATURAS')
+		if [ "$tipopalavra" == '1' ]; then
+		 	cat /usr/share/lianetts/liane/lianetts.exc > /tmp/EntraPalavra
+      			cat /tmp/EntraPalavra |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/EntraPalavraUtf;
+      			perl -pi -e 's/\r\n/\n/;' /tmp/EntraPalavraUtf
+      			Msg="Digite no formato: palavra=exceção - sem espaços!"
+      			until verifica_sinal
+			do
+				zenity --error --text "$Msg"
+			done 
+			echo "$palavra" >> /tmp/EntraPalavraUtf
+                        temp=$(sort /tmp/EntraPalavraUtf)
+                       	echo -e "$temp" > /tmp/EntraPalavraUtf
+                       	zenity --text-info --title 'Visão' --filename /tmp/EntraPalavraUtf
+                       	Msg="Clique OK para confirmar a nova alteração!"
+                       	zenity --question --title 'Adicionar' --text "$Msg" || menu 
+                       	backup -e 
+                       	perl -pi -e 's/\n/\r\n/;' /tmp/EntraPalavraUtf
+                       	cat /tmp/EntraPalavraUtf |perl -e 'use Encode;while(<STDIN>){ print encode("iso-8859-1", decode("utf8", $_))}' > /tmp/EntraPalavra;
+                       	##### durante os testes a linha abaixo deve ser comentada por motivo de segurança
+                       	cat /tmp/EntraPalavra > /usr/share/lianetts/liane/lianetts.exc
+                       	Msg="As alterações foram salvas. Tecle enter!"
+                       	zenity --info --title 'Adicionar' --text "$Msg"
+                       	menu 
+		elif [ "$tipopalavra" == '2' ]; then
+                        cat /usr/share/lianetts/liane/lianetts.abr > /tmp/EntraPalavra
+                        cat /tmp/EntraPalavra |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/EntraPalavraUtf;
+                        perl -pi -e 's/\r\n/\n/;' /tmp/EntraPalavraUtf
+                        Msg="Digite no formato: abreviatura=palavra - sem espaços!"
+			 until verifica_sinal
+                        do
+                                zenity --error --text "$Msg"
+                        done
+			                       
+				echo "$palavra" >> /tmp/EntraPalavraUtf
+                        	temp=$(cat /tmp/EntraPalavraUtf | sort)
+                        	echo -e "$temp" > /tmp/EntraPalavraUtf
+                        	zenity --text-info --title 'Visão' --filename /tmp/EntraPalavraUtf
+                        	Msg="Clique OK para confirmar a alteração!"
+                        	zenity --question --title 'Adicionar' --text "$Msg" || menu 
+                        	backup -a $1
+                        	perl -pi -e 's/\n/\r\n/;' /tmp/EntraPalavraUtf
+                        	cat /tmp/EntraPalavraUtf |perl -e 'use Encode;while(<STDIN>){ print encode("iso-8859-1", decode("utf8", $_))}' > /tmp/EntraPalavra;
+                        	##### durante os testes a linha abaixo deve ser comentada por motivo de segurança
+                        	cat /tmp/EntraPalavra > /usr/share/lianetts/liane/lianetts.abr
+                        	Msg="As alterações foram salvas. Tecle enter"
+                        	zenity --info --title 'Adicionar' --text "$Msg"
+                        	menu 
+
+			
+
+		fi
+	
+########################################################################
+# uma vez que tenha sido escolhida a remoção este é um sub-menu para escolha da lista 
+	elif [ "$abertura" == "2" ]; then
+   		Msg="Escolha a lista que deseja remover palavras:"
+   		tipopalavra=$(zenity --list --height 300 --width 300 --title 'Remover' --text "$Msg" --column Número --column Opção 1 'REMOVER EXCEÇÕES' 2 'REMOVER ABREVIATURAS')
+# remover da lista de excessões
+      		if [ "$tipopalavra" == '1' ]; then
+		 	cat /usr/share/lianetts/liane/lianetts.exc > /tmp/MataPalavra
+      			cat /tmp/MataPalavra |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/MataPalavraUtf;
+      			perl -pi -e 's/\r\n/\n/;' /tmp/MataPalavraUtf
+
+			zenity --list --title 'Remover' --height 500 --width 400 --text "Marque a palavra para remover" \
+			--radiolist --column Escolha --column Palavra $(cat /tmp/MataPalavraUtf | xargs -i echo {}) > /tmp/MataPalavraUtfRem || menu 
+			grep -vf /tmp/MataPalavraUtfRem /tmp/MataPalavraUtf > /tmp/resultado 
+			
+				Msg="Deseja realmente remover $(cat /tmp/MataPalavraUtfRem), clique em OK para confirmar ou Cancelar para voltar."
+				zenity --question --title 'Remover' --text "$Msg" || menu $1
+
+			backup -e 
+      			cat /tmp/resultado > /tmp/MataPalavraUtf
+      			perl -pi -e 's/\n/\r\n/;' /tmp/EntraPalavraUtf
+			cat /tmp/MataPalavraUtf |perl -e 'use Encode;while(<STDIN>){ print encode("iso-8859-1", decode("utf8", $_))}' \
+			> /tmp/MataPalavra;	
+			####### a linha abaixo deve ser comentada para testes
+      			cat /tmp/MataPalavra > /usr/share/lianetts/liane/lianetts.exc
+      			Msg="As alterações foram salvas"
+      			zenity --info --title 'Remoção' --text "$Msg" 
+      			menu 
+			
+# remover da lista de abreviaturas
+		elif [ "$tipopalavra" == '2' ]; then
+                        cat /usr/share/lianetts/liane/lianetts.abr > /tmp/MataPalavra
+                        cat /tmp/MataPalavra |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/MataPalavraUtf;
+                        perl -pi -e 's/\r\n/\n/;' /tmp/MataPalavraUtf
+
+                        zenity --list --title 'Remover' --height 300 --width 300 --text "Marque a abreviatura para Remover" \
+			--radiolist --column Escolha --column Palavra $(cat /tmp/MataPalavraUtf | xargs -i echo {}) >  /tmp/MataPalavraUtfRem || menu 
+			grep -vf /tmp/MataPalavraUtfRem /tmp/MataPalavraUtf > /tmp/resultado 
+				Msg="Deseja realmente remover $(cat /tmp/MataPalavraUtfRem), clique em OK para confirmar ou Cancelar para voltar."
+                        	zenity --question --title 'Remover' --text "$Msg" || menu 
+                        
+                        backup -a 
+                        cat /tmp/resultado > /tmp/MataPalavraUtf
+                        perl -pi -e 's/\n/\r\n/;' /tmp/EntraPalavraUtf
+                        cat /tmp/MataPalavraUtf |perl -e 'use Encode;while(<STDIN>){ print encode("iso-8859-1", decode("utf8", $_))}' > /tmp/MataPalavra;     
+                        ####### a linha abaixo deve ser comentada para testes
+                        cat /tmp/MataPalavra > /usr/share/lianetts/liane/lianetts.abr
+                        Msg="As alterações foram salvas"
+                        zenity --info --title 'Remoção' --text "$Msg"
+			menu  
+		fi
+		
+#########################################################################
+#restauração dos arquivos
+	elif [ "$abertura" == "3" ]; then
+		restaurar -e 
+		restaurar -a 
+
+#########################################################################
+#fechamento do menu principal
+	elif [ "$abertura" == "4" ]; then
+		clear
+		exit
+	fi
+}
+menu $1
+
+

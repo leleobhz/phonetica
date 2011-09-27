@@ -1,0 +1,35 @@
+#!/bin/bash
+echo "
+lianetts
+        O Lianetts é um sintetizador de voz desenvolvido pelo SERPRO em parceria com a UFRJ:
+        Este script tem por objetivo possibilitar o uso de um único utilitário para todos os recursos dos softwares
+        que compoem o sintetizador de voz.
+
+SINOPSE
+    lianetts [freq] [-sagcth]  <arq> e/ou <string>
+
+        -h              Exibe esta ajuda.  
+        freq            Um número que pode variar de -1 a 1 - o padrão é 0.7; Se freq for omitido o programa entenderá freq como 0.7.
+        -s              Parâmetro para leitura de strings - é o padrão; é necessário digitar a string
+        -a              Parâmetro para leitura de arquivos - é necessário digitar o caminho do arquivo
+	-g              Parâmetro para gravação de arquivos no formato wav a partir de uma string; é nessessário fornecer a string.
+	-f              Parâmetro para gravação de arquivos no formato wav a partir de um arquivo texto.
+			É nessessário fornecer o nome dos arquivos.
+        -c              É o parâmetro para acionar o utilitário de configuração do liane.
+                        O utilitário de configuração permite a inserção ou remoção de excessões e abreviaturas. 
+        -t              É o parâmetro para acionar o utilitário de testes do Liane. 
+                        O utilitário de teste permite testar o compilador do Lianetts.
+
+
+        Exemplos de Uso:
+                lianetts -s 0.7 \"teste de leitura de string\" (para ler a string entre aspas)
+                lianetts "teste de leitura de string" (mesmo efeito do comando anterior)
+                lianetts -a 0.7 teste.txt (para ler o conteúde do arquivo)
+                lianetts -g 0.7 teste.wav "teste de gravação" (para gravar o arquivo teste.wav)
+		lianetts -f teste.wav teste.txt, para gravar no arquivo teste.wav, o conteúdo do arquivo teste.txt.
+		Precione control mais c para terminar
+                Se os parâmetros forem omitidos será assumida a opção -s e a frequência 0.7
+	OBS: Para utilização com uma interface de diálogos digite: lianetts -i."
+	      
+
+ 

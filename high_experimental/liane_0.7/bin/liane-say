@@ -1,0 +1,7 @@
+#!/bin/bash
+lianecomp | \
+mbrola -e -t 0.7 /usr/share/mbrola/br4/br4 - - 2> /dev/null | \
+aplay -q -f S16 -r 16000
+
+#Ao inves de aplay pode-se usar:
+#paplay --raw --format S16 --rate 16000 --channels 1

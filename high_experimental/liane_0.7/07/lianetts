@@ -1,0 +1,51 @@
+#!/bin/bash
+# Este é um script desenvolvido pelo SIEID/SUPSI/SERPRO
+# deselvolvedor: Francisco Amaro - francisco.amaro@serpro.gov.br
+# Agradecimentos pela colaboração de Júlio Neves
+
+grava_arq(){
+	echo "$3"| lianecomp | /usr/bin/mbrola -e -t $1 -l 16000 /usr/share/mbrola/br4/br4 - "$2"
+}
+fala_string(){
+		echo $1 |/usr/local/bin/lianecomp | /usr/bin/mbrola -e -t $2 /usr/share/mbrola/br4/br4 - - |/usr/bin/aplay -f S16 -r 16000 2> /dev/null
+# caso seu sistema utilize sistema de som pulse descomente a linha de baixo e comente a linha de cima.
+#		echo $1 |/usr/local/bin/lianecomp | /usr/bin/mbrola -e -t $2 /usr/share/mbrola/br4/br4 - - |/usr/bin/pacat --rate=16000 --channels=1 > /dev/null
+
+}
+fala_arq(){
+		cat "$1" |/usr/local/bin/lianecomp | /usr/bin/mbrola -e -t "$2" /usr/share/mbrola/br4/br4 - - |/usr/bin/aplay -f S16 -r 16000 2> /dev/null
+
+#		cat "$1" |/usr/local/bin/lianecomp | /usr/bin/mbrola -e -t $2 /usr/share/mbrola/br4/br4 - - |/usr/bin/pacat --rate=16000 --channels=1 > /dev/null
+
+}
+[[ $1 == -? ]] && {
+	Opt=$1
+	shift
+	} || Opt=-s
+[[ $1 =~ '^[0-9]?\.?[0-9]+' ]] && {
+	Freq="$1"
+	shift
+	} || Freq="0.7"
+case $Opt in
+	-s) fala_string "$*" "$Freq";;
+	
+	-a) fala_arq "$*" "$Freq";;
+	
+	-g) Arq=$1
+	    shift
+            grava_arq "$Freq" "$Arq" "$*";;
+
+	-f) Arq=$1
+	    shift
+	    grava_arq "$Freq" "$Arq" "$(cat "$*")";;
+
+	-c) config-lianetts;;
+
+	-t) teste-lianetts;;
+
+	-i) lianetts-dialogos;;	 
+	    
+	-h) ajuda-lianetts;;
+	
+	*) exit;;
+esac

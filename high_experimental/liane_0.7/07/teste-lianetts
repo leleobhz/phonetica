@@ -1,0 +1,40 @@
+#!/bin/bash
+# Script para testes do compilador do Lianetts
+#Este é um script desenvolvido pelo SIEID/SUPSI/SERPRO
+# deselvolvedor: Francisco Amaro - francisco.amaro@serpro.gov.br
+
+palavra () {
+palavra=$(zenity --entry --title 'Testar' --text "Digite o texto que deseja testar a compilação: ")
+}
+compila () {
+	comp=$(zenity --list --height 280 --width 240 --title "Teste de compilação do LIANETTS" --text "Escolha Abaixo uma das fases de compilação" --column Numero --column Fase   1 'Pre-processamento' 2 'Pre-prosodia' 3 'Curva da Prosodia' 4 'Compila Fonemas' 5 'Aplica Prosodia' 6 'Menu')
+case $comp in
+	1) echo "$palavra" |lianecomp-teste_par 1 > /tmp/compilado
+	cat /tmp/compilado |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/compiladoUtf;
+   	zenity --text-info --title "Texto Compilado" --filename /tmp/compiladoUtf
+	compila;;
+	2) echo "$palavra" |lianecomp-teste_par 2 > /tmp/compilado
+	cat /tmp/compilado |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/compiladoUtf;
+   	zenity --text-info --title "Texto Compilado" --filename /tmp/compiladoUtf
+	compila;;
+	3) echo "$palavra" |lianecomp-teste_par 3 > /tmp/compilado
+	cat /tmp/compilado |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/compiladoUtf;
+   	zenity --text-info --title "Texto Compilado" --filename /tmp/compiladoUtf
+   	compila;;
+	4) echo "$palavra" |lianecomp-teste_par 4 > /tmp/compilado
+	cat /tmp/compilado |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/compiladoUtf;
+   	zenity --text-info --title "Texto Compilado" --filename /tmp/compiladoUtf
+   	compila;;
+	5) echo "$palavra" |lianecomp-teste_par 5 > /tmp/compilado
+	cat /tmp/compilado |perl -e 'use Encode;while(<STDIN>){ print encode("utf8", decode("iso-8859-1", $_))}' > /tmp/compiladoUtf;
+   	zenity --text-info --title "Texto Compilado" --filename /tmp/compiladoUtf
+   	compila;;
+	6)lianetts -i
+	   exit;;	
+	*) exit;;
+esac
+}
+palavra
+compila 
+
+

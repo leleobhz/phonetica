@@ -1,0 +1,105 @@
+#!/bin/bash
+# Esta é uma interface de dialogos para o utilitário lianetts
+# Este é um script desenvolvido pelo SIEID/SUPSI/SERPRO
+# deselvolvedor: Francisco Amaro - francisco.amaro@serpro.gov.br
+
+
+#menu inicial do lianetts
+menu () {
+        Msg=""
+        abertura=$(zenity --list --height 380 --width 340 --title 'MENU PRINCIPAL' \
+        --text "LianeTTS - Utilitários" --column Número --column Opção 1 'Reproduzir texto' 2 'Reproduzir Wav'\
+        3 'Reproduzir arquivo Texto' 4 'Gravar texto em arquivo wav' \
+	5 'Gravar arquivo texto em Arqivo Wav' 6 'Configurar o Liane TTS' \
+	7 'Testar o Compilador' 8 'Ajuda' 9 'Fechar')
+
+if [ "$abertura" == "1" ]; then
+                Msg="Digite o texto para reprodução."
+                texto=$(zenity --entry --title 'Reprodução de texto' --text "$Msg")
+		lianetts -s $texto
+		menu $1
+
+elif [ "$abertura" == "2" ]; then
+		arqwav=$(zenity --file-selection --title "Selecione o Arquivo Wav")
+		if [ "$arqwav" == "" ]; then
+		menu
+		else  
+		wav=$(echo $arqwav |grep -o '\(.wav\)$')
+		if [ "$wav" == ".wav"  ]; then  
+		lianeplay "$arqwav"
+		sleep 1
+		menu $1
+		else
+		zenity --error --text "Erro este não é um arquivo wav"
+		menu
+		fi
+		fi
+elif [ "$abertura" == "3" ]; then
+		Msg="Escolha o caminho e nome do arquivo texto."
+                arq=$(zenity --file-selection --title "$Msg")
+		if [ "$arq" == "" ]; then
+                menu
+                else
+		txt=$(file $arq |grep  -o ': [a-zA-Z0-9]*'|cut -d: -f2)
+		if [ "$txt" == " UTF" ] || [ "$txt" == " ASCII" ] || [ "$txt" == " ISO" ]; then 
+		lianetts -a "$arq"
+		menu
+		else
+		zenity --error --text "Erro este não é um arquivo texto"
+		menu
+		fi
+		fi
+		
+
+elif [ "$abertura" == "4" ]; then
+		Msg="Digite o caminho e nome para o arquivo wav."
+		arqwav=$(zenity --entry --title 'Arquivo Wav' --text "$Msg")
+		if [ "$arqwav" == "" ]; then
+                menu
+                else
+                Msg="Digite o texto para gravação."
+		texto=$(zenity --entry --title 'Gravação de texto' --text "$Msg")
+		if [ "$texto" == "" ]; then
+                menu
+                else
+		lianetts -g "$arqwav" "$texto"
+		menu $1
+		fi
+		fi
+
+elif [ "$abertura" == "5" ]; then
+                Msg="Digite o caminhi e nome para o arquivo wav."
+                arqwav=$(zenity --entry --title 'Arquivo Wav' --text "$Msg")
+		if [ "$arqwav" == "" ]; then
+                menu
+                else
+		Msg="Escolha o caminho e o nome do arquivo texto."
+                arqtxt=$(zenity --file-selection --title "$Msg")
+		if [ "$arqtxt" == "" ]; then
+                menu
+                else
+		txt=$(file $arqtxt |grep  -o ': [a-zA-Z0-9]*'|cut -d: -f2)
+		if [ "$txt" == " UTF" ] || [ "$txt" == " ASCII" ] || [ "$txt" == " ISO" ]; then
+		lianetts -f "$arqwav" "$arqtxt"
+		menu 
+		else
+		zenity --error --text "Erro este não é um arquivo texto"
+		menu
+		fi
+		fi
+		fi
+elif [ "$abertura" == "6" ]; then
+		lianetts -c $1
+		menu $1
+		
+elif [ "$abertura" == "7" ]; then
+		lianetts -t $1
+		menu $1
+elif [ "$abertura" == "8" ]; then
+	        ajuda=$(lianetts -h); echo "$ajuda" > /tmp/ajuda; zenity --text-info --title "Ajuda" --width 700  --height 600  --filename /tmp/ajuda 	
+		menu $1
+elif [ "$abertura" == "9" ]; then
+exit
+fi
+}
+menu $1
